@@ -11,6 +11,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -64,6 +67,7 @@ public class PlayerBottomSheetFragment extends Fragment {
         customizeBottomSheetBackground();
         customizeBottomSheetAction();
         initViewPager();
+        applyEdgeToEdgeInsets();
         setHeaderBookmarksButton();
 
         return view;
@@ -100,6 +104,25 @@ public class PlayerBottomSheetFragment extends Fragment {
     private void initViewPager() {
         bind.playerBodyLayout.playerBodyBottomSheetViewPager.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
         bind.playerBodyLayout.playerBodyBottomSheetViewPager.setAdapter(new PlayerControllerVerticalPager(this));
+    }
+
+    private void applyEdgeToEdgeInsets() {
+        final int bodyPaddingLeft = bind.playerBodyLayout.playerBodyBottomSheetViewPager.getPaddingLeft();
+        final int bodyPaddingTop = bind.playerBodyLayout.playerBodyBottomSheetViewPager.getPaddingTop();
+        final int bodyPaddingRight = bind.playerBodyLayout.playerBodyBottomSheetViewPager.getPaddingRight();
+        final int bodyPaddingBottom = bind.playerBodyLayout.playerBodyBottomSheetViewPager.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(bind.getRoot(), (view, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            bind.playerBodyLayout.playerBodyBottomSheetViewPager.setPadding(
+                    bodyPaddingLeft,
+                    bodyPaddingTop + systemBars.top,
+                    bodyPaddingRight,
+                    bodyPaddingBottom + systemBars.bottom
+            );
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(bind.getRoot());
     }
 
     private void initializeMediaBrowser() {

@@ -84,7 +84,7 @@ public class ArtistBottomSheetDialog extends BottomSheetDialogFragment implement
         ToggleButton favoriteToggle = view.findViewById(R.id.button_favorite);
         favoriteToggle.setChecked(artistBottomSheetViewModel.getArtist().getStarred() != null);
         favoriteToggle.setOnClickListener(v -> {
-            artistBottomSheetViewModel.setFavorite(requireContext());
+            artistBottomSheetViewModel.setFavorite();
         });
 
         TextView playRadio = view.findViewById(R.id.play_radio_text_view);
@@ -98,7 +98,7 @@ public class ArtistBottomSheetDialog extends BottomSheetDialogFragment implement
             isFirstBatch = true;
             Toast.makeText(requireContext(), R.string.bottom_sheet_generating_instant_mix, Toast.LENGTH_SHORT).show();
 
-            artistBottomSheetViewModel.getArtistInstantMix(activity, artist).observe(activity, media -> {
+            artistBottomSheetViewModel.getArtistInstantMix(artist).observe(activity, media -> {
                 if (media == null || media.isEmpty()) return;
                 if (getActivity() == null) return;
 

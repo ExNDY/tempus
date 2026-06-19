@@ -90,6 +90,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         MappingUtil.observeExternalAudioRefresh(getViewLifecycleOwner(), this::updateDownloadButtons);
+        observeActions();
     }
 
     @Override
@@ -128,7 +129,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         ToggleButton favoriteToggle = view.findViewById(R.id.button_favorite);
         favoriteToggle.setChecked(songBottomSheetViewModel.getSong().getStarred() != null);
         favoriteToggle.setOnClickListener(v -> {
-            songBottomSheetViewModel.setFavorite(requireContext());
+            songBottomSheetViewModel.setFavorite();
         });
         favoriteToggle.setOnLongClickListener(v -> {
             Bundle bundle = new Bundle();
@@ -203,17 +204,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         });
 
         downloadButton = view.findViewById(R.id.download_text_view);
-        downloadButton.setOnClickListener(v -> {
-            if (Preferences.getDownloadDirectoryUri() == null) {
-                DownloadUtil.getDownloadTracker(requireContext()).download(
-                        MappingUtil.mapDownload(song),
-                        new Download(song)
-                );
-            } else {
-                ExternalAudioWriter.downloadToUserDirectory(requireContext(), song);
-            }
-            dismissBottomSheet();
-        });
+        downloadButton.setOnClickListener(v -> handleRequestedDownload(song));
 
         removeButton = view.findViewById(R.id.remove_text_view);
         removeButton.setOnClickListener(v -> {
@@ -435,6 +426,30 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
 
     private void refreshShares() {
         homeViewModel.refreshShares(requireActivity());
+    }
+
+    private void observeActions() {
+        songBottomSheetViewModel.getActions().observe(getViewLifecycleOwner(), action -> {
+            if (action instanceof SongBottomSheetViewModel.Action.RequestDownload) {
+                handleRequestedDownload(((SongBottomSheetViewModel.Action.RequestDownload) action).getMedia());
+            }
+        });
+    }
+
+    private void handleRequestedDownload(Child media) {
+        if (media == null) {
+            return;
+        }
+
+        if (Preferences.getDownloadDirectoryUri() == null) {
+            DownloadUtil.getDownloadTracker(requireContext()).download(
+                    MappingUtil.mapDownload(media),
+                    new Download(media)
+            );
+        } else {
+            ExternalAudioWriter.downloadToUserDirectory(requireContext(), media);
+        }
+        dismissBottomSheet();
     }
 
 }

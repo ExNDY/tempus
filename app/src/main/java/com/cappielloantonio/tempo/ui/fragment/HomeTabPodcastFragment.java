@@ -102,7 +102,7 @@ public class HomeTabPodcastFragment extends Fragment implements ClickCallback, P
     }
 
     private void initPodcastView() {
-        podcastViewModel.getPodcastChannels(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), podcastChannels -> {
+        podcastViewModel.getPodcastChannels().observe(getViewLifecycleOwner(), podcastChannels -> {
             if (podcastChannels == null) {
                 if (bind != null) bind.homePodcastChannelsSector.setVisibility(View.GONE);
                 if (bind != null) bind.emptyPodcastLayout.setVisibility(View.GONE);
@@ -120,7 +120,7 @@ public class HomeTabPodcastFragment extends Fragment implements ClickCallback, P
 
         podcastChannelHorizontalAdapter = new PodcastChannelHorizontalAdapter(this);
         bind.podcastChannelsRecyclerView.setAdapter(podcastChannelHorizontalAdapter);
-        podcastViewModel.getPodcastChannels(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), podcastChannels -> {
+        podcastViewModel.getPodcastChannels().observe(getViewLifecycleOwner(), podcastChannels -> {
             if (podcastChannels == null) {
                 if (bind != null) bind.homePodcastChannelsSector.setVisibility(View.GONE);
             } else {
@@ -138,7 +138,7 @@ public class HomeTabPodcastFragment extends Fragment implements ClickCallback, P
 
         podcastEpisodeAdapter = new PodcastEpisodeAdapter(this);
         bind.newestPodcastsRecyclerView.setAdapter(podcastEpisodeAdapter);
-        podcastViewModel.getNewestPodcastEpisodes(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), podcastEpisodes -> {
+        podcastViewModel.getNewestPodcastEpisodes().observe(getViewLifecycleOwner(), podcastEpisodes -> {
             if (podcastEpisodes == null) {
                 if (bind != null) bind.homeNewestPodcastsSector.setVisibility(View.GONE);
             } else {
@@ -182,8 +182,8 @@ public class HomeTabPodcastFragment extends Fragment implements ClickCallback, P
     @Override
     public void onDismiss() {
         new Handler().postDelayed(() -> {
-            if (podcastViewModel != null) podcastViewModel.refreshPodcastChannels(getViewLifecycleOwner());
-            if (podcastViewModel != null) podcastViewModel.refreshNewestPodcastEpisodes(getViewLifecycleOwner());
+            if (podcastViewModel != null) podcastViewModel.refreshPodcastChannels();
+            if (podcastViewModel != null) podcastViewModel.refreshNewestPodcastEpisodes();
         }, 1000);
     }
 }

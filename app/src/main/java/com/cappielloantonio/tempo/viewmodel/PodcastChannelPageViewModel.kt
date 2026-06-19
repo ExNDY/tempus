@@ -1,7 +1,5 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -12,8 +10,9 @@ import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class PodcastChannelPageViewModel(application: Application) : AndroidViewModel(application) {
-    private val podcastRepository = PodcastRepository()
+class PodcastChannelPageViewModel(
+    private val podcastRepository: PodcastRepository,
+) : androidx.lifecycle.ViewModel() {
     private val podcastChannel = MutableLiveData<PodcastChannel>()
 
     fun getPodcastChannel(): LiveData<PodcastChannel> = podcastChannel

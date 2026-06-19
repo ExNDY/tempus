@@ -1,31 +1,31 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 
 @UnstableApi
-class StarredArtistsSyncViewModel(application: Application) : AndroidViewModel(application) {
-    private val artistRepository = ArtistRepository()
-    private val _collectedSongs = MutableLiveData<List<Child>>()
+class StarredArtistsSyncViewModel(
+    private val artistRepository: ArtistRepository
+) : ViewModel() {
 
-    fun getAllStarredArtistSongs(): LiveData<List<Child>> = _collectedSongs
+    private val collectedSongs = MutableLiveData<List<Child>?>(null)
 
-    fun getStarredArtistSongs(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Child>> {
-        // Implementation might have triggered the sync before
-        return _collectedSongs
+    fun getAllStarredArtistSongs(): LiveData<List<Child>?> = collectedSongs
+
+    fun getStarredArtistSongs(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Child>?> {
+        return collectedSongs
     }
 
     fun syncStarredArtists(artists: List<ArtistID3>) {
         val allSongs = mutableListOf<Child>()
         var count = 0
         if (artists.isEmpty()) {
-            _collectedSongs.postValue(emptyList())
+            collectedSongs.postValue(emptyList())
             return
         }
 
@@ -36,7 +36,7 @@ class StarredArtistsSyncViewModel(application: Application) : AndroidViewModel(a
                 }
                 count++
                 if (count == artists.size) {
-                    _collectedSongs.postValue(allSongs)
+                    collectedSongs.postValue(allSongs)
                 }
             }
         }

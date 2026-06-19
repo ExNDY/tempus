@@ -125,7 +125,7 @@ public class PlaylistCatalogueFragment extends Fragment implements ClickCallback
         playlistHorizontalAdapter = new PlaylistHorizontalAdapter(this);
         bind.playlistCatalogueRecyclerView.setAdapter(playlistHorizontalAdapter);
 
-        playlistCatalogueViewModel.getPlaylistList(getViewLifecycleOwner());
+        playlistCatalogueViewModel.getPlaylistList();
 
         bind.playlistCatalogueRecyclerView.setOnTouchListener((v, event) -> {
             hideKeyboard(v);

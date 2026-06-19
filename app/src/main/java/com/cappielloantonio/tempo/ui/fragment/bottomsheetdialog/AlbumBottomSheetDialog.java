@@ -84,6 +84,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         MappingUtil.observeExternalAudioRefresh(getViewLifecycleOwner(), this::updateRemoveAllVisibility);
+        observeActions();
     }
 
     @Override
@@ -115,7 +116,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
 
         ToggleButton favoriteToggle = view.findViewById(R.id.button_favorite);
         favoriteToggle.setChecked(albumBottomSheetViewModel.getAlbum().getStarred() != null);
-        favoriteToggle.setOnClickListener(v -> albumBottomSheetViewModel.setFavorite(requireContext()));
+        favoriteToggle.setOnClickListener(v -> albumBottomSheetViewModel.setFavorite());
 
         TextView playRadio = view.findViewById(R.id.play_radio_text_view);
         playRadio.setOnClickListener(v -> {
@@ -297,6 +298,29 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
 
     private void refreshShares() {
         homeViewModel.refreshShares(requireActivity());
+    }
+
+    private void observeActions() {
+        albumBottomSheetViewModel.getActions().observe(getViewLifecycleOwner(), action -> {
+            if (action instanceof AlbumBottomSheetViewModel.Action.RequestDownload) {
+                handleRequestedDownload(((AlbumBottomSheetViewModel.Action.RequestDownload) action).getSongs());
+            }
+        });
+    }
+
+    private void handleRequestedDownload(List<Child> songs) {
+        if (songs == null || songs.isEmpty()) {
+            return;
+        }
+
+        if (Preferences.getDownloadDirectoryUri() == null) {
+            List<MediaItem> mediaItems = MappingUtil.mapDownloads(songs);
+            List<Download> downloads = songs.stream().map(Download::new).collect(Collectors.toList());
+            DownloadUtil.getDownloadTracker(requireContext()).download(mediaItems, downloads);
+        } else {
+            songs.forEach(child -> ExternalAudioWriter.downloadToUserDirectory(requireContext(), child));
+        }
+        dismissBottomSheet();
     }
 
 }

@@ -88,7 +88,7 @@ public class HomeTabRadioFragment extends Fragment implements ClickCallback, Rad
         });
 
         bind.internetRadioStationTitleTextView.setOnLongClickListener(v -> {
-            radioViewModel.getInternetRadioStations(getViewLifecycleOwner());
+            radioViewModel.getInternetRadioStations();
             return true;
         });
 
@@ -101,7 +101,7 @@ public class HomeTabRadioFragment extends Fragment implements ClickCallback, Rad
 
         internetRadioStationAdapter = new InternetRadioStationAdapter(this);
         bind.internetRadioStationRecyclerView.setAdapter(internetRadioStationAdapter);
-        radioViewModel.getInternetRadioStations(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), internetRadioStations -> {
+        radioViewModel.getInternetRadioStations().observe(getViewLifecycleOwner(), internetRadioStations -> {
             if (internetRadioStations == null) {
                 if (bind != null) bind.homeRadioStationSector.setVisibility(View.GONE);
                 if (bind != null) bind.emptyRadioStationLayout.setVisibility(View.GONE);
@@ -135,7 +135,7 @@ public class HomeTabRadioFragment extends Fragment implements ClickCallback, Rad
         RadioEditorDialog dialog = new RadioEditorDialog(new RadioCallback() {
             @Override
             public void onDismiss() {
-                radioViewModel.getInternetRadioStations(getViewLifecycleOwner());
+                radioViewModel.getInternetRadioStations();
             }
         });
         dialog.setArguments(bundle);
@@ -146,7 +146,7 @@ public class HomeTabRadioFragment extends Fragment implements ClickCallback, Rad
     public void onDismiss() {
         new Handler().postDelayed(() -> {
             if (radioViewModel != null)
-                radioViewModel.refreshInternetRadioStations(getViewLifecycleOwner());
+                radioViewModel.refreshInternetRadioStations();
         }, 1000);
     }
 }

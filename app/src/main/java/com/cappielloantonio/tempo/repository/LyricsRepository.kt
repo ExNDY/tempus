@@ -19,7 +19,7 @@ class LyricsRepository {
         }
     }
 
-    fun observeLyrics(songId: String): LiveData<LyricsCache> {
+    fun observeLyrics(songId: String): LiveData<LyricsCache?> {
         return lyricsDao.observeOne(songId)
     }
 

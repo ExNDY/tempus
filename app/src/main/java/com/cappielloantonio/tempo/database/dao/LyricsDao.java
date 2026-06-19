@@ -1,5 +1,6 @@
 package com.cappielloantonio.tempo.database.dao;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
@@ -11,6 +12,7 @@ import com.cappielloantonio.tempo.model.LyricsCache;
 @Dao
 public interface LyricsDao {
     @Query("SELECT * FROM lyrics_cache WHERE song_id = :songId")
+    @Nullable
     LyricsCache getOne(String songId);
 
     @Query("SELECT * FROM lyrics_cache WHERE song_id = :songId")

@@ -139,7 +139,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
 
     private void init(View view, ArtistID3 artistArg) {
         artistPageViewModel.setArtist(artistArg);
-        artistPageViewModel.fetchCategorizedAlbums(getViewLifecycleOwner());
+        artistPageViewModel.fetchCategorizedAlbums();
 
         bind.mostStreamedSongTextViewClickable.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
@@ -150,7 +150,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
 
         ToggleButton favoriteToggle = view.findViewById(R.id.button_favorite);
         favoriteToggle.setChecked(artistPageViewModel.getArtist().getStarred() != null);
-        favoriteToggle.setOnClickListener(v -> artistPageViewModel.setFavorite(requireContext()));
+        favoriteToggle.setOnClickListener(v -> artistPageViewModel.setFavorite());
 
         Button bioToggle = view.findViewById(R.id.button_toggle_bio);
         bioToggle.setOnClickListener(v ->

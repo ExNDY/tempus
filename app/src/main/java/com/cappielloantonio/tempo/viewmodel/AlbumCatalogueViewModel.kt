@@ -1,21 +1,21 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class AlbumCatalogueViewModel(application: Application) : AndroidViewModel(application) {
+class AlbumCatalogueViewModel(
+    private val subsonicRepository: SubsonicRepository
+) : ViewModel() {
+
     private val albumList = MutableLiveData<List<AlbumID3>>(ArrayList())
     private val loading = MutableLiveData(true)
-    private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
 
     private var page = 0
     private var status = Status.STOPPED

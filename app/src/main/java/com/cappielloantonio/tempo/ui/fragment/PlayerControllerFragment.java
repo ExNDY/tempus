@@ -45,10 +45,14 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.InnerFragmentPlayerControllerBinding;
 import com.cappielloantonio.tempo.equalizer.EqualizerManager;
+import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.dialog.PlaybackSpeedDialog;
 import com.cappielloantonio.tempo.ui.dialog.SleepTimerDialog;
+import com.cappielloantonio.tempo.subsonic.models.Child;
+import com.cappielloantonio.tempo.util.DownloadUtil;
+import com.cappielloantonio.tempo.util.MappingUtil;
 import com.cappielloantonio.tempo.util.SleepTimerManager;
 
 import androidx.core.widget.ImageViewCompat;
@@ -134,6 +138,12 @@ public class PlayerControllerFragment extends Fragment {
         updateSleepTimerUI();
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        observeActions();
     }
 
     @Override
@@ -666,6 +676,29 @@ public class PlayerControllerFragment extends Fragment {
         }
     }
 
+    private void observeActions() {
+        playerBottomSheetViewModel.getActions().observe(getViewLifecycleOwner(), action -> {
+            if (action instanceof PlayerBottomSheetViewModel.Action.RequestDownload) {
+                handleRequestedDownload(((PlayerBottomSheetViewModel.Action.RequestDownload) action).getMedia());
+            }
+        });
+    }
+
+    private void handleRequestedDownload(Child media) {
+        if (media == null) {
+            return;
+        }
+
+        if (Preferences.getDownloadDirectoryUri() == null) {
+            DownloadUtil.getDownloadTracker(requireContext()).download(
+                    MappingUtil.mapDownload(media),
+                    new Download(media)
+            );
+        } else {
+            com.cappielloantonio.tempo.util.ExternalAudioWriter.downloadToUserDirectory(requireContext(), media);
+        }
+    }
+
     private void initCoverLyricsSlideView() {
         playerMediaCoverViewPager.setOrientation(ViewPager2.ORIENTATION_HORIZONTAL);
         playerMediaCoverViewPager.setAdapter(new PlayerControllerHorizontalPager(this));
@@ -699,7 +732,7 @@ public class PlayerControllerFragment extends Fragment {
             if (media != null) {
                 ratingViewModel.setSong(media);
                 buttonFavorite.setChecked(media.getStarred() != null);
-                buttonFavorite.setOnClickListener(v -> playerBottomSheetViewModel.setFavorite(requireContext(), media));
+                buttonFavorite.setOnClickListener(v -> playerBottomSheetViewModel.setFavorite(media));
                 buttonFavorite.setOnLongClickListener(v -> {
                     Bundle bundle = new Bundle();
                     bundle.putSerializable(Constants.TRACK_OBJECT, media);

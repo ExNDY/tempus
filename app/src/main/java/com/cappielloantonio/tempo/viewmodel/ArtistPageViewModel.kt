@@ -1,14 +1,9 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
-import android.content.Context
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.interfaces.StarCallback
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.FavoriteRepository
@@ -18,15 +13,15 @@ import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.ArtistInfo2
 import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.util.Constants
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class ArtistPageViewModel(application: Application) : AndroidViewModel(application) {
-    private val artistRepository = ArtistRepository()
-    private val songRepository = SongRepository()
-    private val favoriteRepository = FavoriteRepository()
-    private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
+class ArtistPageViewModel(
+    private val artistRepository: ArtistRepository,
+    private val songRepository: SongRepository,
+    private val favoriteRepository: FavoriteRepository,
+    private val subsonicRepository: SubsonicRepository,
+) : androidx.lifecycle.ViewModel() {
 
     private val artist = MutableLiveData<ArtistID3>()
     
@@ -63,7 +58,7 @@ class ArtistPageViewModel(application: Application) : AndroidViewModel(applicati
         this.artist.value = artist
     }
 
-    fun setFavorite(context: Context) {
+    fun setFavorite() {
         val currentArtist = artist.value ?: return
         val toStar = currentArtist.starred == null
         
@@ -85,7 +80,7 @@ class ArtistPageViewModel(application: Application) : AndroidViewModel(applicati
         return result
     }
 
-    fun fetchCategorizedAlbums(owner: LifecycleOwner) {
+    fun fetchCategorizedAlbums() {
         val id = artist.value?.id ?: return
         viewModelScope.launch {
             val response = subsonicRepository.getArtist(id)

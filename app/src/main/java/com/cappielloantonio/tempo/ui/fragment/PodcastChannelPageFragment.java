@@ -41,7 +41,7 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
         activity = (MainActivity) getActivity();
         bind = FragmentPodcastChannelPageBinding.inflate(inflater, container, false);
         View view = bind.getRoot();
-        podcastChannelPageViewModel = new ViewModelProvider(this).get(PodcastChannelPageViewModel.class);
+        podcastChannelPageViewModel = new ViewModelProvider(requireActivity()).get(PodcastChannelPageViewModel.class);
 
         Bundle args = getArguments();
         PodcastChannel channel = args != null ? (PodcastChannel) args.getSerializable(Constants.PODCAST_OBJECT) : null;

@@ -100,7 +100,7 @@ public class PodcastChannelCatalogueFragment extends Fragment implements ClickCa
         podcastChannelCatalogueAdapter = new PodcastChannelCatalogueAdapter(this);
         podcastChannelCatalogueAdapter.setStateRestorationPolicy(RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY);
         bind.podcastChannelCatalogueRecyclerView.setAdapter(podcastChannelCatalogueAdapter);
-        podcastChannelCatalogueViewModel.getPodcastChannels(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), albums -> {
+        podcastChannelCatalogueViewModel.getPodcastChannels().observe(getViewLifecycleOwner(), albums -> {
             if (albums != null) {
                 podcastChannelCatalogueAdapter.setItems(albums);
             }
