@@ -1,25 +1,27 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
 import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.R
+import com.cappielloantonio.tempo.ui.state.UiEvent
+import com.cappielloantonio.tempo.ui.state.UiText
 import com.cappielloantonio.tempo.repository.PodcastRepository
 import com.cappielloantonio.tempo.subsonic.models.SubsonicResponse
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class PodcastChannelEditorViewModel(application: Application) : AndroidViewModel(application) {
-    private val podcastRepository = PodcastRepository()
-    private val _isSuccess = MutableLiveData(false)
-    val isSuccess: LiveData<Boolean> = _isSuccess
+class PodcastChannelEditorViewModel(
+    private val podcastRepository: PodcastRepository,
+) : androidx.lifecycle.ViewModel() {
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> = _errorMessage
+    private val _events = Channel<UiEvent>(Channel.BUFFERED)
+    val events: LiveData<UiEvent> = _events.receiveAsFlow().asLiveData()
 
     fun clearError() {
         _errorMessage.value = null
@@ -27,7 +29,6 @@ class PodcastChannelEditorViewModel(application: Application) : AndroidViewModel
 
     fun createChannel(url: String) {
         _errorMessage.value = null
-        _isSuccess.value = false
 
         viewModelScope.launch {
             val response = podcastRepository.createPodcastChannel(url)
@@ -42,7 +43,7 @@ class PodcastChannelEditorViewModel(application: Application) : AndroidViewModel
         }
 
         if (response.status == "ok") {
-            _isSuccess.postValue(true)
+            sendAction(_events, UiEvent.CloseDialog)
         } else {
             val errorMsg = response.error?.message ?: "Unknown server error"
             showError(errorMsg)
@@ -50,8 +51,8 @@ class PodcastChannelEditorViewModel(application: Application) : AndroidViewModel
     }
 
     private fun showError(message: String) {
-        Toast.makeText(getApplication(), message, Toast.LENGTH_LONG).show()
         _errorMessage.postValue(message)
         Log.e("PodcastChannelEditorVM", "Error: $message")
+        sendAction(_events, UiEvent.ShowMessage(UiText.raw(message)))
     }
 }

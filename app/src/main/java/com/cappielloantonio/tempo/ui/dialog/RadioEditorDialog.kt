@@ -29,8 +29,9 @@ import com.cappielloantonio.tempo.interfaces.RadioCallback
 import com.cappielloantonio.tempo.radiobrowser.RadioBrowserCountry
 import com.cappielloantonio.tempo.radiobrowser.RadioBrowserRepository
 import com.cappielloantonio.tempo.radiobrowser.RadioBrowserStation
-import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.viewmodel.RadioEditorViewModel
+import com.cappielloantonio.tempo.viewmodel.RadioEditorViewModel.Action
+import com.cappielloantonio.tempo.util.Constants
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.util.*
@@ -54,7 +55,7 @@ class RadioEditorDialog(private val radioCallback: RadioCallback?) : DialogFragm
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         bind = DialogRadioEditorBinding.inflate(layoutInflater)
-        radioEditorViewModel = ViewModelProvider(this).get(RadioEditorViewModel::class.java)
+        radioEditorViewModel = ViewModelProvider(requireActivity()).get(RadioEditorViewModel::class.java)
 
         arguments?.getSerializable(Constants.INTERNET_RADIO_STATION_OBJECT)?.let {
             radioEditorViewModel.setRadioToEdit(it as com.cappielloantonio.tempo.subsonic.models.InternetRadioStation)
@@ -297,19 +298,26 @@ class RadioEditorDialog(private val radioCallback: RadioCallback?) : DialogFragm
     }
 
     private fun setupObservers() {
-        radioEditorViewModel.isSuccess.observe(this) { isSuccess ->
-            if (isSuccess == true) {
-                Toast.makeText(requireContext(),
-                    if (radioEditorViewModel.radioToEdit == null)
-                        App.getContext().getString(R.string.radio_editor_dialog_added) else App.getContext().getString(R.string.radio_editor_dialog_updated),
-                    Toast.LENGTH_SHORT).show()
-                dismissDialog()
-            }
-        }
-        radioEditorViewModel.errorMessage.observe(this) { error ->
-            if (!error.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
-                radioEditorViewModel.clearError()
+        radioEditorViewModel.actions.observe(this) { action ->
+            when (action) {
+                is Action.Saved -> {
+                    Toast.makeText(
+                        requireContext(),
+                        if (action.isNew) {
+                            getString(R.string.radio_editor_dialog_added)
+                        } else {
+                            getString(R.string.radio_editor_dialog_updated)
+                        },
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    dismissDialog()
+                }
+                is Action.ShowMessage -> {
+                    Toast.makeText(requireContext(), action.message.resolve(requireContext()), Toast.LENGTH_LONG).show()
+                }
+                Action.CloseDialog -> {
+                    dismissDialog()
+                }
             }
         }
     }

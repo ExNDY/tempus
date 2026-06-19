@@ -1,20 +1,29 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
 import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.cappielloantonio.tempo.ui.state.UiEvent
+import com.cappielloantonio.tempo.ui.state.UiText
 import com.cappielloantonio.tempo.repository.PodcastRepository
 import com.cappielloantonio.tempo.subsonic.models.PodcastChannel
 import com.cappielloantonio.tempo.subsonic.models.SubsonicResponse
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class PodcastChannelBottomSheetViewModel(application: Application) : AndroidViewModel(application) {
-    private val podcastRepository = PodcastRepository()
+class PodcastChannelBottomSheetViewModel(
+    private val podcastRepository: PodcastRepository,
+) : androidx.lifecycle.ViewModel() {
     var podcastChannel: PodcastChannel? = null
+    private val _errorMessage = MutableLiveData<String?>()
+    val errorMessage: LiveData<String?> = _errorMessage
+    private val _events = Channel<UiEvent>(Channel.BUFFERED)
+    val events: LiveData<UiEvent> = _events.receiveAsFlow().asLiveData()
 
     fun deletePodcastChannel() {
         val channelId = podcastChannel?.id ?: return
@@ -26,15 +35,21 @@ class PodcastChannelBottomSheetViewModel(application: Application) : AndroidView
 
     private fun handleResponse(response: SubsonicResponse?) {
         if (response == null) {
-            Toast.makeText(getApplication(), "Network error", Toast.LENGTH_LONG).show()
+            postError("Network error")
             return
         }
 
         if (response.status == "ok") {
-            Toast.makeText(getApplication(), "Podcast channel deleted", Toast.LENGTH_SHORT).show()
+            sendAction(_events, UiEvent.CloseDialog)
         } else {
             val errorMsg = response.error?.message ?: "Unknown server error"
-            Toast.makeText(getApplication(), errorMsg, Toast.LENGTH_LONG).show()
+            postError(errorMsg)
         }
+    }
+
+    private fun postError(message: String) {
+        _errorMessage.postValue(message)
+        Log.e("PodcastChannelBottomSheetVM", "Error: $message")
+        sendAction(_events, UiEvent.ShowMessage(UiText.raw(message)))
     }
 }

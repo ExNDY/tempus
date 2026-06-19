@@ -12,4 +12,5 @@ val appModule = module {
     single { AppDatabase.getInstance() }
     single { get<AppDatabase>().serverDao() }
     single { get<AppDatabase>().queueDao() }
+    single { get<AppDatabase>().recentSearchDao() }
 }

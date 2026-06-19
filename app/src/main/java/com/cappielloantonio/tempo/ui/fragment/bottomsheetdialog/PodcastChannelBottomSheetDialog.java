@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
@@ -18,6 +19,7 @@ import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.PodcastChannel;
+import com.cappielloantonio.tempo.ui.state.UiEvent;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.MusicUtil;
 import com.cappielloantonio.tempo.viewmodel.PodcastChannelBottomSheetViewModel;
@@ -40,6 +42,7 @@ public class PodcastChannelBottomSheetDialog extends BottomSheetDialogFragment i
 
         podcastChannelBottomSheetViewModel = new ViewModelProvider(requireActivity()).get(PodcastChannelBottomSheetViewModel.class);
         podcastChannelBottomSheetViewModel.setPodcastChannel(podcastChannel);
+        setupObservers();
 
         init(view);
 
@@ -73,7 +76,17 @@ public class PodcastChannelBottomSheetDialog extends BottomSheetDialogFragment i
         TextView delete = view.findViewById(R.id.delete_text_view);
         delete.setOnClickListener(v -> {
             podcastChannelBottomSheetViewModel.deletePodcastChannel();
-            dismissBottomSheet();
+        });
+    }
+
+    private void setupObservers() {
+        podcastChannelBottomSheetViewModel.getEvents().observe(getViewLifecycleOwner(), event -> {
+            if (event instanceof UiEvent.ShowMessage) {
+                UiEvent.ShowMessage showMessage = (UiEvent.ShowMessage) event;
+                Toast.makeText(requireContext(), showMessage.getMessage().resolve(requireContext()), Toast.LENGTH_LONG).show();
+            } else if (event instanceof UiEvent.CloseDialog) {
+                dismissBottomSheet();
+            }
         });
     }
 

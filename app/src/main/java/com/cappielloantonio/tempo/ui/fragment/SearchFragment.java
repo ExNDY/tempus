@@ -248,7 +248,14 @@ public class SearchFragment extends Fragment implements ClickCallback {
         }
     }
     private void performSearch(String query) {
-        searchViewModel.search3(this, query).observe(getViewLifecycleOwner(), result -> {
+        searchViewModel.searchAllSongs(query).observe(getViewLifecycleOwner(), allSongs -> {
+            if (allSongs != null) {
+                allSongs.setName(getString(R.string.search_all_songs, String.valueOf(allSongs.getSongCount())));
+                updateUI(Collections.singletonList(allSongs));
+            }
+        });
+
+        searchViewModel.search3(query).observe(getViewLifecycleOwner(), result -> {
             if (bind != null) {
                 if (result.getArtists() != null) {
                     bind.searchArtistSector.setVisibility(!result.getArtists().isEmpty() ? View.VISIBLE : View.GONE);

@@ -19,6 +19,14 @@ class SystemRepository @JvmOverloads constructor(
     private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
 ) {
 
+    suspend fun ping(): SubsonicResponse? = withContext(Dispatchers.IO) {
+        subsonicRepository.ping()
+    }
+
+    suspend fun getOpenSubsonicExtensions(): List<OpenSubsonicExtension>? = withContext(Dispatchers.IO) {
+        subsonicRepository.getOpenSubsonicExtensions()?.openSubsonicExtensions
+    }
+
     fun checkUserCredential(callback: SystemCallback) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.ping()
@@ -36,24 +44,6 @@ class SystemRepository @JvmOverloads constructor(
                 }
             }
         }
-    }
-
-    fun ping(): MutableLiveData<SubsonicResponse?> {
-        val pingResult = MutableLiveData<SubsonicResponse?>()
-        CoroutineScope(Dispatchers.IO).launch {
-            val response = subsonicRepository.ping()
-            pingResult.postValue(response)
-        }
-        return pingResult
-    }
-
-    fun getOpenSubsonicExtensions(): MutableLiveData<List<OpenSubsonicExtension>?> {
-        val extensionsResult = MutableLiveData<List<OpenSubsonicExtension>?>()
-        CoroutineScope(Dispatchers.IO).launch {
-            val response = subsonicRepository.getOpenSubsonicExtensions()
-            extensionsResult.postValue(response?.openSubsonicExtensions)
-        }
-        return extensionsResult
     }
 
     fun checkTempoUpdate(): MutableLiveData<LatestRelease?> {

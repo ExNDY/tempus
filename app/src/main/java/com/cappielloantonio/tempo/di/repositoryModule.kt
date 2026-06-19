@@ -11,9 +11,9 @@ val repositoryModule = module {
     single { ArtistRepository() }
     single { GenreRepository() }
     single { PlaylistRepository() }
-    single { SearchingRepository() }
+    single { SearchingRepository(get(), get(), get()) }
     single { PodcastRepository() }
-    single { RadioRepository() }
+    single { RadioRepository(get()) }
     single { DirectoryRepository() }
     single { FavoriteRepository() }
     single { DownloadRepository() }

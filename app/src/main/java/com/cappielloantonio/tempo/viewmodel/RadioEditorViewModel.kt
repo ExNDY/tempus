@@ -1,34 +1,34 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.asLiveData
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.R
+import com.cappielloantonio.tempo.ui.state.UiText
+import dev.icerock.moko.mvvm.viewmodel.ViewModel
 import com.cappielloantonio.tempo.repository.RadioRepository
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation
 import com.cappielloantonio.tempo.subsonic.models.SubsonicResponse
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @UnstableApi
-class RadioEditorViewModel(application: Application) : AndroidViewModel(application) {
-    private val radioRepository = RadioRepository()
+class RadioEditorViewModel(
+    private val radioRepository: RadioRepository
+) : ViewModel() {
+    sealed interface Action {
+        data class Saved(val isNew: Boolean) : Action
+        data class ShowMessage(val message: UiText) : Action
+        data object CloseDialog : Action
+    }
+
     var radioToEdit: InternetRadioStation? = null
         private set
     var isLocal = false
         private set
 
-    private val _isSuccess = MutableLiveData(false)
-    val isSuccess: LiveData<Boolean> = _isSuccess
-
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> = _errorMessage
-
-    fun clearError() {
-        _errorMessage.value = null
-    }
+    private val _actions = Channel<Action>(Channel.BUFFERED)
+    val actions: LiveData<Action> = _actions.receiveAsFlow().asLiveData()
 
     fun setRadioToEdit(internetRadioStation: InternetRadioStation?) {
         this.radioToEdit = internetRadioStation
@@ -42,9 +42,6 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
     fun isEditing(): Boolean = radioToEdit != null
 
     fun createRadio(name: String, streamURL: String, homepageURL: String?, coverArtUrl: String?) {
-        _errorMessage.value = null
-        _isSuccess.value = false
-
         if (isLocal) {
             createLocalRadio(name, streamURL, homepageURL, coverArtUrl)
         } else {
@@ -53,8 +50,9 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private fun createLocalRadio(name: String, streamURL: String, homepageURL: String?, coverArtUrl: String?) {
-        radioRepository.createLocalStation(name, streamURL, homepageURL, coverArtUrl) {
-            _isSuccess.postValue(true)
+        viewModelScope.launch {
+            radioRepository.createLocalStation(name, streamURL, homepageURL, coverArtUrl)
+            sendAction(_actions, Action.Saved(radioToEdit == null))
         }
     }
 
@@ -68,9 +66,6 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
     fun updateRadio(name: String, streamURL: String, homepageURL: String?, coverArtUrl: String?) {
         val id = radioToEdit?.id ?: return
 
-        _errorMessage.value = null
-        _isSuccess.value = false
-
         if (isLocal) {
             updateLocalRadio(name, streamURL, homepageURL, coverArtUrl)
         } else {
@@ -80,8 +75,9 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun updateLocalRadio(name: String, streamURL: String, homepageURL: String?, coverArtUrl: String?) {
         radioToEdit?.id?.let { id ->
-            radioRepository.updateLocalStation(id, name, streamURL, homepageURL, coverArtUrl) {
-                _isSuccess.postValue(true)
+            viewModelScope.launch {
+                radioRepository.updateLocalStation(id, name, streamURL, homepageURL, coverArtUrl)
+                sendAction(_actions, Action.Saved(false))
             }
         }
     }
@@ -97,9 +93,6 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
     fun deleteRadio() {
         val id = radioToEdit?.id ?: return
 
-        _errorMessage.value = null
-        _isSuccess.value = false
-
         if (isLocal) {
             deleteLocalRadio()
         } else {
@@ -109,7 +102,10 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun deleteLocalRadio() {
         radioToEdit?.id?.let { id ->
-            radioRepository.deleteLocalStation(id) { _isSuccess.postValue(true) }
+            viewModelScope.launch {
+                radioRepository.deleteLocalStation(id)
+                sendAction(_actions, Action.CloseDialog)
+            }
         }
     }
 
@@ -117,25 +113,47 @@ class RadioEditorViewModel(application: Application) : AndroidViewModel(applicat
         val id = radioToEdit?.id ?: return
         viewModelScope.launch {
             val response = radioRepository.deleteInternetRadioStation(id)
-            handleServerResponse(response)
+            handleDeleteResponse(response)
         }
     }
 
     private fun handleServerResponse(response: SubsonicResponse?) {
         if (response == null) {
-            _errorMessage.postValue("Network error")
+            postError("Network error")
             return
         }
 
         if (response.status == "ok") {
-            _isSuccess.postValue(true)
+            if (radioToEdit == null) {
+                sendAction(_actions, Action.Saved(true))
+            } else {
+                sendAction(_actions, Action.Saved(false))
+            }
         } else {
             val errorMsg = response.error?.message ?: "Unknown server error"
             if (errorMsg == "Not implemented") {
-                _errorMessage.postValue(getApplication<Application>().getString(R.string.radio_dialog_not_supported_snackbar))
+                postError("Internet radio management are not supported by this server.")
             } else {
-                _errorMessage.postValue(errorMsg)
+                postError(errorMsg)
             }
         }
+    }
+
+    private fun handleDeleteResponse(response: SubsonicResponse?) {
+        if (response == null) {
+            postError("Network error")
+            return
+        }
+
+        if (response.status == "ok") {
+            sendAction(_actions, Action.CloseDialog)
+        } else {
+            val errorMsg = response.error?.message ?: "Unknown server error"
+            postError(errorMsg)
+        }
+    }
+
+    private fun postError(message: String) {
+        sendAction(_actions, Action.ShowMessage(UiText.raw(message)))
     }
 }

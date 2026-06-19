@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.DialogPodcastChannelEditorBinding;
 import com.cappielloantonio.tempo.interfaces.PodcastCallback;
+import com.cappielloantonio.tempo.ui.state.UiEvent;
 import com.cappielloantonio.tempo.viewmodel.PodcastChannelEditorViewModel;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -35,6 +37,7 @@ public class PodcastChannelEditorDialog extends DialogFragment {
         bind = DialogPodcastChannelEditorBinding.inflate(getLayoutInflater());
 
         podcastChannelEditorViewModel = new ViewModelProvider(requireActivity()).get(PodcastChannelEditorViewModel.class);
+        setupObservers();
 
         return new MaterialAlertDialogBuilder(getActivity())
                 .setView(bind.getRoot())
@@ -42,6 +45,17 @@ public class PodcastChannelEditorDialog extends DialogFragment {
                 .setPositiveButton(R.string.radio_editor_dialog_positive_button, (dialog, id) -> { })
                 .setNegativeButton(R.string.radio_editor_dialog_negative_button, (dialog, id) -> dialog.cancel())
                 .create();
+    }
+
+    private void setupObservers() {
+        podcastChannelEditorViewModel.getEvents().observe(this, event -> {
+            if (event instanceof UiEvent.ShowMessage) {
+                UiEvent.ShowMessage showMessage = (UiEvent.ShowMessage) event;
+                Toast.makeText(requireContext(), showMessage.getMessage().resolve(requireContext()), Toast.LENGTH_LONG).show();
+            } else if (event instanceof UiEvent.CloseDialog) {
+                dismissDialog();
+            }
+        });
     }
 
     @Override
@@ -64,7 +78,6 @@ public class PodcastChannelEditorDialog extends DialogFragment {
             positiveButton.setOnClickListener(v -> {
                 if (validateInput()) {
                     podcastChannelEditorViewModel.createChannel(channelUrl);
-                    dismissDialog();
                 }
             });
         }
