@@ -601,4 +601,15 @@
 
     <string name="search_sort_title">Сортировать недавние поиски по времени</string>
     <string name="search_sort_summary">Если включено, поиски сортируются по времени. Если отключено - по имени.</string>
+
+    <!-- Downloader -->
+    <string name="downloader_downloading_batch">Загрузка %1$s (%2$s/%3$s)</string>
+    <string name="downloader_download_completed">Загрузка завершена</string>
+    <string name="downloader_downloaded_title">Скачано: %1$s</string>
+    <string name="downloader_album_downloaded">Альбом загружен: %1$s</string>
+    <string name="downloader_all_downloads_completed">Все загрузки завершены (%1$d файлов)</string>
+    <string name="downloader_error_loading">Ошибка загрузки</string>
+    <string name="downloader_errors_loading">Ошибки при загрузке (%1$d файлов)</string>
+    <string name="downloader_downloaded_and_errors">Загружено: %1$d, ошибок: %2$d</string>
+    <string name="downloader_retry">Повторить</string>
 </resources>

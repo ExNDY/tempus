@@ -735,4 +735,15 @@
     <string name="playlist_error_not_found_title">Playlist not found</string>
     <string name="playlist_error_not_found_message">This playlist could not be found on the server. It will be removed from your local cache.</string>
     <string name="playlist_error_not_found_toast">Playlist removed from cache</string>
+
+    <!-- Downloader -->
+    <string name="downloader_downloading_batch">Downloading %1$s (%2$s/%3$s)</string>
+    <string name="downloader_download_completed">Download completed</string>
+    <string name="downloader_downloaded_title">Downloaded: %1$s</string>
+    <string name="downloader_album_downloaded">Album downloaded: %1$s</string>
+    <string name="downloader_all_downloads_completed">All downloads completed (%1$d files)</string>
+    <string name="downloader_error_loading">Download error</string>
+    <string name="downloader_errors_loading">Download errors (%1$d files)</string>
+    <string name="downloader_downloaded_and_errors">Downloaded: %1$d, errors: %2$d</string>
+    <string name="downloader_retry">Retry</string>
 </resources>

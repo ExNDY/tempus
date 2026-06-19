@@ -20,16 +20,17 @@ import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.R
-import com.cappielloantonio.tempo.subsonic.base.ApiResponse
+import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.Preferences
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "BaseSessionCallback"
 
@@ -38,6 +39,8 @@ open class BaseSessionCallback(
     protected val context: Context,
     protected val service: BaseMediaService) :
     MediaLibraryService.MediaLibrarySession.Callback {
+
+    private val subsonicRepository = App.get(SubsonicRepository::class.java)
 
     // ─────────────────────────────────────────────────────────────
     // CommandButtons
@@ -151,9 +154,6 @@ open class BaseSessionCallback(
 
     private var currentSession: MediaSession? = null
 
-    /**
-     * Updates the player listener when the player changes (e.g., when switching to Cast).
-     */
     fun handlePlayerChanged(oldPlayer: Player?, newPlayer: Player) {
         oldPlayer?.removeListener(playerListener)
         if (currentSession != null) {
@@ -296,10 +296,13 @@ open class BaseSessionCallback(
         controller: MediaSession.ControllerInfo,
         rating: Rating
     ): ListenableFuture<SessionResult> {
+        val currentItem = session.player.currentMediaItem
+        if (currentItem == null) return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
+        
         return onSetRating(
             session,
             controller,
-            session.player.currentMediaItem!!.mediaId,
+            currentItem.mediaId,
             rating
         )
     }
@@ -311,22 +314,16 @@ open class BaseSessionCallback(
         rating: Rating
     ): ListenableFuture<SessionResult> {
         val isStarring = (rating as HeartRating).isHeart
-
-        val networkCall = if (isStarring)
-            App.getSubsonicClientInstance(false)
-                .mediaAnnotationClient
-                .star(mediaId, null, null)
-        else
-            App.getSubsonicClientInstance(false)
-                .mediaAnnotationClient
-                .unstar(mediaId, null, null)
-
         val future = SettableFuture.create<SessionResult>()
 
-        networkCall.enqueue(object : Callback<ApiResponse?> {
-            @OptIn(UnstableApi::class)
-            override fun onResponse(call: Call<ApiResponse?>, response: Response<ApiResponse?>) {
-                if (response.isSuccessful) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = if (isStarring)
+                subsonicRepository.star(mediaId, null, null)
+            else
+                subsonicRepository.unstar(mediaId, null, null)
+
+            if (response != null && response.error == null) {
+                withContext(Dispatchers.Main) {
                     for (i in 0 until session.player.mediaItemCount) {
                         val mediaItem = session.player.getMediaItemAt(i)
                         if (mediaItem.mediaId == mediaId) {
@@ -340,18 +337,14 @@ open class BaseSessionCallback(
                     }
                     updateMediaNotificationCustomLayout(session)
                     future.set(SessionResult(SessionResult.RESULT_SUCCESS))
-                } else {
+                }
+            } else {
+                withContext(Dispatchers.Main) {
                     updateMediaNotificationCustomLayout(session)
-                    future.set(SessionResult(SessionError(response.code(), response.message())))
+                    future.set(SessionResult(SessionError(SessionError.ERROR_UNKNOWN, "Network error")))
                 }
             }
-
-            @OptIn(UnstableApi::class)
-            override fun onFailure(call: Call<ApiResponse?>, t: Throwable) {
-                updateMediaNotificationCustomLayout(session)
-                future.set(SessionResult(SessionError(SessionError.ERROR_UNKNOWN, "An error has occurred")))
-            }
-        })
+        }
 
         return future
     }
@@ -415,11 +408,6 @@ open class BaseSessionCallback(
             )
         }
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // onAddMediaItems — basic version (without AA)
-    // should be override in MediaLibrarySessionCallback for full Tempus release
-    // ─────────────────────────────────────────────────────────────
 
     override fun onAddMediaItems(
         mediaSession: MediaSession,

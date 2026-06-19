@@ -146,8 +146,8 @@ class MediaLibrarySessionCallback(
 
     private fun fetchRadioItem(firstItem: MediaItem): ListenableFuture<List<MediaItem>> {
         val radioFuture = Futures.transformAsync(
-            automotiveRepository.internetRadioStations,
-            { result ->
+            automotiveRepository.getInternetRadioStations(),
+            { result: LibraryResult<ImmutableList<MediaItem>>? ->
                 val selected = result?.value?.find { it.mediaId == firstItem.mediaId }
                 if (selected != null) {
                     val updated = selected.buildUpon()
@@ -197,7 +197,7 @@ class MediaLibrarySessionCallback(
 
                 Futures.transform(
                     automotiveRepository.getInstantMix(artistId, count),
-                    { it.value ?: emptyList() },
+                    { result: LibraryResult<ImmutableList<MediaItem>> -> result.value ?: emptyList() },
                     MoreExecutors.directExecutor()
                 )
             }
@@ -215,7 +215,7 @@ class MediaLibrarySessionCallback(
 
                 Futures.transform(
                     automotiveRepository.getMadeForYou(mixType, count),
-                    { it.value ?: emptyList() },
+                    { result: LibraryResult<ImmutableList<MediaItem>> -> result.value ?: emptyList() },
                     MoreExecutors.directExecutor()
                 )
             }

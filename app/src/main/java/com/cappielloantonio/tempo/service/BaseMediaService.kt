@@ -119,20 +119,20 @@ open class BaseMediaService : MediaLibraryService() {
         if (player.mediaItemCount > 0) return
 
         val queueRepository = QueueRepository()
-        val storedQueue = queueRepository.media
+        val storedQueue = queueRepository.getMedia()
         if (storedQueue.isNullOrEmpty()) return
 
         val mediaItems = MappingUtil.mapMediaItems(storedQueue)
         if (mediaItems.isEmpty()) return
 
         val lastIndex = try {
-            queueRepository.lastPlayedMediaIndex
+            queueRepository.getLastPlayedMediaIndex()
         } catch (_: Exception) {
             0
         }.coerceIn(0, mediaItems.size - 1)
 
         val lastPosition = try {
-            queueRepository.lastPlayedMediaTimestamp
+            queueRepository.getLastPlayedMediaTimestamp()
         } catch (_: Exception) {
             0L
         }.let { if (it < 0L) 0L else it }

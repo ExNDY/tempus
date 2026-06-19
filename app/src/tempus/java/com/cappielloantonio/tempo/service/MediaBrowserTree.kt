@@ -596,7 +596,7 @@ object MediaBrowserTree {
                 ConstantsAA.NUMBER_OF_DISPLAYED_ALBUMS,
                 false)
             ConstantsAA.RECENT_TRACKS_ID -> automotiveRepository.getRecentlyPlayedSongs(
-                getServerId(),
+                getServerId() ?: "",
                 ConstantsAA.NUMBER_OF_DISPLAYED_RECENT_TRACKS)
             ConstantsAA.RECENTLY_ADDED_ID -> automotiveRepository.getAlbums(
                 ConstantsAA.ALBUM_ID,
