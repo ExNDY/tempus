@@ -45,6 +45,7 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
 import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.Share;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.ui.adapter.AlbumAdapter;
 import com.cappielloantonio.tempo.ui.adapter.AlbumHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistAdapter;
@@ -1258,7 +1259,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
     public void onMediaClick(Bundle bundle) {
         if (bundle.containsKey(Constants.MEDIA_MIX)) {
-            Child track = bundle.getParcelable(Constants.TRACK_OBJECT);
+            Child track = (Child) bundle.getSerializable(Constants.TRACK_OBJECT);
             activity.setBottomSheetInPeek(true);
 
             if (mediaBrowserListenableFuture != null) {
@@ -1277,11 +1278,11 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                         });
             }
         } else if (bundle.containsKey(Constants.MEDIA_CHRONOLOGY)) {
-            List<Child> media = bundle.getParcelableArrayList(Constants.TRACKS_OBJECT);
+            List<Child> media = (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT);
             MediaManager.startQueue(mediaBrowserListenableFuture, media, bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);
         } else {
-            MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+            MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);
         }
         topSongAdapter.notifyDataSetChanged();
@@ -1311,7 +1312,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                     .show();
 
             if (mediaBrowserListenableFuture != null) {
-                homeViewModel.getArtistInstantMix(getViewLifecycleOwner(), bundle.getParcelable(Constants.ARTIST_OBJECT)).observe(getViewLifecycleOwner(), songs -> {
+                homeViewModel.getArtistInstantMix(getViewLifecycleOwner(), (ArtistID3) bundle.getSerializable(Constants.ARTIST_OBJECT)).observe(getViewLifecycleOwner(), songs -> {
                     MusicUtil.ratingFilter(songs);
 
                     if (songs != null && !songs.isEmpty()) {
@@ -1321,7 +1322,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                 });
             }
         } else if (bundle.containsKey(Constants.MEDIA_BEST_OF) && bundle.getBoolean(Constants.MEDIA_BEST_OF)) {
-            ArtistID3 artist = bundle.getParcelable(Constants.ARTIST_OBJECT);
+            ArtistID3 artist = (ArtistID3) bundle.getSerializable(Constants.ARTIST_OBJECT);
             if (artist == null) return;
             if (mediaBrowserListenableFuture != null) {
                 homeViewModel.getArtistBestOf(artist).observe(getViewLifecycleOwner(), songs -> {
@@ -1349,7 +1350,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onShareClick(Bundle bundle) {
-        Share share = bundle.getParcelable(Constants.SHARE_OBJECT);
+        Share share = (Share) bundle.getSerializable(Constants.SHARE_OBJECT);
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(share.getUrl())).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
     }

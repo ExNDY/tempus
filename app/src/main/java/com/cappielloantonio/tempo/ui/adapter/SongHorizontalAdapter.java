@@ -335,7 +335,7 @@ public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAd
             Child tappedSong = songs.get(pos);
 
             Bundle bundle = new Bundle();
-            bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(MusicUtil.limitPlayableMedia(songs, getBindingAdapterPosition())));
+            bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(MusicUtil.limitPlayableMedia(songs, getBindingAdapterPosition())));
             bundle.putInt(Constants.ITEM_POSITION, MusicUtil.getPlayableMediaPosition(songs, getBindingAdapterPosition()));
 
             if (tappedSong.getId().equals(currentPlayingId)) {
@@ -358,7 +358,7 @@ public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAd
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
             bundle.putInt(Constants.ITEM_POSITION, getBindingAdapterPosition());
 
             click.onMediaLongClick(bundle);

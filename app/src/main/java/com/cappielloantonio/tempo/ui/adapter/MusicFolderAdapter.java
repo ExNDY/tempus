@@ -78,7 +78,7 @@ public class MusicFolderAdapter extends RecyclerView.Adapter<MusicFolderAdapter.
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, musicFolders.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.MUSIC_FOLDER_OBJECT, musicFolders.get(getBindingAdapterPosition()));
             click.onMusicFolderClick(bundle);
         }
     }

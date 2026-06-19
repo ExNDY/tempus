@@ -75,7 +75,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_song_dialog, container, false);
 
-        song = requireArguments().getParcelable(Constants.TRACK_OBJECT);
+        song = (Child) requireArguments().getSerializable(Constants.TRACK_OBJECT);
 
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
         songBottomSheetViewModel = new ViewModelProvider(requireActivity()).get(SongBottomSheetViewModel.class);
@@ -132,7 +132,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         });
         favoriteToggle.setOnLongClickListener(v -> {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.TRACK_OBJECT, song);
+            bundle.putSerializable(Constants.TRACK_OBJECT, song);
 
             RatingDialog dialog = new RatingDialog();
             dialog.setArguments(bundle);
@@ -193,7 +193,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         TextView rate = view.findViewById(R.id.rate_text_view);
         rate.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.TRACK_OBJECT, song);
+            bundle.putSerializable(Constants.TRACK_OBJECT, song);
 
             RatingDialog dialog = new RatingDialog();
             dialog.setArguments(bundle);
@@ -261,7 +261,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         TextView addToPlaylist = view.findViewById(R.id.add_to_playlist_text_view);
         addToPlaylist.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
-            bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(Collections.singletonList(song)));
+            bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(Collections.singletonList(song)));
 
             PlaylistChooserDialog dialog = new PlaylistChooserDialog();
             dialog.setArguments(bundle);
@@ -274,7 +274,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         goToAlbum.setOnClickListener(v -> songBottomSheetViewModel.getAlbum().observe(getViewLifecycleOwner(), album -> {
             if (album != null) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ALBUM_OBJECT, album);
+                bundle.putSerializable(Constants.ALBUM_OBJECT, album);
                 NavHostFragment.findNavController(this).navigate(R.id.albumPageFragment, bundle);
             } else
                 Toast.makeText(requireContext(), getString(R.string.song_bottom_sheet_error_retrieving_album), Toast.LENGTH_SHORT).show();
@@ -288,7 +288,7 @@ public class SongBottomSheetDialog extends BottomSheetDialogFragment implements 
         goToArtist.setOnClickListener(v -> songBottomSheetViewModel.getArtist().observe(getViewLifecycleOwner(), artist -> {
             if (artist != null) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ARTIST_OBJECT, artist);
+                bundle.putSerializable(Constants.ARTIST_OBJECT, artist);
                 NavHostFragment.findNavController(this).navigate(R.id.artistPageFragment, bundle);
             } else
                 Toast.makeText(requireContext(), getString(R.string.song_bottom_sheet_error_retrieving_artist), Toast.LENGTH_SHORT).show();

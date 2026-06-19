@@ -90,7 +90,7 @@ public class MusicDirectoryAdapter extends RecyclerView.Adapter<MusicDirectoryAd
                 bundle.putString(Constants.MUSIC_DIRECTORY_ID, children.get(getBindingAdapterPosition()).getId());
                 click.onMusicDirectoryClick(bundle);
             } else {
-                bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(children));
+                bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(children));
                 bundle.putInt(Constants.ITEM_POSITION, getBindingAdapterPosition());
                 click.onMediaClick(bundle);
             }
@@ -99,7 +99,7 @@ public class MusicDirectoryAdapter extends RecyclerView.Adapter<MusicDirectoryAd
         private boolean onLongClick() {
             if (!children.get(getBindingAdapterPosition()).isDir()) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.TRACK_OBJECT, children.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.TRACK_OBJECT, children.get(getBindingAdapterPosition()));
 
                 click.onMediaLongClick(bundle);
 

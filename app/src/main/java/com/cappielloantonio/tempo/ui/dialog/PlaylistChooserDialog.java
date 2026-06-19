@@ -14,7 +14,9 @@ import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.DialogPlaylistChooserBinding;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.subsonic.models.Playlist;
+import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.ui.adapter.PlaylistDialogHorizontalAdapter;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.viewmodel.PlaylistChooserViewModel;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -60,12 +62,12 @@ public class PlaylistChooserDialog extends DialogFragment implements ClickCallba
     }
 
     private void setSongInfo() {
-        playlistChooserViewModel.setSongsToAdd(requireArguments().getParcelableArrayList(Constants.TRACKS_OBJECT));
+        playlistChooserViewModel.setSongsToAdd((ArrayList<Child>) requireArguments().getSerializable(Constants.TRACKS_OBJECT));
     }
 
     private void launchPlaylistEditor() {
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(
+        bundle.putSerializable(
                 Constants.TRACKS_OBJECT,
                 playlistChooserViewModel.getSongsToAdd()
         );
@@ -103,7 +105,7 @@ public class PlaylistChooserDialog extends DialogFragment implements ClickCallba
     @Override
     public void onPlaylistClick(Bundle bundle) {
         if (playlistChooserViewModel.getSongsToAdd() != null && !playlistChooserViewModel.getSongsToAdd().isEmpty()) {
-            Playlist playlist = bundle.getParcelable(Constants.PLAYLIST_OBJECT);
+            Playlist playlist = (Playlist) bundle.getSerializable(Constants.PLAYLIST_OBJECT);
             playlistChooserViewModel.addSongsToPlaylist(this, getDialog(), playlist.getId());
         } else {
             Toast.makeText(requireContext(), R.string.playlist_chooser_dialog_toast_add_failure, Toast.LENGTH_SHORT).show();

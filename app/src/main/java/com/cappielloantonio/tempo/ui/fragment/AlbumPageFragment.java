@@ -32,7 +32,9 @@ import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
+import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.ui.adapter.SongHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.dialog.PlaylistChooserDialog;
 import com.cappielloantonio.tempo.ui.dialog.RatingDialog;
@@ -86,7 +88,7 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
         playbackViewModel = new ViewModelProvider(requireActivity()).get(PlaybackViewModel.class);
 
         Bundle args = getArguments();
-        AlbumID3 albumArg = args != null ? args.getParcelable(Constants.ALBUM_OBJECT) : null;
+        AlbumID3 albumArg = args != null ? (AlbumID3) args.getSerializable(Constants.ALBUM_OBJECT) : null;
         if (albumArg == null) {
             if (activity != null && activity.navController != null) activity.navController.navigateUp();
             return view;
@@ -136,7 +138,7 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
         if (item.getItemId() == R.id.action_rate_album) {
             Bundle bundle = new Bundle();
             AlbumID3 album = albumPageViewModel.getAlbum().getValue();
-            bundle.putParcelable(Constants.ALBUM_OBJECT, album);
+            bundle.putSerializable(Constants.ALBUM_OBJECT, album);
             RatingDialog dialog = new RatingDialog();
             dialog.setArguments(bundle);
             dialog.show(requireActivity().getSupportFragmentManager(), null);
@@ -159,7 +161,7 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
         if (item.getItemId() == R.id.action_add_to_playlist) {
             albumPageViewModel.getAlbumSongLiveList().observe(getViewLifecycleOwner(), songs -> {
                 Bundle bundle = new Bundle();
-                bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(songs));
+                bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(songs));
 
                 PlaylistChooserDialog dialog = new PlaylistChooserDialog();
                 dialog.setArguments(bundle);
@@ -283,7 +285,7 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
         bind.albumArtistLabel.setOnClickListener(v -> albumPageViewModel.getArtist().observe(getViewLifecycleOwner(), artist -> {
             if (artist != null) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ARTIST_OBJECT, artist);
+                bundle.putSerializable(Constants.ARTIST_OBJECT, artist);
                 activity.navController.navigate(R.id.action_albumPageFragment_to_artistPageFragment, bundle);
             } else
                 Toast.makeText(requireContext(), getString(R.string.album_error_retrieving_artist), Toast.LENGTH_SHORT).show();
@@ -369,7 +371,7 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onMediaClick(Bundle bundle) {
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
         activity.setBottomSheetInPeek(true);
     }
 

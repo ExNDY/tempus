@@ -349,7 +349,7 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
 
             switch (view) {
                 case Constants.DOWNLOAD_TYPE_TRACK:
-                    bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(grouped));
+                    bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(grouped));
                     bundle.putInt(Constants.ITEM_POSITION, getBindingAdapterPosition());
                     click.onMediaClick(bundle);
                     break;
@@ -408,7 +408,7 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
 
             if (filteredSongs.isEmpty()) return false;
 
-            bundle.putParcelableArrayList(Constants.DOWNLOAD_GROUP, new ArrayList<>(filteredSongs));
+            bundle.putSerializable(Constants.DOWNLOAD_GROUP, new ArrayList<>(filteredSongs));
             bundle.putString(Constants.DOWNLOAD_GROUP_TITLE, item.downloadedItemTitleTextView.getText().toString());
             bundle.putString(Constants.DOWNLOAD_GROUP_SUBTITLE, item.downloadedItemSubtitleTextView.getText().toString());
             click.onDownloadGroupLongClick(bundle);

@@ -106,7 +106,7 @@ public class GenreCatalogueAdapter extends RecyclerView.Adapter<GenreCatalogueAd
             itemView.setOnClickListener(v -> {
                 Bundle bundle = new Bundle();
                 bundle.putString(Constants.MEDIA_BY_GENRE, Constants.MEDIA_BY_GENRE);
-                bundle.putParcelable(Constants.GENRE_OBJECT, genres.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.GENRE_OBJECT, genres.get(getBindingAdapterPosition()));
 
                 click.onGenreClick(bundle);
             });

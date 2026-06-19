@@ -2,36 +2,37 @@ package com.cappielloantonio.tempo.viewmodel
 
 import android.app.Application
 import android.app.Dialog
-import android.os.Parcelable
+import java.io.Serializable
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.repository.PlaylistRepository
 import com.cappielloantonio.tempo.subsonic.models.Playlist
+import com.cappielloantonio.tempo.subsonic.models.Child
 import java.util.ArrayList
 
 @UnstableApi
 class PlaylistChooserViewModel(application: Application) : AndroidViewModel(application) {
     private val playlistRepository = PlaylistRepository()
     private var _songIds = ArrayList<String>()
-    private var _parcelableSongs = ArrayList<Parcelable>()
+    private var _parcelableSongs = ArrayList<Child>()
     var isPlaylistPublic = true
 
     fun setIsPlaylistPublic(isPublic: Boolean) {
         isPlaylistPublic = isPublic
     }
 
-    fun setSongsToAdd(songs: ArrayList<Parcelable>?) {
+    fun setSongsToAdd(songs: ArrayList<Child>?) {
         _songIds.clear()
         _parcelableSongs.clear()
         songs?.forEach { 
             _parcelableSongs.add(it)
-            if (it is com.cappielloantonio.tempo.subsonic.models.Child) _songIds.add(it.id) 
+            _songIds.add(it.id) 
         }
     }
 
-    fun getSongsToAdd(): ArrayList<Parcelable> = _parcelableSongs
+    fun getSongsToAdd(): ArrayList<Child> = _parcelableSongs
 
     fun getPlaylistList(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Playlist>> {
         return playlistRepository.getAllPlaylists(owner)

@@ -78,14 +78,14 @@ public class AlbumArtistPageOrSimilarAdapter extends RecyclerView.Adapter<AlbumA
 
         private void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
 
             click.onAlbumClick(bundle);
         }
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
 
             click.onAlbumLongClick(bundle);
 

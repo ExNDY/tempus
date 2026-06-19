@@ -129,14 +129,14 @@ public class InternetRadioStationAdapter extends RecyclerView.Adapter<InternetRa
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.INTERNET_RADIO_STATION_OBJECT, internetRadioStations.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.INTERNET_RADIO_STATION_OBJECT, internetRadioStations.get(getBindingAdapterPosition()));
 
             click.onInternetRadioStationClick(bundle);
         }
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.INTERNET_RADIO_STATION_OBJECT, internetRadioStations.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.INTERNET_RADIO_STATION_OBJECT, internetRadioStations.get(getBindingAdapterPosition()));
 
             click.onInternetRadioStationLongClick(bundle);
 

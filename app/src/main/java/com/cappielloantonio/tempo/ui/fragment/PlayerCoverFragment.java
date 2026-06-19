@@ -133,7 +133,7 @@ public class PlayerCoverFragment extends Fragment {
                             ArrayList<Child> tracks = new ArrayList<>();
                             tracks.add(song);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, tracks);
+                            bundle.putSerializable(Constants.TRACKS_OBJECT, tracks);
 
                             PlaylistChooserDialog dialog = new PlaylistChooserDialog();
                             dialog.setArguments(bundle);

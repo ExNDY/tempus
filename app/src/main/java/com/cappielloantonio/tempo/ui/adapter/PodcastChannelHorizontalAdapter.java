@@ -80,14 +80,14 @@ public class PodcastChannelHorizontalAdapter extends RecyclerView.Adapter<Podcas
 
         private void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.PODCAST_CHANNEL_OBJECT, podcastChannels.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.PODCAST_CHANNEL_OBJECT, podcastChannels.get(getBindingAdapterPosition()));
 
             click.onPodcastChannelClick(bundle);
         }
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.PODCAST_CHANNEL_OBJECT, podcastChannels.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.PODCAST_CHANNEL_OBJECT, podcastChannels.get(getBindingAdapterPosition()));
 
             click.onPodcastChannelLongClick(bundle);
 

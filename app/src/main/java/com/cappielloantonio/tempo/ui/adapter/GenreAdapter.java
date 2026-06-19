@@ -68,7 +68,7 @@ public class GenreAdapter extends RecyclerView.Adapter<GenreAdapter.ViewHolder> 
         private void onClick() {
             Bundle bundle = new Bundle();
             bundle.putString(Constants.MEDIA_BY_GENRE, Constants.MEDIA_BY_GENRE);
-            bundle.putParcelable(Constants.GENRE_OBJECT, genres.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.GENRE_OBJECT, genres.get(getBindingAdapterPosition()));
 
             click.onGenreClick(bundle);
         }

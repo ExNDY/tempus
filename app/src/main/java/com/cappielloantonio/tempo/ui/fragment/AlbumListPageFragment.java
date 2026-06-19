@@ -28,6 +28,8 @@ import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentAlbumListPageBinding;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
+import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.AlbumHorizontalAdapter;
 import com.cappielloantonio.tempo.util.Constants;
@@ -95,12 +97,12 @@ public class AlbumListPageFragment extends Fragment implements ClickCallback {
         } else if (args.getString(Constants.ALBUM_DOWNLOADED) != null) {
             albumListPageViewModel.title = Constants.ALBUM_DOWNLOADED;
             bind.pageTitleLabel.setText(R.string.album_list_page_downloaded);
-        } else if (args.getParcelable(Constants.ARTIST_OBJECT) != null) {
-            albumListPageViewModel.artist = args.getParcelable(Constants.ARTIST_OBJECT);
+        } else if (args.getSerializable(Constants.ARTIST_OBJECT) != null) {
+            albumListPageViewModel.artist = (ArtistID3) args.getSerializable(Constants.ARTIST_OBJECT);
             albumListPageViewModel.title = Constants.ALBUM_FROM_ARTIST;
             bind.pageTitleLabel.setText(albumListPageViewModel.artist.getName());
-        } else if (args.getParcelableArrayList(Constants.ALBUMS_OBJECT) != null) {
-            albumListPageViewModel.albums = args.getParcelableArrayList(Constants.ALBUMS_OBJECT);
+        } else if (args.getSerializable(Constants.ALBUMS_OBJECT) != null) {
+            albumListPageViewModel.albums = (ArrayList<AlbumID3>) args.getSerializable(Constants.ALBUMS_OBJECT);
             albumListPageViewModel.title = args.getString(Constants.ALBUM_LIST_TITLE, "");
             bind.pageTitleLabel.setText(albumListPageViewModel.title);
         }

@@ -83,7 +83,7 @@ public class IndexFragment extends Fragment implements ClickCallback {
     }
 
     private void init() {
-        MusicFolder musicFolder = getArguments().getParcelable(Constants.MUSIC_FOLDER_OBJECT);
+        MusicFolder musicFolder = (MusicFolder) getArguments().getSerializable(Constants.MUSIC_FOLDER_OBJECT);
 
         if (musicFolder != null) {
             indexViewModel.setMusicFolder(musicFolder);
@@ -113,7 +113,7 @@ public class IndexFragment extends Fragment implements ClickCallback {
     }
 
     private void initDirectoryListView() {
-        MusicFolder musicFolder = getArguments().getParcelable(Constants.MUSIC_FOLDER_OBJECT);
+        MusicFolder musicFolder = (MusicFolder) getArguments().getSerializable(Constants.MUSIC_FOLDER_OBJECT);
 
         bind.indexRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         bind.indexRecyclerView.setHasFixedSize(true);

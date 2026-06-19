@@ -189,13 +189,12 @@ public class PlayerControllerFragment extends Fragment {
                 PopupMenu popup = new PopupMenu(requireContext(), v);
                 popup.inflate(R.menu.player_overflow_menu);
                 popup.setOnMenuItemClickListener(item -> {
-                    switch (item.getItemId()) {
-                        case R.id.action_open_equalizer:
-                            navigateToEqualizerFragment();
-                            return true;
-                        default:
-                            return false;
+                    int itemId = item.getItemId();
+                    if (itemId == R.id.action_open_equalizer) {
+                        navigateToEqualizerFragment();
+                        return true;
                     }
+                    return false;
                 });
                 popup.show();
             });
@@ -654,14 +653,14 @@ public class PlayerControllerFragment extends Fragment {
             sleepTimerLabel.setText(label);
             sleepTimerLabel.setVisibility(View.VISIBLE);
             int accentColor = com.google.android.material.color.MaterialColors.getColor(
-                    sleepTimerButton, com.google.android.material.R.attr.colorPrimary);
+                    sleepTimerButton, R.attr.colorPrimary);
             ImageViewCompat.setImageTintList(sleepTimerButton,
                     ColorStateList.valueOf(accentColor));
         } else {
             sleepTimerLabel.setVisibility(View.GONE);
             sleepTimerLabel.setText("");
             int defaultColor = com.google.android.material.color.MaterialColors.getColor(
-                    sleepTimerButton, com.google.android.material.R.attr.colorOnSurface);
+                    sleepTimerButton, R.attr.colorOnSurface);
             ImageViewCompat.setImageTintList(sleepTimerButton,
                     ColorStateList.valueOf(defaultColor));
         }
@@ -703,7 +702,7 @@ public class PlayerControllerFragment extends Fragment {
                 buttonFavorite.setOnClickListener(v -> playerBottomSheetViewModel.setFavorite(requireContext(), media));
                 buttonFavorite.setOnLongClickListener(v -> {
                     Bundle bundle = new Bundle();
-                    bundle.putParcelable(Constants.TRACK_OBJECT, media);
+                    bundle.putSerializable(Constants.TRACK_OBJECT, media);
 
                     RatingDialog dialog = new RatingDialog();
                     dialog.setArguments(bundle);
@@ -744,7 +743,7 @@ public class PlayerControllerFragment extends Fragment {
             if (album != null) {
                 playerMediaTitleLabel.setOnClickListener(view -> {
                     Bundle bundle = new Bundle();
-                    bundle.putParcelable(Constants.ALBUM_OBJECT, album);
+                    bundle.putSerializable(Constants.ALBUM_OBJECT, album);
                     NavHostFragment.findNavController(this).navigate(R.id.albumPageFragment, bundle);
                     activity.collapseBottomSheetDelayed();
                 });
@@ -757,7 +756,7 @@ public class PlayerControllerFragment extends Fragment {
             if (artist != null) {
                 playerArtistNameLabel.setOnClickListener(view -> {
                     Bundle bundle = new Bundle();
-                    bundle.putParcelable(Constants.ARTIST_OBJECT, artist);
+                    bundle.putSerializable(Constants.ARTIST_OBJECT, artist);
                     NavHostFragment.findNavController(this).navigate(R.id.artistPageFragment, bundle);
                     activity.collapseBottomSheetDelayed();
                 });

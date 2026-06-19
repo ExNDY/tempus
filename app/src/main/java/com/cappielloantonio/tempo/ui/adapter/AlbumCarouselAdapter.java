@@ -78,13 +78,13 @@ public class AlbumCarouselAdapter extends RecyclerView.Adapter<AlbumCarouselAdap
 
             itemView.setOnClickListener(v -> {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
                 click.onAlbumClick(bundle);
             });
 
             itemView.setOnLongClickListener(v -> {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.ALBUM_OBJECT, albums.get(getBindingAdapterPosition()));
                 click.onAlbumLongClick(bundle);
                 return true;
             });

@@ -21,6 +21,7 @@ import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.interfaces.RadioCallback;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
+import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.InternetRadioStationAdapter;
 import com.cappielloantonio.tempo.ui.dialog.RadioEditorDialog;
@@ -125,7 +126,7 @@ public class HomeTabRadioFragment extends Fragment implements ClickCallback, Rad
 
     @Override
     public void onInternetRadioStationClick(Bundle bundle) {
-        MediaManager.startRadio(mediaBrowserListenableFuture, bundle.getParcelable(Constants.INTERNET_RADIO_STATION_OBJECT));
+        MediaManager.startRadio(mediaBrowserListenableFuture, (InternetRadioStation) bundle.getSerializable(Constants.INTERNET_RADIO_STATION_OBJECT));
         activity.setBottomSheetInPeek(true);
     }
 

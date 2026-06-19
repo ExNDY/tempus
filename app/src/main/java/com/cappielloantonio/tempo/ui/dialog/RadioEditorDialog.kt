@@ -56,8 +56,8 @@ class RadioEditorDialog(private val radioCallback: RadioCallback?) : DialogFragm
         bind = DialogRadioEditorBinding.inflate(layoutInflater)
         radioEditorViewModel = ViewModelProvider(this).get(RadioEditorViewModel::class.java)
 
-        arguments?.getParcelable<com.cappielloantonio.tempo.subsonic.models.InternetRadioStation>(Constants.INTERNET_RADIO_STATION_OBJECT)?.let {
-            radioEditorViewModel.setRadioToEdit(it)
+        arguments?.getSerializable(Constants.INTERNET_RADIO_STATION_OBJECT)?.let {
+            radioEditorViewModel.setRadioToEdit(it as com.cappielloantonio.tempo.subsonic.models.InternetRadioStation)
         }
 
         setupObservers()

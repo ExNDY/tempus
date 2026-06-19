@@ -27,6 +27,8 @@ import com.cappielloantonio.tempo.interfaces.DialogClickCallback;
 import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
+import com.cappielloantonio.tempo.subsonic.models.Child;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.repository.DirectoryRepository;
 import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.Directory;
@@ -193,7 +195,7 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onMediaClick(Bundle bundle) {
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
     }
 
     @Override

@@ -80,7 +80,7 @@ public final class AssetLinkNavigator {
                 viewModel.setSong(child);
                 SongBottomSheetDialog dialog = new SongBottomSheetDialog();
                 Bundle args = new Bundle();
-                args.putParcelable(Constants.TRACK_OBJECT, child);
+                args.putSerializable(Constants.TRACK_OBJECT, child);
                 dialog.setArguments(args);
                 dialog.show(activity.getSupportFragmentManager(), null);
             }
@@ -99,7 +99,7 @@ public final class AssetLinkNavigator {
                     return;
                 }
                 Bundle args = new Bundle();
-                args.putParcelable(Constants.ALBUM_OBJECT, album);
+                args.putSerializable(Constants.ALBUM_OBJECT, album);
                 navigateSafely(R.id.albumPageFragment, args);
             }
         };
@@ -117,7 +117,7 @@ public final class AssetLinkNavigator {
                     return;
                 }
                 Bundle args = new Bundle();
-                args.putParcelable(Constants.ARTIST_OBJECT, artist);
+                args.putSerializable(Constants.ARTIST_OBJECT, artist);
                 navigateSafely(R.id.artistPageFragment, args);
             }
         };
@@ -135,7 +135,7 @@ public final class AssetLinkNavigator {
                     return;
                 }
                 Bundle args = new Bundle();
-                args.putParcelable(Constants.PLAYLIST_OBJECT, playlist);
+                args.putSerializable(Constants.PLAYLIST_OBJECT, playlist);
                 navigateSafely(R.id.playlistPageFragment, args);
             }
         };
@@ -154,7 +154,7 @@ public final class AssetLinkNavigator {
         genre.setSongCount(0);
         genre.setAlbumCount(0);
         Bundle args = new Bundle();
-        args.putParcelable(Constants.GENRE_OBJECT, genre);
+        args.putSerializable(Constants.GENRE_OBJECT, genre);
         args.putString(Constants.MEDIA_BY_GENRE, Constants.MEDIA_BY_GENRE);
         navigateSafely(R.id.songListPageFragment, args);
     }

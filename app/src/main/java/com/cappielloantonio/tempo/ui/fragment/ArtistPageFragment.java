@@ -38,6 +38,7 @@ import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
 import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.ui.adapter.AlbumCarouselAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistCarouselAdapter;
 import com.cappielloantonio.tempo.ui.adapter.SongHorizontalAdapter;
@@ -87,7 +88,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
         playbackViewModel = new ViewModelProvider(requireActivity()).get(PlaybackViewModel.class);
 
         Bundle args = getArguments();
-        ArtistID3 artistArg = args != null ? args.getParcelable(Constants.ARTIST_OBJECT) : null;
+        ArtistID3 artistArg = args != null ? (ArtistID3) args.getSerializable(Constants.ARTIST_OBJECT) : null;
         if (artistArg == null) {
             if (activity != null && activity.navController != null) activity.navController.navigateUp();
             return view;
@@ -143,7 +144,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
         bind.mostStreamedSongTextViewClickable.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString(Constants.MEDIA_BY_ARTIST, Constants.MEDIA_BY_ARTIST);
-            bundle.putParcelable(Constants.ARTIST_OBJECT, artistPageViewModel.getArtist());
+            bundle.putSerializable(Constants.ARTIST_OBJECT, artistPageViewModel.getArtist());
             activity.navController.navigate(R.id.action_artistPageFragment_to_songListPageFragment, bundle);
         });
 
@@ -504,7 +505,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
     private void navigateToAlbumList(String title, List<com.cappielloantonio.tempo.subsonic.models.AlbumID3> albums) {
         Bundle bundle = new Bundle();
         bundle.putString(Constants.ALBUM_LIST_TITLE, title);
-        bundle.putParcelableArrayList(Constants.ALBUMS_OBJECT, new ArrayList<>(albums));
+        bundle.putSerializable(Constants.ALBUMS_OBJECT, new ArrayList<>(albums));
         Navigation.findNavController(requireView()).navigate(R.id.albumListPageFragment, bundle);
     }
 
@@ -547,7 +548,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onMediaClick(Bundle bundle) {
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
         activity.setBottomSheetInPeek(true);
     }
 

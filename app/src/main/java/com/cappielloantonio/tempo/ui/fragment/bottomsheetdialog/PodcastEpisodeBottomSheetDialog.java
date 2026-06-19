@@ -38,7 +38,7 @@ public class PodcastEpisodeBottomSheetDialog extends BottomSheetDialogFragment i
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_podcast_episode_dialog, container, false);
 
-        podcastEpisode = requireArguments().getParcelable(Constants.PODCAST_OBJECT);
+        podcastEpisode = (PodcastEpisode) requireArguments().getSerializable(Constants.PODCAST_OBJECT);
 
         podcastEpisodeBottomSheetViewModel = new ViewModelProvider(requireActivity()).get(PodcastEpisodeBottomSheetViewModel.class);
         podcastEpisodeBottomSheetViewModel.setPodcastEpisode(podcastEpisode);

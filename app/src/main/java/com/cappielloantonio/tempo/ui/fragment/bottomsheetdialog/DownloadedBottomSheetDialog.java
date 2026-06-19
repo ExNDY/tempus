@@ -20,6 +20,8 @@ import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.Child;
+import java.util.ArrayList;
+import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.DownloadUtil;
@@ -48,7 +50,7 @@ public class DownloadedBottomSheetDialog extends BottomSheetDialogFragment imple
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_downloaded_dialog, container, false);
 
-        songs = this.requireArguments().getParcelableArrayList(Constants.DOWNLOAD_GROUP);
+        songs = (ArrayList<Child>) this.requireArguments().getSerializable(Constants.DOWNLOAD_GROUP);
         groupTitle = this.requireArguments().getString(Constants.DOWNLOAD_GROUP_TITLE);
         groupSubtitle = this.requireArguments().getString(Constants.DOWNLOAD_GROUP_SUBTITLE);
 

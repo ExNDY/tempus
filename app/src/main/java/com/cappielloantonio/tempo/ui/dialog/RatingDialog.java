@@ -9,6 +9,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.DialogRatingBinding;
+import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
+import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
+import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.viewmodel.RatingViewModel;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -48,12 +51,12 @@ public class RatingDialog extends DialogFragment {
     }
 
     private void setElementInfo() {
-        if (requireArguments().getParcelable(Constants.TRACK_OBJECT) != null) {
-            ratingViewModel.setSong(requireArguments().getParcelable(Constants.TRACK_OBJECT));
-        } else if (requireArguments().getParcelable(Constants.ALBUM_OBJECT) != null) {
-            ratingViewModel.setAlbum(requireArguments().getParcelable(Constants.ALBUM_OBJECT));
-        } else if (requireArguments().getParcelable(Constants.ARTIST_OBJECT) != null) {
-            ratingViewModel.setArtist(requireArguments().getParcelable(Constants.ARTIST_OBJECT));
+        if (requireArguments().getSerializable(Constants.TRACK_OBJECT) != null) {
+            ratingViewModel.setSong((Child) requireArguments().getSerializable(Constants.TRACK_OBJECT));
+        } else if (requireArguments().getSerializable(Constants.ALBUM_OBJECT) != null) {
+            ratingViewModel.setAlbum((AlbumID3) requireArguments().getSerializable(Constants.ALBUM_OBJECT));
+        } else if (requireArguments().getSerializable(Constants.ARTIST_OBJECT) != null) {
+            ratingViewModel.setArtist((ArtistID3) requireArguments().getSerializable(Constants.ARTIST_OBJECT));
         }
     }
 

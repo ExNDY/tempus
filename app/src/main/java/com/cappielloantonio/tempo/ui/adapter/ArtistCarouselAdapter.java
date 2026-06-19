@@ -73,13 +73,13 @@ public class ArtistCarouselAdapter extends RecyclerView.Adapter<ArtistCarouselAd
 
             itemView.setOnClickListener(v -> {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
                 click.onArtistClick(bundle);
             });
 
             itemView.setOnLongClickListener(v -> {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
                 click.onArtistLongClick(bundle);
                 return true;
             });

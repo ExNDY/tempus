@@ -44,7 +44,7 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
         podcastChannelPageViewModel = new ViewModelProvider(this).get(PodcastChannelPageViewModel.class);
 
         Bundle args = getArguments();
-        PodcastChannel channel = args != null ? args.getParcelable(Constants.PODCAST_OBJECT) : null;
+        PodcastChannel channel = args != null ? (PodcastChannel) args.getSerializable(Constants.PODCAST_OBJECT) : null;
 
         init(channel);
         initAppBar();
@@ -150,7 +150,7 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
 
     @Override
     public void onMediaLongClick(Bundle bundle) {
-        PodcastEpisode episode = bundle.getParcelable(Constants.PODCAST_OBJECT);
+        PodcastEpisode episode = (PodcastEpisode) bundle.getSerializable(Constants.PODCAST_OBJECT);
         if (episode != null) {
             PodcastEpisodeBottomSheetDialog bottomSheet = new PodcastEpisodeBottomSheetDialog();
             bottomSheet.setArguments(bundle);

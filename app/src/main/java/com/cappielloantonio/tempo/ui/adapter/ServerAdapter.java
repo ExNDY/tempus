@@ -69,14 +69,14 @@ public class ServerAdapter extends RecyclerView.Adapter<ServerAdapter.ViewHolder
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable("server_object", servers.get(getBindingAdapterPosition()));
+            bundle.putSerializable("server_object", servers.get(getBindingAdapterPosition()));
 
             click.onServerClick(bundle);
         }
 
         public boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable("server_object", servers.get(getBindingAdapterPosition()));
+            bundle.putSerializable("server_object", servers.get(getBindingAdapterPosition()));
 
             click.onServerLongClick(bundle);
 

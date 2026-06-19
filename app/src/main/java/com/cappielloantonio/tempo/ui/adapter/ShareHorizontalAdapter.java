@@ -82,14 +82,14 @@ public class ShareHorizontalAdapter extends RecyclerView.Adapter<ShareHorizontal
 
         private void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.SHARE_OBJECT, shares.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.SHARE_OBJECT, shares.get(getBindingAdapterPosition()));
 
             click.onShareClick(bundle);
         }
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.SHARE_OBJECT, shares.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.SHARE_OBJECT, shares.get(getBindingAdapterPosition()));
 
             click.onShareLongClick(bundle);
 

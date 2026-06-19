@@ -97,7 +97,7 @@ public class DiscoverSongAdapter extends RecyclerView.Adapter<DiscoverSongAdapte
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
             bundle.putBoolean(Constants.MEDIA_MIX, true);
 
             click.onMediaClick(bundle);
@@ -105,7 +105,7 @@ public class DiscoverSongAdapter extends RecyclerView.Adapter<DiscoverSongAdapte
 
         private boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.TRACK_OBJECT, songs.get(getBindingAdapterPosition()));
             click.onMediaLongClick(bundle);
             return true;
         }

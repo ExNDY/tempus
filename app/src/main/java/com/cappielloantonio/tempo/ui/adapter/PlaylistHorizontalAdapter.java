@@ -124,14 +124,14 @@ public class PlaylistHorizontalAdapter extends RecyclerView.Adapter<PlaylistHori
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
 
             click.onPlaylistClick(bundle);
         }
 
         public boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
 
             click.onPlaylistLongClick(bundle);
 

@@ -28,6 +28,7 @@ import com.cappielloantonio.tempo.service.DownloaderManager;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.Child;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.subsonic.models.PlayQueue;
 import com.cappielloantonio.tempo.ui.adapter.PlayerSongQueueAdapter;
 import com.cappielloantonio.tempo.ui.dialog.PlaylistChooserDialog;
@@ -215,7 +216,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onMediaClick(Bundle bundle) {
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
     }
 
     private void observePlayback() {
@@ -367,7 +368,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
         }
 
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(queueSongs));
+        bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(queueSongs));
 
         PlaylistChooserDialog dialog = new PlaylistChooserDialog();
         dialog.setArguments(bundle);

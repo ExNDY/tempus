@@ -98,14 +98,14 @@ public class ArtistSimilarAdapter extends RecyclerView.Adapter<ArtistSimilarAdap
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
 
             click.onArtistClick(bundle);
         }
 
         public boolean onLongClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.ARTIST_OBJECT, artists.get(getBindingAdapterPosition()));
 
             click.onArtistLongClick(bundle);
 

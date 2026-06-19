@@ -102,7 +102,7 @@ public class PodcastEpisodeAdapter extends RecyclerView.Adapter<PodcastEpisodeAd
 
             if (podcastEpisode.getStatus().equals("completed")) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
 
                 click.onPodcastEpisodeClick(bundle);
             }
@@ -113,7 +113,7 @@ public class PodcastEpisodeAdapter extends RecyclerView.Adapter<PodcastEpisodeAd
 
             if (podcastEpisode.getStatus().equals("completed")) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
 
                 click.onPodcastEpisodeLongClick(bundle);
 
@@ -128,7 +128,7 @@ public class PodcastEpisodeAdapter extends RecyclerView.Adapter<PodcastEpisodeAd
 
             if (!podcastEpisode.getStatus().equals("completed")) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
+                bundle.putSerializable(Constants.PODCAST_OBJECT, podcastEpisodes.get(getBindingAdapterPosition()));
 
                 click.onPodcastEpisodeAltClick(bundle);
             }

@@ -26,8 +26,11 @@ import com.cappielloantonio.tempo.helper.recyclerview.CustomLinearSnapHelper;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
+import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.Playlist;
+import com.cappielloantonio.tempo.subsonic.models.PlaylistWithSongs;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.ui.adapter.AlbumAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistAdapter;
 import com.cappielloantonio.tempo.ui.adapter.SongHorizontalAdapter;
@@ -294,7 +297,7 @@ public class SearchFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onMediaClick(Bundle bundle) {
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
         songHorizontalAdapter.notifyDataSetChanged();
         activity.setBottomSheetInPeek(true);
     }
@@ -306,9 +309,9 @@ public class SearchFragment extends Fragment implements ClickCallback {
 
     @Override
     public void onPlaylistClick(Bundle bundle) {
-        PlaylistWithSongs playlistWithSongs = bundle.getParcelable(Constants.PLAYLIST_OBJECT);
+        PlaylistWithSongs playlistWithSongs = (PlaylistWithSongs) bundle.getSerializable(Constants.PLAYLIST_OBJECT);
         if (playlistWithSongs != null) {
-            MediaManager.startQueue(mediaBrowserListenableFuture, playlistWithSongs.getEntries(), 0);
+            MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) playlistWithSongs.getEntries(), 0);
         }
     }
 

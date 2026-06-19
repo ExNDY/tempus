@@ -28,6 +28,11 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.cappielloantonio.tempo.R;
+import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
+import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
+import com.cappielloantonio.tempo.subsonic.models.Child;
+import com.cappielloantonio.tempo.subsonic.models.Genre;
+import java.util.ArrayList;
 import com.cappielloantonio.tempo.databinding.FragmentSongListPageBinding;
 import com.cappielloantonio.tempo.helper.recyclerview.PaginationScrollListener;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
@@ -131,12 +136,12 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
             bind.pageTitleLabel.setText(R.string.song_list_page_recently_added);
         } else if (args.getString(Constants.MEDIA_BY_GENRE) != null) {
             songListPageViewModel.title = Constants.MEDIA_BY_GENRE;
-            songListPageViewModel.genre = args.getParcelable(Constants.GENRE_OBJECT);
+            songListPageViewModel.genre = (Genre) args.getSerializable(Constants.GENRE_OBJECT);
             songListPageViewModel.toolbarTitle = songListPageViewModel.genre.getGenre();
             bind.pageTitleLabel.setText(songListPageViewModel.genre.getGenre());
         } else if (args.getString(Constants.MEDIA_BY_ARTIST) != null) {
             songListPageViewModel.title = Constants.MEDIA_BY_ARTIST;
-            songListPageViewModel.artist = args.getParcelable(Constants.ARTIST_OBJECT);
+            songListPageViewModel.artist = (ArtistID3) args.getSerializable(Constants.ARTIST_OBJECT);
             songListPageViewModel.toolbarTitle = getString(R.string.song_list_page_top, songListPageViewModel.artist.getName());
             bind.pageTitleLabel.setText(getString(R.string.song_list_page_top, songListPageViewModel.artist.getName()));
         } else if (args.getString(Constants.MEDIA_BY_GENRES) != null) {
@@ -158,8 +163,8 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
             songListPageViewModel.title = Constants.MEDIA_DOWNLOADED;
             songListPageViewModel.toolbarTitle = getString(R.string.song_list_page_downloaded);
             bind.pageTitleLabel.setText(getString(R.string.song_list_page_downloaded));
-        } else if (args.getParcelable(Constants.ALBUM_OBJECT) != null) {
-            songListPageViewModel.album = args.getParcelable(Constants.ALBUM_OBJECT);
+        } else if (args.getSerializable(Constants.ALBUM_OBJECT) != null) {
+            songListPageViewModel.album = (AlbumID3) args.getSerializable(Constants.ALBUM_OBJECT);
             songListPageViewModel.title = Constants.MEDIA_FROM_ALBUM;
             songListPageViewModel.toolbarTitle = songListPageViewModel.album.getName();
             bind.pageTitleLabel.setText(songListPageViewModel.album.getName());
@@ -341,7 +346,7 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
     @Override
     public void onMediaClick(Bundle bundle) {
         hideKeyboard(requireView());
-        MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
+        MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) bundle.getSerializable(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
         activity.setBottomSheetInPeek(true);
     }
 

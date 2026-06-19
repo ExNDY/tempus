@@ -69,7 +69,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_album_dialog, container, false);
 
-        album = this.requireArguments().getParcelable(Constants.ALBUM_OBJECT);
+        album = (AlbumID3) this.requireArguments().getSerializable(Constants.ALBUM_OBJECT);
 
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
         albumBottomSheetViewModel = new ViewModelProvider(requireActivity()).get(AlbumBottomSheetViewModel.class);
@@ -197,7 +197,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
         TextView addToPlaylist = view.findViewById(R.id.add_to_playlist_text_view);
         addToPlaylist.setOnClickListener(v -> albumBottomSheetViewModel.getAlbumTracks().observe(getViewLifecycleOwner(), songs -> {
             Bundle bundle = new Bundle();
-            bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(songs));
+            bundle.putSerializable(Constants.TRACKS_OBJECT, new ArrayList<>(songs));
 
             PlaylistChooserDialog dialog = new PlaylistChooserDialog();
             dialog.setArguments(bundle);
@@ -227,7 +227,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
         goToArtist.setOnClickListener(v -> albumBottomSheetViewModel.getArtist().observe(getViewLifecycleOwner(), artist -> {
             if (artist != null) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.ARTIST_OBJECT, artist);
+                bundle.putSerializable(Constants.ARTIST_OBJECT, artist);
                 NavHostFragment.findNavController(this).navigate(R.id.artistPageFragment, bundle);
             } else {
                 Toast.makeText(requireContext(), getString(R.string.album_error_retrieving_artist), Toast.LENGTH_SHORT).show();

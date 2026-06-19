@@ -19,6 +19,7 @@ import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.PlaylistWithSongs;
+import com.cappielloantonio.tempo.subsonic.models.PlaylistWithSongs;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.MusicUtil;
@@ -36,7 +37,7 @@ public class PlaylistBottomSheetDialog extends BottomSheetDialogFragment impleme
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_playlist_dialog, container, false);
 
-        playlist = requireArguments().getParcelable(Constants.PLAYLIST_OBJECT);
+        playlist = (PlaylistWithSongs) requireArguments().getSerializable(Constants.PLAYLIST_OBJECT);
 
         init(view);
 

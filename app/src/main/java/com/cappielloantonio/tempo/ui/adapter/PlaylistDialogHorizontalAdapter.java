@@ -71,7 +71,7 @@ public class PlaylistDialogHorizontalAdapter extends RecyclerView.Adapter<Playli
 
         public void onClick() {
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
+            bundle.putSerializable(Constants.PLAYLIST_OBJECT, playlists.get(getBindingAdapterPosition()));
 
             click.onPlaylistClick(bundle);
         }
