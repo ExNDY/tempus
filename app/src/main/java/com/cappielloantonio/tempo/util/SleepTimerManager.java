@@ -353,7 +353,7 @@ public class SleepTimerManager {
 
     private SharedPreferences getPrefs() {
         try {
-            return App.getInstance().getPreferences();
+            return App.getSharedPreferences();
         } catch (Exception e) {
             return null;
         }

@@ -423,6 +423,7 @@ public class MainActivity extends BaseActivity {
     public void quit() {
         resetUserSession();
         resetMusicSession();
+        App.refreshSubsonicClient();
         resetViewModel();
         goToLogin();
     }
