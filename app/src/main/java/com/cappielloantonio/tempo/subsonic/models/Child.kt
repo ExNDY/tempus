@@ -1,16 +1,14 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.*
 
 @Keep
-@Parcelize
 open class Child @JvmOverloads constructor(
     @PrimaryKey
     @ColumnInfo(name = "id")
@@ -95,4 +93,4 @@ open class Child @JvmOverloads constructor(
     @Embedded(prefix = "rg_")
     @SerializedName("replayGain")
     var replayGain: ReplayGainInfo? = null
-) : Parcelable
+) : Serializable

@@ -1,14 +1,11 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.IgnoredOnParcel
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.*
 
 @Keep
-@Parcelize
 class PodcastEpisode(
     var id: String? = null,
     @SerializedName("parent")
@@ -37,4 +34,4 @@ class PodcastEpisode(
     var description: String? = null,
     var status: String? = null,
     var publishDate: Date? = null,
-) : Parcelable
+) : Serializable

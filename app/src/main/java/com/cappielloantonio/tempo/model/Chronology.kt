@@ -7,11 +7,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.util.Preferences
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.Date
 
 @Keep
-@Parcelize
 @Entity(tableName = "chronology")
 class Chronology(
     @PrimaryKey override val id: String,
@@ -19,7 +18,7 @@ class Chronology(
     var timestamp: Long = System.currentTimeMillis(),
     @ColumnInfo(name = "server")
     var server: String? = null,
-) : Child(id) {
+) : Child(id), Serializable {
     constructor(mediaItem: MediaItem) : this(mediaItem.mediaMetadata.extras!!.getString("id")!!) {
         parentId = mediaItem.mediaMetadata.extras!!.getString("parentId")
         isDir = mediaItem.mediaMetadata.extras!!.getBoolean("isDir")

@@ -1,12 +1,10 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import com.google.gson.annotations.SerializedName
 
 @Keep
-@Parcelize
 class InternetRadioStation(
     var id: String? = null,
     var name: String? = null,
@@ -15,4 +13,4 @@ class InternetRadioStation(
     var homePageUrl: String? = null,
     var coverArt: String? = null,
     var source: String? = null,
-) : Parcelable
+) : Serializable

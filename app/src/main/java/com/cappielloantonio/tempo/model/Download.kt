@@ -5,10 +5,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cappielloantonio.tempo.subsonic.models.Child
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 @Entity(tableName = "download")
 class Download(
     @PrimaryKey override val id: String,
@@ -20,7 +19,7 @@ class Download(
     var downloadState: Int = 0,
     @ColumnInfo(name = "download_uri", defaultValue = "")
     var downloadUri: String? = null,
-) : Child(id) {
+) : Child(id), Serializable {
     constructor(child: Child) : this(child.id) {
         parentId = child.parentId
         isDir = child.isDir

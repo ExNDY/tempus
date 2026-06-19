@@ -1,17 +1,15 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.Date
 
 @Keep
-@Parcelize
 @Entity(tableName = "playlist")
 open class Playlist(
     @PrimaryKey
@@ -24,7 +22,7 @@ open class Playlist(
     @SerializedName("coverArt")
     @ColumnInfo(name = "coverArt")
     var coverArtId: String? = null,
-) : Parcelable {
+) : Serializable {
     var comment: String? = null
     var owner: String? = null
     @SerializedName("public")

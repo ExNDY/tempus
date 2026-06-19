@@ -1,12 +1,10 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 class MusicFolder(
     var id: String? = null,
     var name: String? = null,
-) : Parcelable
+) : Serializable

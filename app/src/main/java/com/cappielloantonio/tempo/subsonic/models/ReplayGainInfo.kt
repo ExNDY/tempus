@@ -1,9 +1,8 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 /**
  * Corresponds to the OpenSubsonic `ReplayGain` object returned inside a
@@ -17,7 +16,6 @@ import kotlinx.parcelize.Parcelize
  * See: https://opensubsonic.netlify.app/docs/responses/replaygain/
  */
 @Keep
-@Parcelize
 data class ReplayGainInfo(
     @ColumnInfo(name = "track_gain")
     var trackGain: Float? = null,
@@ -31,7 +29,7 @@ data class ReplayGainInfo(
     var baseGain: Float? = null,
     @ColumnInfo(name = "fallback_gain")
     var fallbackGain: Float? = null,
-) : Parcelable {
+) : Serializable {
     /** True if any of the fields carries a meaningful value. */
     fun hasAnyValue(): Boolean =
         trackGain != null || albumGain != null ||
