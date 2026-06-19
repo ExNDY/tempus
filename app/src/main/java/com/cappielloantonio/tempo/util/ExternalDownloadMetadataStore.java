@@ -24,7 +24,7 @@ public final class ExternalDownloadMetadataStore {
     }
 
     private static SharedPreferences preferences() {
-        return App.getInstance().getPreferences();
+        return App.getSharedPreferences();
     }
 
     private static JSONObject readAll() {

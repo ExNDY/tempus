@@ -20,9 +20,12 @@ public class MainViewModel extends AndroidViewModel {
     private final SystemRepository systemRepository;
 
     public MainViewModel(@NonNull Application application) {
-        super(application);
+        this(application, new SystemRepository());
+    }
 
-        systemRepository = new SystemRepository();
+    public MainViewModel(@NonNull Application application, SystemRepository systemRepository) {
+        super(application);
+        this.systemRepository = systemRepository;
     }
 
     public boolean isQueueLoaded() {

@@ -1,6 +1,5 @@
 package com.cappielloantonio.tempo.ui.fragment;
 
-import android.content.ComponentName;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,27 +10,23 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.UnstableApi;
-import androidx.media3.session.MediaBrowser;
-import androidx.media3.session.SessionToken;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentPodcastChannelPageBinding;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
-import com.cappielloantonio.tempo.service.MediaManager;
-import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.PodcastChannel;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.PodcastEpisodeAdapter;
+import com.cappielloantonio.tempo.ui.fragment.bottomsheetdialog.PodcastEpisodeBottomSheetDialog;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.MusicUtil;
 import com.cappielloantonio.tempo.util.UIUtil;
 import com.cappielloantonio.tempo.viewmodel.PodcastChannelPageViewModel;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @UnstableApi
@@ -39,27 +34,19 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
     private FragmentPodcastChannelPageBinding bind;
     private MainActivity activity;
     private PodcastChannelPageViewModel podcastChannelPageViewModel;
-
     private PodcastEpisodeAdapter podcastEpisodeAdapter;
-
-    private ListenableFuture<MediaBrowser> mediaBrowserListenableFuture;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         activity = (MainActivity) getActivity();
-
         bind = FragmentPodcastChannelPageBinding.inflate(inflater, container, false);
         View view = bind.getRoot();
-        podcastChannelPageViewModel = new ViewModelProvider(requireActivity()).get(PodcastChannelPageViewModel.class);
+        podcastChannelPageViewModel = new ViewModelProvider(this).get(PodcastChannelPageViewModel.class);
 
         Bundle args = getArguments();
-        PodcastChannel channelArg = args != null ? args.getParcelable(Constants.PODCAST_CHANNEL_OBJECT) : null;
-        if (channelArg == null) {
-            if (activity != null && activity.navController != null) activity.navController.navigateUp();
-            return view;
-        }
+        PodcastChannel channel = args != null ? args.getParcelable(Constants.PODCAST_OBJECT) : null;
 
-        init(channelArg);
+        init(channel);
         initAppBar();
         initPodcastChannelInfo();
         initPodcastChannelEpisodesView();
@@ -70,13 +57,10 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
     @Override
     public void onStart() {
         super.onStart();
-
-        initializeMediaBrowser();
     }
 
     @Override
     public void onStop() {
-        releaseMediaBrowser();
         super.onStop();
     }
 
@@ -98,13 +82,17 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
             activity.getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
 
-        bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
+        if (podcastChannelPageViewModel.getPodcastChannel().getValue() != null) {
+            bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getValue().getTitle());
+        }
         bind.toolbar.setNavigationOnClickListener(v -> activity.navController.navigateUp());
-        bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
     }
 
     private void initPodcastChannelInfo() {
-        String normalizePodcastChannelDescription = MusicUtil.forceReadableString(podcastChannelPageViewModel.getPodcastChannel().getDescription());
+        String normalizePodcastChannelDescription = "";
+        if (podcastChannelPageViewModel.getPodcastChannel().getValue() != null) {
+            normalizePodcastChannelDescription = MusicUtil.forceReadableString(podcastChannelPageViewModel.getPodcastChannel().getValue().getDescription());
+        }
 
         if (bind != null) {
             bind.podcastChannelDescriptionTextView.setVisibility(!normalizePodcastChannelDescription.trim().isEmpty() ? View.VISIBLE : View.GONE);
@@ -119,73 +107,66 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
 
         podcastEpisodeAdapter = new PodcastEpisodeAdapter(this);
         bind.podcastEpisodesRecyclerView.setAdapter(podcastEpisodeAdapter);
-        podcastChannelPageViewModel.getPodcastChannelEpisodes().observe(getViewLifecycleOwner(), channels -> {
-            if (channels == null) {
-                if (bind != null) {
-                    bind.podcastEpisodesRecyclerView.setVisibility(View.GONE);
+
+        podcastChannelPageViewModel.getPodcastChannelEpisodes().observe(getViewLifecycleOwner(), episodes -> {
+            if (episodes != null) {
+                if (bind != null) bind.podcastEpisodesRecyclerView.setVisibility(View.VISIBLE);
+                if (!episodes.isEmpty()) {
+                    List<PodcastEpisode> availableEpisode = new ArrayList<>(episodes);
+                    Collections.sort(availableEpisode, (p1, p2) -> {
+                        if (p1.getPublishDate() == null || p2.getPublishDate() == null)
+                            return 0;
+                        return p2.getPublishDate().compareTo(p1.getPublishDate());
+                    });
+                    podcastEpisodeAdapter.setItems(availableEpisode);
                 }
             } else {
-                if (bind != null) {
-                    bind.podcastEpisodesRecyclerView.setVisibility(View.VISIBLE);
-                }
-
-                if (!channels.isEmpty() && channels.get(0) != null && channels.get(0).getEpisodes() != null) {
-                    List<PodcastEpisode> availableEpisode = channels.get(0).getEpisodes();
-
-                    if (bind != null && availableEpisode != null) {
-                        bind.podcastEpisodesRecyclerView.setVisibility(availableEpisode.isEmpty() ? View.GONE : View.VISIBLE);
-                        podcastEpisodeAdapter.setItems(availableEpisode);
-                    }
-                }
+                if (bind != null) bind.podcastEpisodesRecyclerView.setVisibility(View.GONE);
             }
         });
     }
 
-    private void initializeMediaBrowser() {
-        mediaBrowserListenableFuture = new MediaBrowser.Builder(requireContext(), new SessionToken(requireContext(), new ComponentName(requireContext(), MediaService.class))).buildAsync();
-    }
-
-    private void releaseMediaBrowser() {
-        MediaBrowser.releaseFuture(mediaBrowserListenableFuture);
-    }
-
-    private void showPopupMenu(View view, int menuResource) {
+    private void showPopupMenu(View view, int menuRes) {
         PopupMenu popup = new PopupMenu(requireContext(), view);
-        popup.getMenuInflater().inflate(menuResource, popup.getMenu());
-
-        popup.setOnMenuItemClickListener(menuItem -> {
-            if (menuItem.getItemId() == R.id.menu_podcast_filter_download) {
-                podcastEpisodeAdapter.sort(Constants.PODCAST_FILTER_BY_DOWNLOAD);
-                return true;
-            } else if (menuItem.getItemId() == R.id.menu_podcast_filter_all) {
+        popup.getMenuInflater().inflate(menuRes, popup.getMenu());
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.menu_podcast_filter_all) {
                 podcastEpisodeAdapter.sort(Constants.PODCAST_FILTER_BY_ALL);
                 return true;
+            } else if (id == R.id.menu_podcast_filter_download) {
+                podcastEpisodeAdapter.sort(Constants.PODCAST_FILTER_BY_DOWNLOAD);
+                return true;
             }
-
             return false;
         });
-
         popup.show();
     }
 
     @Override
-    public void onPodcastEpisodeClick(Bundle bundle) {
-        MediaManager.startPodcast(mediaBrowserListenableFuture, bundle.getParcelable(Constants.PODCAST_OBJECT));
-        activity.setBottomSheetInPeek(true);
+    public void onMediaClick(Bundle bundle) {
+        // Handle episode click
     }
 
     @Override
-    public void onPodcastEpisodeLongClick(Bundle bundle) {
-        Navigation.findNavController(requireView()).navigate(R.id.podcastEpisodeBottomSheetDialog, bundle);
-    }
-
-    @Override
-    public void onPodcastEpisodeAltClick(Bundle bundle) {
+    public void onMediaLongClick(Bundle bundle) {
         PodcastEpisode episode = bundle.getParcelable(Constants.PODCAST_OBJECT);
-        podcastChannelPageViewModel.requestPodcastEpisodeDownload(episode);
-
-        Snackbar.make(requireView(), R.string.podcast_episode_download_request_snackbar, Snackbar.LENGTH_SHORT)
-                .setAnchorView(activity.bind.bottomNavigation)
-                .show();
+        if (episode != null) {
+            PodcastEpisodeBottomSheetDialog bottomSheet = new PodcastEpisodeBottomSheetDialog();
+            bottomSheet.setArguments(bundle);
+            bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
+        }
     }
+
+    @Override
+    public void onAlbumClick(Bundle bundle) {}
+
+    @Override
+    public void onAlbumLongClick(Bundle bundle) {}
+
+    @Override
+    public void onArtistClick(Bundle bundle) {}
+
+    @Override
+    public void onArtistLongClick(Bundle bundle) {}
 }
