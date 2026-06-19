@@ -381,7 +381,7 @@ class AutomotiveRepository {
                             .build()
 
                         mediaItems.add(MediaItem.Builder()
-                            .setMediaId(prefix + (song.id ?: ""))
+                            .setMediaId(prefix + song.id)
                             .setMediaMetadata(mediaMetadata)
                             .setUri(MusicUtil.getStreamUri(song.id))
                             .build())
