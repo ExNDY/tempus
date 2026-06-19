@@ -97,6 +97,14 @@ dependencies {
     implementation "io.insert-koin:koin-android:4.2.2"
     implementation "io.insert-koin:koin-androidx-compose:4.2.2"
 
+    // Moko
+    implementation "dev.icerock.moko:mvvm-core:0.16.1"
+    implementation "dev.icerock.moko:mvvm-flow:0.16.1"
+    implementation "dev.icerock.moko:mvvm-livedata:0.16.1"
+    implementation "dev.icerock.moko:resources:0.26.3"
+    implementation "dev.icerock.moko:resources-compose:0.26.3"
+    testImplementation "dev.icerock.moko:resources-test:0.26.3"
+
     // Compose
     implementation "androidx.compose.ui:ui:1.11.3"
     implementation "androidx.compose.material3:material3:1.4.0"

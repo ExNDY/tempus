@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.di.appModule
 import com.cappielloantonio.tempo.di.networkModule
 import com.cappielloantonio.tempo.di.repositoryModule
+import com.cappielloantonio.tempo.di.startDI
 import com.cappielloantonio.tempo.di.viewModelModule
 import com.cappielloantonio.tempo.helper.ThemeHelper
 import com.cappielloantonio.tempo.subsonic.Subsonic
@@ -17,7 +18,6 @@ import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.loadKoinModules
-import org.koin.core.context.startKoin
 import org.koin.core.context.unloadKoinModules
 import org.koin.core.parameter.ParametersHolder
 import org.koin.core.qualifier.Qualifier
@@ -46,10 +46,9 @@ class App : Application() {
             .apply()
 
         // Koin
-        startKoin {
+        startDI {
             androidLogger()
             androidContext(this@App)
-            modules(listOf(appModule, networkModule, repositoryModule, viewModelModule))
         }
 
         val prefs = get<Preferences>()

@@ -20,6 +20,7 @@ import androidx.media3.session.SessionToken;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.helper.ThemeHelper;
+import com.cappielloantonio.tempo.di.KoinViewModelFactory;
 import com.cappielloantonio.tempo.service.DownloaderService;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.ui.dialog.BatteryOptimizationDialog;
@@ -34,6 +35,11 @@ public class BaseActivity extends AppCompatActivity {
     private static final String TAG = "BaseActivity";
 
     private ListenableFuture<MediaBrowser> mediaBrowserListenableFuture;
+
+    @Override
+    public androidx.lifecycle.ViewModelProvider.Factory getDefaultViewModelProviderFactory() {
+        return new KoinViewModelFactory();
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -71,7 +77,9 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        setNavigationBarColor();
+        if (!isEdgeToEdgeEnabled()) {
+            setNavigationBarColor();
+        }
         initializeBrowser();
     }
 
@@ -130,6 +138,10 @@ public class BaseActivity extends AppCompatActivity {
         } catch (IllegalStateException e) {
             DownloadService.startForeground(this, DownloaderService.class);
         }
+    }
+
+    protected boolean isEdgeToEdgeEnabled() {
+        return false;
     }
 
     private void setNavigationBarColor() {
