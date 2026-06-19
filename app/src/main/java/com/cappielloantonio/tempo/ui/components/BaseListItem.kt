@@ -1,7 +1,17 @@
 package com.cappielloantonio.tempo.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +44,7 @@ fun BaseListItem(
                 .size(56.dp)
                 .clip(MaterialTheme.shapes.small)
         ) {
-            androidx.compose.foundation.Image(
+            Image(
                 painter = imagePainter,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
@@ -85,7 +95,7 @@ fun SongListItem(
         imagePainter = imagePainter,
         onClick = onClick,
         trailingContent = {
-            androidx.compose.material3.Icon(
+            Icon(
                 painter = if (isFavorite) TempusTheme.painters.favorite else TempusTheme.painters.favoriteOutlined,
                 contentDescription = null,
                 modifier = Modifier
@@ -94,7 +104,7 @@ fun SongListItem(
                 tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(8.dp))
-            androidx.compose.material3.Icon(
+            Icon(
                 painter = TempusTheme.painters.moreVert,
                 contentDescription = null,
                 modifier = Modifier
