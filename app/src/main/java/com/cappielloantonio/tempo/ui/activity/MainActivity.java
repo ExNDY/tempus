@@ -4,16 +4,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
@@ -60,6 +68,7 @@ public class MainActivity extends BaseActivity {
 
     public ActivityMainBinding bind;
     private MainViewModel mainViewModel;
+    private int bottomSystemBarInset;
 
     private FragmentManager fragmentManager;
     private NavHostFragment navHostFragment;
@@ -83,14 +92,30 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
+    protected boolean isEdgeToEdgeEnabled() {
+        return true;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SplashScreen.installSplashScreen(this);
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+        splashScreen.setKeepOnScreenCondition(this::shouldKeepSplashOnScreen);
+        EdgeToEdge.enable(
+                this,
+                SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+                SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+        );
 
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
 
         bind = ActivityMainBinding.inflate(getLayoutInflater());
         View view = bind.getRoot();
         setContentView(view);
+        applyEdgeToEdgeInsets();
 
         mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
         assetLinkNavigator = new AssetLinkNavigator(this);
@@ -106,6 +131,87 @@ public class MainActivity extends BaseActivity {
         checkTempoUpdate();
 
         maybeSchedulePlaybackIntent(getIntent());
+    }
+
+    private boolean shouldKeepSplashOnScreen() {
+        return false;
+    }
+
+    private void applyEdgeToEdgeInsets() {
+        final int navHostPaddingLeft = bind.navHostFragment.getPaddingLeft();
+        final int navHostPaddingTop = bind.navHostFragment.getPaddingTop();
+        final int navHostPaddingRight = bind.navHostFragment.getPaddingRight();
+        final int navHostPaddingBottom = bind.navHostFragment.getPaddingBottom();
+
+        final int offlinePaddingLeft = bind.offlineModeTextView.getPaddingLeft();
+        final int offlinePaddingTop = bind.offlineModeTextView.getPaddingTop();
+        final int offlinePaddingRight = bind.offlineModeTextView.getPaddingRight();
+        final int offlinePaddingBottom = bind.offlineModeTextView.getPaddingBottom();
+
+        final int navigationViewPaddingLeft = bind.navView.getPaddingLeft();
+        final int navigationViewPaddingTop = bind.navView.getPaddingTop();
+        final int navigationViewPaddingRight = bind.navView.getPaddingRight();
+        final int navigationViewPaddingBottom = bind.navView.getPaddingBottom();
+
+        final int bottomNavigationPaddingLeft = bind.bottomNavigation.getPaddingLeft();
+        final int bottomNavigationPaddingTop = bind.bottomNavigation.getPaddingTop();
+        final int bottomNavigationPaddingRight = bind.bottomNavigation.getPaddingRight();
+        final int bottomNavigationPaddingBottom = bind.bottomNavigation.getPaddingBottom();
+        final ViewGroup.LayoutParams bottomNavigationLayoutParams = bind.bottomNavigation.getLayoutParams();
+        final int bottomNavigationHeight = bottomNavigationLayoutParams.height;
+
+        ViewCompat.setOnApplyWindowInsetsListener(bind.getRoot(), (root, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            bottomSystemBarInset = systemBars.bottom;
+
+            bind.navHostFragment.setPadding(
+                    navHostPaddingLeft,
+                    navHostPaddingTop + systemBars.top,
+                    navHostPaddingRight,
+                    navHostPaddingBottom
+            );
+
+            bind.offlineModeTextView.setPadding(
+                    offlinePaddingLeft,
+                    offlinePaddingTop + systemBars.top,
+                    offlinePaddingRight,
+                    offlinePaddingBottom
+            );
+
+            bind.navView.setPadding(
+                    navigationViewPaddingLeft,
+                    navigationViewPaddingTop + systemBars.top,
+                    navigationViewPaddingRight,
+                    navigationViewPaddingBottom
+            );
+
+            ViewGroup.LayoutParams layoutParams = bind.bottomNavigation.getLayoutParams();
+            layoutParams.height = bottomNavigationHeight + systemBars.bottom;
+            bind.bottomNavigation.setLayoutParams(layoutParams);
+            bind.bottomNavigation.setPadding(
+                    bottomNavigationPaddingLeft,
+                    bottomNavigationPaddingTop,
+                    bottomNavigationPaddingRight,
+                    bottomNavigationPaddingBottom + systemBars.bottom
+            );
+            updateBottomSheetPeekHeight();
+
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(bind.getRoot());
+    }
+
+    private void updateBottomSheetPeekHeight() {
+        if (bind == null || bottomSheetBehavior == null) {
+            return;
+        }
+
+        int playerHeaderPeekHeight = getResources().getDimensionPixelSize(R.dimen.bottom_sheet_peek_height);
+        int bottomOverlayHeight = bind.bottomNavigation.getVisibility() == View.VISIBLE
+                ? bind.bottomNavigation.getLayoutParams().height
+                : bottomSystemBarInset;
+
+        bottomSheetBehavior.setPeekHeight(playerHeaderPeekHeight + bottomOverlayHeight);
     }
 
     @Override
@@ -214,6 +320,7 @@ public class MainActivity extends BaseActivity {
         bottomSheetController.addCallback(bottomSheetCallback);
         bottomSheetController.replaceFragment(R.id.player_bottom_sheet);
         bottomSheetController.checkAfterStateChanged(mainViewModel);
+        updateBottomSheetPeekHeight();
     }
 
     public BottomSheetController getBottomSheetController() {
@@ -294,26 +401,26 @@ public class MainActivity extends BaseActivity {
     }
 
     public void toggleBottomNavigationBarVisibilityOnOrientationChange() {
-        float displayDensity = getResources().getDisplayMetrics().density;
         // Ignore orientation change, bottom navbar always hidden
         if (Preferences.getHideBottomNavbarOnPortrait()) {
             navigationController.setNavbarVisibility(false);
-            bottomSheetController.setPeekHeight(56, displayDensity);
             navigationController.setSystemBarsVisibility(this, !isLandscape);
+            updateBottomSheetPeekHeight();
+            ViewCompat.requestApplyInsets(bind.getRoot());
             return;
         }
 
         if (!isLandscape) {
             // Show app navbar + show system bars
-            bottomSheetController.setPeekHeight(136, displayDensity);
             navigationController.setNavbarVisibility(true);
             navigationController.setSystemBarsVisibility(this, true);
         } else {
             // Hide app navbar + hide system bars
-            bottomSheetController.setPeekHeight(56, displayDensity);
             navigationController.setNavbarVisibility(false);
             navigationController.setSystemBarsVisibility(this, false);
         }
+        updateBottomSheetPeekHeight();
+        ViewCompat.requestApplyInsets(bind.getRoot());
     }
 
     public void setNavigationDrawerLock(boolean locked) {
