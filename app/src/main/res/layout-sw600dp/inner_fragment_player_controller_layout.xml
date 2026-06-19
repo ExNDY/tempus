@@ -59,7 +59,7 @@
                 android:clickable="true"
                 android:checked="true"
                 android:focusable="true"
-                android:text="Unknown"
+                android:text="@string/player_unknown"
                 app:chipStrokeWidth="0dp"
                 app:chipBackgroundColor="?attr/colorSecondaryContainer"
                 app:layout_constraintTop_toTopOf="parent"

@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.media3.common.MediaItem;
 
+import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.repository.DownloadRepository;
 import com.cappielloantonio.tempo.subsonic.models.Child;
@@ -86,7 +87,7 @@ public class ExternalAudioWriter {
 
         DocumentFile directory = DocumentFile.fromTreeUri(context, Uri.parse(uriString));
         if (directory == null || !directory.canWrite()) {
-            notifyFailure(context, "Cannot write to folder.");
+            notifyFailure(context, context.getString(R.string.download_notification_cannot_write_to_folder));
             return;
         }
 
@@ -104,7 +105,7 @@ public class ExternalAudioWriter {
                 ? mediaItem.requestMetadata.mediaUri
                 : null;
         if (mediaUri == null) {
-            notifyFailure(context, "Invalid media URI.");
+            notifyFailure(context, context.getString(R.string.download_notification_invalid_media_uri));
             ExternalDownloadMetadataStore.remove(metadataKey);
             return;
         }
@@ -128,7 +129,7 @@ public class ExternalAudioWriter {
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode >= HttpURLConnection.HTTP_BAD_REQUEST) {
-                    notifyFailure(context, "Server returned " + responseCode);
+                    notifyFailure(context, context.getString(R.string.download_notification_server_returned, responseCode));
                     ExternalDownloadMetadataStore.remove(metadataKey);
                     return;
                 }
@@ -154,7 +155,7 @@ public class ExternalAudioWriter {
                     mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
                 }
             } else {
-                notifyFailure(context, "Unsupported media URI.");
+                notifyFailure(context, context.getString(R.string.download_notification_unsupported_media_uri));
                 ExternalDownloadMetadataStore.remove(metadataKey);
                 return;
             }
@@ -216,7 +217,7 @@ public class ExternalAudioWriter {
 
             targetFile = directory.createFile(mimeType, fileName);
             if (targetFile == null) {
-                notifyFailure(context, "Failed to create file.");
+                notifyFailure(context, context.getString(R.string.download_notification_failed_to_create_file));
                 return;
             }
 
@@ -224,7 +225,7 @@ public class ExternalAudioWriter {
             try (InputStream in = openInputStream(context, mediaUri, scheme, connection, sourceFile);
                  OutputStream out = context.getContentResolver().openOutputStream(targetUri)) {
                 if (out == null) {
-                    notifyFailure(context, "Cannot open output stream.");
+                    notifyFailure(context, context.getString(R.string.download_notification_cannot_open_output_stream));
                     targetFile.delete();
                     return;
                 }
@@ -241,14 +242,14 @@ public class ExternalAudioWriter {
                 if (total <= 0) {
                     targetFile.delete();
                     ExternalDownloadMetadataStore.remove(metadataKey);
-                    notifyFailure(context, "Empty download.");
+                    notifyFailure(context, context.getString(R.string.download_notification_empty_download));
                     return;
                 }
 
                 if (remoteLength > 0 && total != remoteLength) {
                     targetFile.delete();
                     ExternalDownloadMetadataStore.remove(metadataKey);
-                    notifyFailure(context, "Incomplete download.");
+                    notifyFailure(context, context.getString(R.string.download_notification_incomplete_download));
                     return;
                 }
 
@@ -262,7 +263,7 @@ public class ExternalAudioWriter {
                 targetFile.delete();
             }
             ExternalDownloadMetadataStore.remove(metadataKey);
-            notifyFailure(context, e.getMessage() != null ? e.getMessage() : "Download failed");
+            notifyFailure(context, e.getMessage() != null ? e.getMessage() : context.getString(R.string.download_notification_failed));
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -278,8 +279,8 @@ public class ExternalAudioWriter {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("No download folder set")
-                .setContentText("Tap to set one in settings")
+                .setContentTitle(context.getString(R.string.download_notification_no_folder_title))
+                .setContentText(context.getString(R.string.download_notification_no_folder_text))
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setSilent(true)
@@ -292,7 +293,7 @@ public class ExternalAudioWriter {
     private static void notifyFailure(Context context, String message) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Download failed")
+                .setContentTitle(context.getString(R.string.download_notification_failed))
                 .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setAutoCancel(true);
@@ -302,7 +303,7 @@ public class ExternalAudioWriter {
     private static void notifySuccess(Context context, String name, Child child, Uri fileUri) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Download complete")
+                .setContentTitle(context.getString(R.string.downloader_download_completed))
                 .setContentText(name)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setAutoCancel(true);
@@ -333,7 +334,7 @@ public class ExternalAudioWriter {
     private static void notifyExists(Context context, String name) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Already downloaded")
+                .setContentTitle(context.getString(R.string.download_notification_already_downloaded))
                 .setContentText(name)
                 .setSmallIcon(android.R.drawable.stat_sys_warning)
                 .setAutoCancel(true);

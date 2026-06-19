@@ -123,7 +123,11 @@ class SettingsFragment : Fragment() {
                 )
                 Preferences.setDownloadDirectoryUri(uri.toString())
                 ExternalAudioReader.refreshCache()
-                Toast.makeText(requireContext(), R.string.settings_download_folder_set, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    R.string.settings_download_folder_set,
+                    Toast.LENGTH_SHORT
+                ).show()
                 refreshUiState()
             }
         }
@@ -244,27 +248,164 @@ class SettingsFragment : Fragment() {
     private fun buildUiSection(): SettingsSectionUiModel {
         val items = buildList<SettingsItemUiModel> {
             add(buildLanguageItem())
-            add(selectItem(KEY_THEME, R.string.settings_theme, R.array.theme_list_titles, R.array.theme_list_values, getStringPref(KEY_THEME, ThemeHelper.DEFAULT_MODE)))
+            add(
+                selectItem(
+                    KEY_THEME,
+                    R.string.settings_theme,
+                    R.array.theme_list_titles,
+                    R.array.theme_list_values,
+                    getStringPref(KEY_THEME, ThemeHelper.DEFAULT_MODE)
+                )
+            )
             if (isDarkThemeVisible(getStringPref(KEY_THEME, ThemeHelper.DEFAULT_MODE))) {
-                add(selectItem(KEY_DARK_THEME_STYLE, R.string.settings_dark_theme_style, R.array.dark_theme_style_titles, R.array.dark_theme_style_values, getStringPref(KEY_DARK_THEME_STYLE, "standard")))
+                add(
+                    selectItem(
+                        KEY_DARK_THEME_STYLE,
+                        R.string.settings_dark_theme_style,
+                        R.array.dark_theme_style_titles,
+                        R.array.dark_theme_style_values,
+                        getStringPref(KEY_DARK_THEME_STYLE, "standard")
+                    )
+                )
             }
-            add(toggleItem(KEY_ALWAYS_ON_DISPLAY, R.string.settings_always_on_display, null, getBooleanPref(KEY_ALWAYS_ON_DISPLAY, false)))
-            add(selectItem(KEY_TILE_SIZE, R.string.settings_tile_size, R.array.tile_size_titles, R.array.tile_size_divisor, getStringPref(KEY_TILE_SIZE, "2")))
-            add(toggleItem(KEY_ENABLE_DRAWER_ON_PORTRAIT, R.string.settings_enable_drawer_on_landscape, R.string.settings_enable_drawer_on_landscape_summary, getBooleanPref(KEY_ENABLE_DRAWER_ON_PORTRAIT, false)))
-            add(toggleItem(KEY_HIDE_BOTTOM_NAVBAR_ON_PORTRAIT, R.string.settings_hide_bottom_navbar_on_portrait, R.string.settings_hide_bottom_navbar_on_portrait_summary, getBooleanPref(KEY_HIDE_BOTTOM_NAVBAR_ON_PORTRAIT, false)))
-            add(toggleItem(KEY_ROUNDED_CORNER, R.string.settings_rounded_corner, R.string.settings_rounded_corner_summary, getBooleanPref(KEY_ROUNDED_CORNER, true)))
-            add(selectItem(KEY_ROUNDED_CORNER_SIZE, R.string.settings_rounded_corner_size, R.array.rounded_corner_size_titles, R.array.rounded_corner_size_values, getStringPref(KEY_ROUNDED_CORNER_SIZE, "6")))
-            add(toggleItem(KEY_AUDIO_QUALITY_PER_ITEM, R.string.settings_audio_quality, R.string.settings_audio_quality_summary, getBooleanPref(KEY_AUDIO_QUALITY_PER_ITEM, false)))
-            add(toggleItem(KEY_SONG_RATING_PER_ITEM, R.string.settings_song_rating, R.string.settings_song_rating_summary, getBooleanPref(KEY_SONG_RATING_PER_ITEM, false)))
-            add(toggleItem(KEY_TRACK_NUMBER_VISIBLE, R.string.settings_track_number, R.string.settings_track_number_summary, getBooleanPref(KEY_TRACK_NUMBER_VISIBLE, false)))
-            add(toggleItem(KEY_RATING_PER_ITEM, R.string.settings_item_rating, R.string.settings_item_rating_summary, getBooleanPref(KEY_RATING_PER_ITEM, false)))
-            add(toggleItem(KEY_PODCAST_SECTION_VISIBILITY, R.string.settings_podcast, R.string.settings_podcast_summary, getBooleanPref(KEY_PODCAST_SECTION_VISIBILITY, true)))
-            add(toggleItem(KEY_RADIO_SECTION_VISIBILITY, R.string.settings_radio, R.string.settings_radio_summary, getBooleanPref(KEY_RADIO_SECTION_VISIBILITY, true)))
-            add(toggleItem(KEY_AUTO_DOWNLOAD_LYRICS, R.string.settings_auto_download_lyrics, R.string.settings_auto_download_lyrics_summary, Preferences.isAutoDownloadLyricsEnabled()))
-            add(toggleItem(KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY, R.string.settings_music_directory, R.string.settings_music_directory_summary, getBooleanPref(KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY, true)))
-            add(toggleItem(KEY_ALBUM_DETAIL, R.string.settings_album_detail, R.string.settings_album_detail_summary, getBooleanPref(KEY_ALBUM_DETAIL, false)))
-            add(toggleItem(KEY_ARTIST_SORT_BY_ALBUM_COUNT, R.string.settings_artist_sort_by_album_count, R.string.settings_artist_sort_by_album_count_summary, getBooleanPref(KEY_ARTIST_SORT_BY_ALBUM_COUNT, false)))
-            add(toggleItem(KEY_SORT_SEARCH_CHRONOLOGICALLY, R.string.search_sort_title, R.string.search_sort_summary, getBooleanPref(KEY_SORT_SEARCH_CHRONOLOGICALLY, false)))
+            add(
+                toggleItem(
+                    KEY_ALWAYS_ON_DISPLAY,
+                    R.string.settings_always_on_display,
+                    null,
+                    getBooleanPref(KEY_ALWAYS_ON_DISPLAY, false)
+                )
+            )
+            add(
+                selectItem(
+                    KEY_TILE_SIZE,
+                    R.string.settings_tile_size,
+                    R.array.tile_size_titles,
+                    R.array.tile_size_divisor,
+                    getStringPref(KEY_TILE_SIZE, "2")
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_ENABLE_DRAWER_ON_PORTRAIT,
+                    R.string.settings_enable_drawer_on_landscape,
+                    R.string.settings_enable_drawer_on_landscape_summary,
+                    getBooleanPref(KEY_ENABLE_DRAWER_ON_PORTRAIT, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_HIDE_BOTTOM_NAVBAR_ON_PORTRAIT,
+                    R.string.settings_hide_bottom_navbar_on_portrait,
+                    R.string.settings_hide_bottom_navbar_on_portrait_summary,
+                    getBooleanPref(KEY_HIDE_BOTTOM_NAVBAR_ON_PORTRAIT, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_ROUNDED_CORNER,
+                    R.string.settings_rounded_corner,
+                    R.string.settings_rounded_corner_summary,
+                    getBooleanPref(KEY_ROUNDED_CORNER, true)
+                )
+            )
+            add(
+                selectItem(
+                    KEY_ROUNDED_CORNER_SIZE,
+                    R.string.settings_rounded_corner_size,
+                    R.array.rounded_corner_size_titles,
+                    R.array.rounded_corner_size_values,
+                    getStringPref(KEY_ROUNDED_CORNER_SIZE, "6")
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_AUDIO_QUALITY_PER_ITEM,
+                    R.string.settings_audio_quality,
+                    R.string.settings_audio_quality_summary,
+                    getBooleanPref(KEY_AUDIO_QUALITY_PER_ITEM, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_SONG_RATING_PER_ITEM,
+                    R.string.settings_song_rating,
+                    R.string.settings_song_rating_summary,
+                    getBooleanPref(KEY_SONG_RATING_PER_ITEM, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_TRACK_NUMBER_VISIBLE,
+                    R.string.settings_track_number,
+                    R.string.settings_track_number_summary,
+                    getBooleanPref(KEY_TRACK_NUMBER_VISIBLE, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_RATING_PER_ITEM,
+                    R.string.settings_item_rating,
+                    R.string.settings_item_rating_summary,
+                    getBooleanPref(KEY_RATING_PER_ITEM, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_PODCAST_SECTION_VISIBILITY,
+                    R.string.settings_podcast,
+                    R.string.settings_podcast_summary,
+                    getBooleanPref(KEY_PODCAST_SECTION_VISIBILITY, true)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_RADIO_SECTION_VISIBILITY,
+                    R.string.settings_radio,
+                    R.string.settings_radio_summary,
+                    getBooleanPref(KEY_RADIO_SECTION_VISIBILITY, true)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_AUTO_DOWNLOAD_LYRICS,
+                    R.string.settings_auto_download_lyrics,
+                    R.string.settings_auto_download_lyrics_summary,
+                    Preferences.isAutoDownloadLyricsEnabled()
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY,
+                    R.string.settings_music_directory,
+                    R.string.settings_music_directory_summary,
+                    getBooleanPref(KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY, true)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_ALBUM_DETAIL,
+                    R.string.settings_album_detail,
+                    R.string.settings_album_detail_summary,
+                    getBooleanPref(KEY_ALBUM_DETAIL, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_ARTIST_SORT_BY_ALBUM_COUNT,
+                    R.string.settings_artist_sort_by_album_count,
+                    R.string.settings_artist_sort_by_album_count_summary,
+                    getBooleanPref(KEY_ARTIST_SORT_BY_ALBUM_COUNT, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_SORT_SEARCH_CHRONOLOGICALLY,
+                    R.string.search_sort_title,
+                    R.string.search_sort_summary,
+                    getBooleanPref(KEY_SORT_SEARCH_CHRONOLOGICALLY, false)
+                )
+            )
         }
 
         return section(
@@ -280,7 +421,15 @@ class SettingsFragment : Fragment() {
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_equalizer),
                     items = buildList {
-                        add(selectItem(KEY_SELECTED_EQUALIZER, R.string.settings_equalizer_select, R.array.selected_equalizer_entries, R.array.selected_equalizer_values, getStringPref(KEY_SELECTED_EQUALIZER, "0")))
+                        add(
+                            selectItem(
+                                KEY_SELECTED_EQUALIZER,
+                                R.string.settings_equalizer_select,
+                                R.array.selected_equalizer_entries,
+                                R.array.selected_equalizer_values,
+                                getStringPref(KEY_SELECTED_EQUALIZER, "0")
+                            )
+                        )
                         if (isSystemEqualizerAvailable()) {
                             add(
                                 SettingsActionItemUiModel(
@@ -306,9 +455,23 @@ class SettingsFragment : Fragment() {
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_replay_gain),
                     items = listOf(
-                        SettingsInfoItemUiModel("replay_gain_info", getString(R.string.settings_summary_replay_gain)),
-                        selectItem(KEY_REPLAY_GAIN_MODE, R.string.settings_replay_gain, R.array.replay_gain_titles, R.array.replay_gain_values, getStringPref(KEY_REPLAY_GAIN_MODE, "disabled")),
-                        toggleItem(KEY_REPLAY_GAIN_PREVENT_CLIPPING, R.string.settings_replay_gain_prevent_clipping_title, R.string.settings_replay_gain_prevent_clipping_summary, getBooleanPref(KEY_REPLAY_GAIN_PREVENT_CLIPPING, true))
+                        SettingsInfoItemUiModel(
+                            "replay_gain_info",
+                            getString(R.string.settings_summary_replay_gain)
+                        ),
+                        selectItem(
+                            KEY_REPLAY_GAIN_MODE,
+                            R.string.settings_replay_gain,
+                            R.array.replay_gain_titles,
+                            R.array.replay_gain_values,
+                            getStringPref(KEY_REPLAY_GAIN_MODE, "disabled")
+                        ),
+                        toggleItem(
+                            KEY_REPLAY_GAIN_PREVENT_CLIPPING,
+                            R.string.settings_replay_gain_prevent_clipping_title,
+                            R.string.settings_replay_gain_prevent_clipping_summary,
+                            getBooleanPref(KEY_REPLAY_GAIN_PREVENT_CLIPPING, true)
+                        )
                     )
                 )
             )
@@ -316,7 +479,10 @@ class SettingsFragment : Fragment() {
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_loudness),
                     items = listOf(
-                        SettingsInfoItemUiModel("loudness_info", getString(R.string.settings_summary_loudness)),
+                        SettingsInfoItemUiModel(
+                            "loudness_info",
+                            getString(R.string.settings_summary_loudness)
+                        ),
                         SettingsSliderItemUiModel(
                             key = KEY_LOUDNESS_PREAMP,
                             title = getString(R.string.settings_loudness_preamp_title),
@@ -345,9 +511,26 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        toggleItem(KEY_CONTINUOUS_PLAY, R.string.settings_continuous_play_title, R.string.settings_continuous_play_summary, getBooleanPref(KEY_CONTINUOUS_PLAY, true)),
-                        selectItem(KEY_CUSTOM_COMMAND_FIRST_BUTTON, R.string.settings_custom_command_first_button, R.array.custom_commands_titles, R.array.custom_commands_values, getStringPref(KEY_CUSTOM_COMMAND_FIRST_BUTTON, "[heartID]")),
-                        selectItem(KEY_CUSTOM_COMMAND_SECOND_BUTTON, R.string.settings_custom_command_second_button, R.array.custom_commands_titles, R.array.custom_commands_values, getStringPref(KEY_CUSTOM_COMMAND_SECOND_BUTTON, "[repeatID]")),
+                        toggleItem(
+                            KEY_CONTINUOUS_PLAY,
+                            R.string.settings_continuous_play_title,
+                            R.string.settings_continuous_play_summary,
+                            getBooleanPref(KEY_CONTINUOUS_PLAY, true)
+                        ),
+                        selectItem(
+                            KEY_CUSTOM_COMMAND_FIRST_BUTTON,
+                            R.string.settings_custom_command_first_button,
+                            R.array.custom_commands_titles,
+                            R.array.custom_commands_values,
+                            getStringPref(KEY_CUSTOM_COMMAND_FIRST_BUTTON, "[heartID]")
+                        ),
+                        selectItem(
+                            KEY_CUSTOM_COMMAND_SECOND_BUTTON,
+                            R.string.settings_custom_command_second_button,
+                            R.array.custom_commands_titles,
+                            R.array.custom_commands_values,
+                            getStringPref(KEY_CUSTOM_COMMAND_SECOND_BUTTON, "[repeatID]")
+                        ),
                         SettingsSliderItemUiModel(
                             key = KEY_MIN_STAR_RATING,
                             title = getString(R.string.settings_title_skip_min_star_rating),
@@ -370,8 +553,19 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        toggleItem(KEY_ALLOW_PLAYLIST_DUPLICATES, R.string.settings_allow_playlist_duplicates, R.string.settings_allow_playlist_duplicates_summary, getBooleanPref(KEY_ALLOW_PLAYLIST_DUPLICATES, false)),
-                        selectItem(KEY_HOME_SORT_PLAYLISTS, R.string.settings_playlist_sort, R.array.playlist_sort_option_titles, R.array.playlist_sort_option_values, getStringPref(KEY_HOME_SORT_PLAYLISTS, "ORDER_BY_NAME"))
+                        toggleItem(
+                            KEY_ALLOW_PLAYLIST_DUPLICATES,
+                            R.string.settings_allow_playlist_duplicates,
+                            R.string.settings_allow_playlist_duplicates_summary,
+                            getBooleanPref(KEY_ALLOW_PLAYLIST_DUPLICATES, false)
+                        ),
+                        selectItem(
+                            KEY_HOME_SORT_PLAYLISTS,
+                            R.string.settings_playlist_sort,
+                            R.array.playlist_sort_option_titles,
+                            R.array.playlist_sort_option_values,
+                            getStringPref(KEY_HOME_SORT_PLAYLISTS, "ORDER_BY_NAME")
+                        )
                     )
                 )
             )
@@ -379,7 +573,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun buildDataSection(): SettingsSectionUiModel {
-        val items = buildList<SettingsItemUiModel> {
+        val items = buildList {
             add(
                 selectItem(
                     key = KEY_STREAMING_CACHE_SIZE,
@@ -389,20 +583,86 @@ class SettingsFragment : Fragment() {
                     selectedValue = getStringPref(KEY_STREAMING_CACHE_SIZE, "256"),
                     summary = getString(
                         R.string.settings_summary_streaming_cache_size,
-                        resolveOptionLabel(R.array.streaming_cache_size_titles, R.array.streaming_cache_size_values, getStringPref(KEY_STREAMING_CACHE_SIZE, "256")),
+                        resolveOptionLabel(
+                            R.array.streaming_cache_size_titles,
+                            R.array.streaming_cache_size_values,
+                            getStringPref(KEY_STREAMING_CACHE_SIZE, "256")
+                        ),
                         (DownloadUtil.getStreamingCacheSize(requireActivity()) / (1024 * 1024)).toString()
                     )
                 )
             )
-            add(selectItem(KEY_IMAGE_CACHE_SIZE, R.string.settings_covers_cache, R.array.pref_cache_size_titles, R.array.pref_cache_size_values, getStringPref(KEY_IMAGE_CACHE_SIZE, "500")))
-            add(selectItem(KEY_IMAGE_SIZE, R.string.settings_image_size, R.array.pref_image_size_titles, R.array.pref_image_size_values, getStringPref(KEY_IMAGE_SIZE, "-1")))
-            add(toggleItem(KEY_WIFI_ONLY, R.string.settings_wifi_only_title, R.string.settings_wifi_only_summary, getBooleanPref(KEY_WIFI_ONLY, false)))
-            add(toggleItem(KEY_DOWNLOAD_WIFI_ONLY, R.string.settings_download_wifi_only_title, R.string.settings_download_wifi_only_summary, getBooleanPref(KEY_DOWNLOAD_WIFI_ONLY, false)))
-            add(toggleItem(KEY_DATA_SAVING_MODE, R.string.settings_data_saving_mode_title, R.string.settings_data_saving_mode_summary, getBooleanPref(KEY_DATA_SAVING_MODE, false)))
-            add(toggleItem(KEY_SYNC_STARRED_TRACKS, R.string.settings_sync_starred_tracks_for_offline_use_title, R.string.settings_sync_starred_tracks_for_offline_use_summary, getBooleanPref(KEY_SYNC_STARRED_TRACKS, false)))
-            add(toggleItem(KEY_SYNC_STARRED_ALBUMS, R.string.settings_sync_starred_albums_for_offline_use_title, R.string.settings_sync_starred_albums_for_offline_use_summary, getBooleanPref(KEY_SYNC_STARRED_ALBUMS, false)))
-            add(toggleItem(KEY_SYNC_STARRED_ARTISTS, R.string.settings_sync_starred_artists_for_offline_use_title, R.string.settings_sync_starred_artists_for_offline_use_summary, getBooleanPref(KEY_SYNC_STARRED_ARTISTS, false)))
-            val preloadLabel = resolveOptionLabel(R.array.song_preload_buffer_titles, R.array.song_preload_buffer_values, getStringPref(KEY_SONG_PRELOAD_BUFFER, "60"))
+            add(
+                selectItem(
+                    key = KEY_IMAGE_CACHE_SIZE,
+                    titleRes = R.string.settings_covers_cache,
+                    entriesRes = R.array.pref_cache_size_titles,
+                    valuesRes = R.array.pref_cache_size_values,
+                    selectedValue = getStringPref(KEY_IMAGE_CACHE_SIZE, "500")
+                )
+            )
+            add(
+                selectItem(
+                    KEY_IMAGE_SIZE,
+                    R.string.settings_image_size,
+                    R.array.pref_image_size_titles,
+                    R.array.pref_image_size_values,
+                    getStringPref(KEY_IMAGE_SIZE, "-1")
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_WIFI_ONLY,
+                    R.string.settings_wifi_only_title,
+                    R.string.settings_wifi_only_summary,
+                    getBooleanPref(KEY_WIFI_ONLY, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_DOWNLOAD_WIFI_ONLY,
+                    R.string.settings_download_wifi_only_title,
+                    R.string.settings_download_wifi_only_summary,
+                    getBooleanPref(KEY_DOWNLOAD_WIFI_ONLY, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_DATA_SAVING_MODE,
+                    R.string.settings_data_saving_mode_title,
+                    R.string.settings_data_saving_mode_summary,
+                    getBooleanPref(KEY_DATA_SAVING_MODE, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_SYNC_STARRED_TRACKS,
+                    R.string.settings_sync_starred_tracks_for_offline_use_title,
+                    R.string.settings_sync_starred_tracks_for_offline_use_summary,
+                    getBooleanPref(KEY_SYNC_STARRED_TRACKS, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_SYNC_STARRED_ALBUMS,
+                    R.string.settings_sync_starred_albums_for_offline_use_title,
+                    R.string.settings_sync_starred_albums_for_offline_use_summary,
+                    getBooleanPref(KEY_SYNC_STARRED_ALBUMS, false)
+                )
+            )
+            add(
+                toggleItem(
+                    KEY_SYNC_STARRED_ARTISTS,
+                    R.string.settings_sync_starred_artists_for_offline_use_title,
+                    R.string.settings_sync_starred_artists_for_offline_use_summary,
+                    getBooleanPref(KEY_SYNC_STARRED_ARTISTS, false)
+                )
+            )
+            val preloadLabel = resolveOptionLabel(
+                R.array.song_preload_buffer_titles,
+                R.array.song_preload_buffer_values,
+                getStringPref(KEY_SONG_PRELOAD_BUFFER, "60")
+            )
             add(
                 selectItem(
                     key = KEY_SONG_PRELOAD_BUFFER,
@@ -456,22 +716,79 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        SettingsInfoItemUiModel("transcoding_info", getString(R.string.settings_summary_transcoding)),
-                        toggleItem(KEY_AUDIO_TRANSCODE_PRIORITY, R.string.settings_audio_transcode_priority_title, R.string.settings_audio_transcode_priority_summary, getBooleanPref(KEY_AUDIO_TRANSCODE_PRIORITY, false)),
-                        selectItem(KEY_AUDIO_TRANSCODE_FORMAT_WIFI, R.string.settings_audio_transcode_format_wifi, R.array.audio_transcode_format_wifi_list_titles, R.array.audio_transcode_format_wifi_list_values, getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_WIFI, "raw")),
-                        selectItem(KEY_MAX_BITRATE_WIFI, R.string.settings_max_bitrate_wifi, R.array.max_bitrate_wifi_list_titles, R.array.max_bitrate_wifi_list_values, getStringPref(KEY_MAX_BITRATE_WIFI, "0")),
-                        selectItem(KEY_AUDIO_TRANSCODE_FORMAT_MOBILE, R.string.settings_audio_transcode_format_mobile, R.array.audio_transcode_format_mobile_list_titles, R.array.audio_transcode_format_mobile_list_values, getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_MOBILE, "raw")),
-                        selectItem(KEY_MAX_BITRATE_MOBILE, R.string.settings_max_bitrate_mobile, R.array.max_bitrate_mobile_list_titles, R.array.max_bitrate_mobile_list_values, getStringPref(KEY_MAX_BITRATE_MOBILE, "0"))
+                        SettingsInfoItemUiModel(
+                            "transcoding_info",
+                            getString(R.string.settings_summary_transcoding)
+                        ),
+                        toggleItem(
+                            KEY_AUDIO_TRANSCODE_PRIORITY,
+                            R.string.settings_audio_transcode_priority_title,
+                            R.string.settings_audio_transcode_priority_summary,
+                            getBooleanPref(KEY_AUDIO_TRANSCODE_PRIORITY, false)
+                        ),
+                        selectItem(
+                            KEY_AUDIO_TRANSCODE_FORMAT_WIFI,
+                            R.string.settings_audio_transcode_format_wifi,
+                            R.array.audio_transcode_format_wifi_list_titles,
+                            R.array.audio_transcode_format_wifi_list_values,
+                            getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_WIFI, "raw")
+                        ),
+                        selectItem(
+                            KEY_MAX_BITRATE_WIFI,
+                            R.string.settings_max_bitrate_wifi,
+                            R.array.max_bitrate_wifi_list_titles,
+                            R.array.max_bitrate_wifi_list_values,
+                            getStringPref(KEY_MAX_BITRATE_WIFI, "0")
+                        ),
+                        selectItem(
+                            KEY_AUDIO_TRANSCODE_FORMAT_MOBILE,
+                            R.string.settings_audio_transcode_format_mobile,
+                            R.array.audio_transcode_format_mobile_list_titles,
+                            R.array.audio_transcode_format_mobile_list_values,
+                            getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_MOBILE, "raw")
+                        ),
+                        selectItem(
+                            KEY_MAX_BITRATE_MOBILE,
+                            R.string.settings_max_bitrate_mobile,
+                            R.array.max_bitrate_mobile_list_titles,
+                            R.array.max_bitrate_mobile_list_values,
+                            getStringPref(KEY_MAX_BITRATE_MOBILE, "0")
+                        )
                     )
                 ),
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_transcoding_download),
                     items = listOf(
-                        SettingsInfoItemUiModel("transcoding_download_info", getString(R.string.settings_summary_transcoding_download)),
-                        toggleItem(KEY_AUDIO_TRANSCODE_DOWNLOAD, R.string.settings_audio_transcode_download_title, R.string.settings_audio_transcode_download_summary, getBooleanPref(KEY_AUDIO_TRANSCODE_DOWNLOAD, false)),
-                        toggleItem(KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY, R.string.settings_audio_transcode_download_priority_title, R.string.settings_audio_transcode_download_priority_summary, getBooleanPref(KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY, false)),
-                        selectItem(KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD, R.string.settings_audio_transcode_format_download, R.array.audio_transcode_format_download_list_titles, R.array.audio_transcode_format_download_list_values, getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD, "raw")),
-                        selectItem(KEY_MAX_BITRATE_DOWNLOAD, R.string.settings_max_bitrate_download, R.array.max_bitrate_download_list_titles, R.array.max_bitrate_download_list_values, getStringPref(KEY_MAX_BITRATE_DOWNLOAD, "0"))
+                        SettingsInfoItemUiModel(
+                            "transcoding_download_info",
+                            getString(R.string.settings_summary_transcoding_download)
+                        ),
+                        toggleItem(
+                            KEY_AUDIO_TRANSCODE_DOWNLOAD,
+                            R.string.settings_audio_transcode_download_title,
+                            R.string.settings_audio_transcode_download_summary,
+                            getBooleanPref(KEY_AUDIO_TRANSCODE_DOWNLOAD, false)
+                        ),
+                        toggleItem(
+                            KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY,
+                            R.string.settings_audio_transcode_download_priority_title,
+                            R.string.settings_audio_transcode_download_priority_summary,
+                            getBooleanPref(KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY, false)
+                        ),
+                        selectItem(
+                            KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD,
+                            R.string.settings_audio_transcode_format_download,
+                            R.array.audio_transcode_format_download_list_titles,
+                            R.array.audio_transcode_format_download_list_values,
+                            getStringPref(KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD, "raw")
+                        ),
+                        selectItem(
+                            KEY_MAX_BITRATE_DOWNLOAD,
+                            R.string.settings_max_bitrate_download,
+                            R.array.max_bitrate_download_list_titles,
+                            R.array.max_bitrate_download_list_values,
+                            getStringPref(KEY_MAX_BITRATE_DOWNLOAD, "0")
+                        )
                     )
                 )
             )
@@ -486,24 +803,57 @@ class SettingsFragment : Fragment() {
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_scrobble),
                     items = listOf(
-                        SettingsInfoItemUiModel("scrobble_info_1", getString(R.string.settings_summary_scrobble)),
-                        SettingsInfoItemUiModel("scrobble_info_2", getString(R.string.settings_sub_summary_scrobble)),
-                        toggleItem(KEY_SCROBBLING, R.string.settings_scrobble_title, null, getBooleanPref(KEY_SCROBBLING, true))
+                        SettingsInfoItemUiModel(
+                            key = "scrobble_info_1",
+                            text = getString(R.string.settings_summary_scrobble)
+                        ),
+                        toggleItem(
+                            key = KEY_SCROBBLING,
+                            titleRes = R.string.settings_scrobble_title,
+                            summaryRes = null,
+                            checked = getBooleanPref(KEY_SCROBBLING, true)
+                        ),
+                        SettingsInfoItemUiModel(
+                            key = "scrobble_info_2",
+                            text = getString(R.string.settings_sub_summary_scrobble)
+                        ),
                     )
                 ),
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_share),
                     items = listOf(
-                        SettingsInfoItemUiModel("share_info", getString(R.string.settings_summary_share)),
-                        toggleItem(KEY_SHARE, R.string.settings_share_title, null, getBooleanPref(KEY_SHARE, false))
+                        SettingsInfoItemUiModel(
+                            "share_info",
+                            getString(R.string.settings_summary_share)
+                        ),
+                        toggleItem(
+                            KEY_SHARE,
+                            R.string.settings_share_title,
+                            null,
+                            getBooleanPref(KEY_SHARE, false)
+                        )
                     )
                 ),
                 SettingsGroupUiModel(
                     title = getString(R.string.settings_title_syncing),
                     items = listOf(
-                        SettingsInfoItemUiModel("queue_sync_info", getString(R.string.settings_summary_syncing)),
-                        toggleItem(KEY_QUEUE_SYNCING, R.string.settings_queue_syncing_title, R.string.settings_queue_syncing_summary, getBooleanPref(KEY_QUEUE_SYNCING, false)),
-                        selectItem(KEY_QUEUE_SYNCING_COUNTDOWN, R.string.settings_queue_syncing_countdown, R.array.queue_syncing_countdown_titles, R.array.queue_syncing_countdown_values, getStringPref(KEY_QUEUE_SYNCING_COUNTDOWN, "5"))
+                        SettingsInfoItemUiModel(
+                            "queue_sync_info",
+                            getString(R.string.settings_summary_syncing)
+                        ),
+                        toggleItem(
+                            KEY_QUEUE_SYNCING,
+                            R.string.settings_queue_syncing_title,
+                            R.string.settings_queue_syncing_summary,
+                            getBooleanPref(KEY_QUEUE_SYNCING, false)
+                        ),
+                        selectItem(
+                            KEY_QUEUE_SYNCING_COUNTDOWN,
+                            R.string.settings_queue_syncing_countdown,
+                            R.array.queue_syncing_countdown_titles,
+                            R.array.queue_syncing_countdown_values,
+                            getStringPref(KEY_QUEUE_SYNCING_COUNTDOWN, "5")
+                        )
                     )
                 )
             )
@@ -517,20 +867,93 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        SettingsInfoItemUiModel("android_auto_info", getString(R.string.home_rearrangement_dialog_subtitle)),
-                        selectItem(KEY_ANDROID_AUTO_FIRST_TAB, R.string.settings_androidauto_first_tab, R.array.aa_tab_titles, R.array.aa_tab_values, getStringPref(KEY_ANDROID_AUTO_FIRST_TAB, "0")),
-                        selectItem(KEY_ANDROID_AUTO_SECOND_TAB, R.string.settings_androidauto_second_tab, R.array.aa_tab_titles, R.array.aa_tab_values, getStringPref(KEY_ANDROID_AUTO_SECOND_TAB, "1")),
-                        selectItem(KEY_ANDROID_AUTO_THIRD_TAB, R.string.settings_androidauto_third_tab, R.array.aa_tab_titles, R.array.aa_tab_values, getStringPref(KEY_ANDROID_AUTO_THIRD_TAB, "2")),
-                        selectItem(KEY_ANDROID_AUTO_FOURTH_TAB, R.string.settings_androidauto_fourth_tab, R.array.aa_tab_titles, R.array.aa_tab_values, getStringPref(KEY_ANDROID_AUTO_FOURTH_TAB, "3")),
-                        toggleItem(KEY_ANDROID_AUTO_HOME_VIEW, R.string.settings_androidauto_home_view, null, getBooleanPref(KEY_ANDROID_AUTO_HOME_VIEW, false)),
-                        toggleItem(KEY_ANDROID_AUTO_ALBUM_VIEW, R.string.settings_androidauto_album_view, null, getBooleanPref(KEY_ANDROID_AUTO_ALBUM_VIEW, true)),
-                        toggleItem(KEY_ANDROID_AUTO_PLAYLIST_VIEW, R.string.settings_androidauto_playlist_view, null, getBooleanPref(KEY_ANDROID_AUTO_PLAYLIST_VIEW, false)),
-                        toggleItem(KEY_ANDROID_AUTO_RADIO_VIEW, R.string.settings_androidauto_radio_view, null, getBooleanPref(KEY_ANDROID_AUTO_RADIO_VIEW, false)),
-                        toggleItem(KEY_ANDROID_AUTO_PODCAST_VIEW, R.string.settings_androidauto_podcast_view, null, getBooleanPref(KEY_ANDROID_AUTO_PODCAST_VIEW, false)),
-                        toggleItem(KEY_ANDROID_AUTO_SHUFFLE_GENRE_SONGS, R.string.settings_androidauto_shuffle_genre_songs, null, getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_GENRE_SONGS, false)),
-                        toggleItem(KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS, R.string.settings_androidauto_shuffle_starred_tracks, null, getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS, false)),
-                        toggleItem(KEY_ANDROID_AUTO_SHUFFLE_PLAYLISTS, R.string.settings_androidauto_shuffle_playlists, null, getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_PLAYLISTS, false)),
-                        selectItem(KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU, R.string.settings_androidauto_starred_for_made_for_you, R.array.aa_starred_for_made_for_you_titles, R.array.aa_starred_for_made_for_you_values, getStringPref(KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU, "0"))
+                        SettingsInfoItemUiModel(
+                            "android_auto_info",
+                            getString(R.string.home_rearrangement_dialog_subtitle)
+                        ),
+                        selectItem(
+                            KEY_ANDROID_AUTO_FIRST_TAB,
+                            R.string.settings_androidauto_first_tab,
+                            R.array.aa_tab_titles,
+                            R.array.aa_tab_values,
+                            getStringPref(KEY_ANDROID_AUTO_FIRST_TAB, "0")
+                        ),
+                        selectItem(
+                            KEY_ANDROID_AUTO_SECOND_TAB,
+                            R.string.settings_androidauto_second_tab,
+                            R.array.aa_tab_titles,
+                            R.array.aa_tab_values,
+                            getStringPref(KEY_ANDROID_AUTO_SECOND_TAB, "1")
+                        ),
+                        selectItem(
+                            KEY_ANDROID_AUTO_THIRD_TAB,
+                            R.string.settings_androidauto_third_tab,
+                            R.array.aa_tab_titles,
+                            R.array.aa_tab_values,
+                            getStringPref(KEY_ANDROID_AUTO_THIRD_TAB, "2")
+                        ),
+                        selectItem(
+                            KEY_ANDROID_AUTO_FOURTH_TAB,
+                            R.string.settings_androidauto_fourth_tab,
+                            R.array.aa_tab_titles,
+                            R.array.aa_tab_values,
+                            getStringPref(KEY_ANDROID_AUTO_FOURTH_TAB, "3")
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_HOME_VIEW,
+                            R.string.settings_androidauto_home_view,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_HOME_VIEW, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_ALBUM_VIEW,
+                            R.string.settings_androidauto_album_view,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_ALBUM_VIEW, true)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_PLAYLIST_VIEW,
+                            R.string.settings_androidauto_playlist_view,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_PLAYLIST_VIEW, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_RADIO_VIEW,
+                            R.string.settings_androidauto_radio_view,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_RADIO_VIEW, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_PODCAST_VIEW,
+                            R.string.settings_androidauto_podcast_view,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_PODCAST_VIEW, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_SHUFFLE_GENRE_SONGS,
+                            R.string.settings_androidauto_shuffle_genre_songs,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_GENRE_SONGS, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS,
+                            R.string.settings_androidauto_shuffle_starred_tracks,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS, false)
+                        ),
+                        toggleItem(
+                            KEY_ANDROID_AUTO_SHUFFLE_PLAYLISTS,
+                            R.string.settings_androidauto_shuffle_playlists,
+                            null,
+                            getBooleanPref(KEY_ANDROID_AUTO_SHUFFLE_PLAYLISTS, false)
+                        ),
+                        selectItem(
+                            KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU,
+                            R.string.settings_androidauto_starred_for_made_for_you,
+                            R.array.aa_starred_for_made_for_you_titles,
+                            R.array.aa_starred_for_made_for_you_values,
+                            getStringPref(KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU, "0")
+                        )
                     )
                 )
             )
@@ -544,8 +967,16 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        SettingsInfoItemUiModel("github_update_info", getString(R.string.settings_github_update_summary)),
-                        toggleItem(KEY_GITHUB_UPDATE_CHECK, R.string.settings_github_update_title, null, getBooleanPref(KEY_GITHUB_UPDATE_CHECK, true))
+                        SettingsInfoItemUiModel(
+                            "github_update_info",
+                            getString(R.string.settings_github_update_summary)
+                        ),
+                        toggleItem(
+                            KEY_GITHUB_UPDATE_CHECK,
+                            R.string.settings_github_update_title,
+                            null,
+                            getBooleanPref(KEY_GITHUB_UPDATE_CHECK, true)
+                        )
                     )
                 )
             )
@@ -559,7 +990,10 @@ class SettingsFragment : Fragment() {
             groups = listOf(
                 SettingsGroupUiModel(
                     items = listOf(
-                        SettingsInfoItemUiModel("about_info", getString(R.string.settings_about_summary)),
+                        SettingsInfoItemUiModel(
+                            "about_info",
+                            getString(R.string.settings_about_summary)
+                        ),
                         SettingsValueItemUiModel(
                             key = KEY_VERSION,
                             title = getString(R.string.settings_version_title),
@@ -790,9 +1224,10 @@ class SettingsFragment : Fragment() {
 
             KEY_SELECTED_EQUALIZER -> {
                 Preferences.setSelectedEqualizer(value)
-                val intent = Intent(requireContext().applicationContext, MediaService::class.java).apply {
-                    action = BaseMediaService.ACTION_RELOAD_EQUALIZER
-                }
+                val intent =
+                    Intent(requireContext().applicationContext, MediaService::class.java).apply {
+                        action = BaseMediaService.ACTION_RELOAD_EQUALIZER
+                    }
                 ContextCompat.startForegroundService(requireContext().applicationContext, intent)
             }
 
@@ -817,26 +1252,83 @@ class SettingsFragment : Fragment() {
                 .map { (title, value) -> SettingsOptionUiModel(title = title, value = value) }
 
             KEY_THEME -> arrayOptions(R.array.theme_list_titles, R.array.theme_list_values)
-            KEY_DARK_THEME_STYLE -> arrayOptions(R.array.dark_theme_style_titles, R.array.dark_theme_style_values)
+            KEY_DARK_THEME_STYLE -> arrayOptions(
+                R.array.dark_theme_style_titles,
+                R.array.dark_theme_style_values
+            )
             KEY_TILE_SIZE -> arrayOptions(R.array.tile_size_titles, R.array.tile_size_divisor)
-            KEY_ROUNDED_CORNER_SIZE -> arrayOptions(R.array.rounded_corner_size_titles, R.array.rounded_corner_size_values)
-            KEY_SELECTED_EQUALIZER -> arrayOptions(R.array.selected_equalizer_entries, R.array.selected_equalizer_values)
-            KEY_REPLAY_GAIN_MODE -> arrayOptions(R.array.replay_gain_titles, R.array.replay_gain_values)
-            KEY_CUSTOM_COMMAND_FIRST_BUTTON, KEY_CUSTOM_COMMAND_SECOND_BUTTON -> arrayOptions(R.array.custom_commands_titles, R.array.custom_commands_values)
-            KEY_HOME_SORT_PLAYLISTS -> arrayOptions(R.array.playlist_sort_option_titles, R.array.playlist_sort_option_values)
-            KEY_STREAMING_CACHE_SIZE -> arrayOptions(R.array.streaming_cache_size_titles, R.array.streaming_cache_size_values)
-            KEY_IMAGE_CACHE_SIZE -> arrayOptions(R.array.pref_cache_size_titles, R.array.pref_cache_size_values)
-            KEY_IMAGE_SIZE -> arrayOptions(R.array.pref_image_size_titles, R.array.pref_image_size_values)
-            KEY_SONG_PRELOAD_BUFFER -> arrayOptions(R.array.song_preload_buffer_titles, R.array.song_preload_buffer_values)
-            KEY_AUDIO_TRANSCODE_FORMAT_WIFI -> arrayOptions(R.array.audio_transcode_format_wifi_list_titles, R.array.audio_transcode_format_wifi_list_values)
-            KEY_MAX_BITRATE_WIFI -> arrayOptions(R.array.max_bitrate_wifi_list_titles, R.array.max_bitrate_wifi_list_values)
-            KEY_AUDIO_TRANSCODE_FORMAT_MOBILE -> arrayOptions(R.array.audio_transcode_format_mobile_list_titles, R.array.audio_transcode_format_mobile_list_values)
-            KEY_MAX_BITRATE_MOBILE -> arrayOptions(R.array.max_bitrate_mobile_list_titles, R.array.max_bitrate_mobile_list_values)
-            KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD -> arrayOptions(R.array.audio_transcode_format_download_list_titles, R.array.audio_transcode_format_download_list_values)
-            KEY_MAX_BITRATE_DOWNLOAD -> arrayOptions(R.array.max_bitrate_download_list_titles, R.array.max_bitrate_download_list_values)
-            KEY_QUEUE_SYNCING_COUNTDOWN -> arrayOptions(R.array.queue_syncing_countdown_titles, R.array.queue_syncing_countdown_values)
-            KEY_ANDROID_AUTO_FIRST_TAB, KEY_ANDROID_AUTO_SECOND_TAB, KEY_ANDROID_AUTO_THIRD_TAB, KEY_ANDROID_AUTO_FOURTH_TAB -> arrayOptions(R.array.aa_tab_titles, R.array.aa_tab_values)
-            KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU -> arrayOptions(R.array.aa_starred_for_made_for_you_titles, R.array.aa_starred_for_made_for_you_values)
+            KEY_ROUNDED_CORNER_SIZE -> arrayOptions(
+                R.array.rounded_corner_size_titles,
+                R.array.rounded_corner_size_values
+            )
+            KEY_SELECTED_EQUALIZER -> arrayOptions(
+                R.array.selected_equalizer_entries,
+                R.array.selected_equalizer_values
+            )
+            KEY_REPLAY_GAIN_MODE -> arrayOptions(
+                R.array.replay_gain_titles,
+                R.array.replay_gain_values
+            )
+            KEY_CUSTOM_COMMAND_FIRST_BUTTON, KEY_CUSTOM_COMMAND_SECOND_BUTTON -> arrayOptions(
+                R.array.custom_commands_titles,
+                R.array.custom_commands_values
+            )
+            KEY_HOME_SORT_PLAYLISTS -> arrayOptions(
+                R.array.playlist_sort_option_titles,
+                R.array.playlist_sort_option_values
+            )
+            KEY_STREAMING_CACHE_SIZE -> arrayOptions(
+                R.array.streaming_cache_size_titles,
+                R.array.streaming_cache_size_values
+            )
+            KEY_IMAGE_CACHE_SIZE -> arrayOptions(
+                R.array.pref_cache_size_titles,
+                R.array.pref_cache_size_values
+            )
+            KEY_IMAGE_SIZE -> arrayOptions(
+                R.array.pref_image_size_titles,
+                R.array.pref_image_size_values
+            )
+            KEY_SONG_PRELOAD_BUFFER -> arrayOptions(
+                R.array.song_preload_buffer_titles,
+                R.array.song_preload_buffer_values
+            )
+            KEY_AUDIO_TRANSCODE_FORMAT_WIFI -> arrayOptions(
+                R.array.audio_transcode_format_wifi_list_titles,
+                R.array.audio_transcode_format_wifi_list_values
+            )
+            KEY_MAX_BITRATE_WIFI -> arrayOptions(
+                R.array.max_bitrate_wifi_list_titles,
+                R.array.max_bitrate_wifi_list_values
+            )
+            KEY_AUDIO_TRANSCODE_FORMAT_MOBILE -> arrayOptions(
+                R.array.audio_transcode_format_mobile_list_titles,
+                R.array.audio_transcode_format_mobile_list_values
+            )
+            KEY_MAX_BITRATE_MOBILE -> arrayOptions(
+                R.array.max_bitrate_mobile_list_titles,
+                R.array.max_bitrate_mobile_list_values
+            )
+            KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD -> arrayOptions(
+                R.array.audio_transcode_format_download_list_titles,
+                R.array.audio_transcode_format_download_list_values
+            )
+            KEY_MAX_BITRATE_DOWNLOAD -> arrayOptions(
+                R.array.max_bitrate_download_list_titles,
+                R.array.max_bitrate_download_list_values
+            )
+            KEY_QUEUE_SYNCING_COUNTDOWN -> arrayOptions(
+                R.array.queue_syncing_countdown_titles,
+                R.array.queue_syncing_countdown_values
+            )
+            KEY_ANDROID_AUTO_FIRST_TAB, KEY_ANDROID_AUTO_SECOND_TAB, KEY_ANDROID_AUTO_THIRD_TAB, KEY_ANDROID_AUTO_FOURTH_TAB -> arrayOptions(
+                R.array.aa_tab_titles,
+                R.array.aa_tab_values
+            )
+            KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU -> arrayOptions(
+                R.array.aa_starred_for_made_for_you_titles,
+                R.array.aa_starred_for_made_for_you_values
+            )
             else -> emptyList()
         }
     }
@@ -939,7 +1431,10 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showStarredArtistSyncDialog() {
-        StarredArtistSyncDialog(::refreshUiState, ::refreshUiState).show(parentFragmentManager, null)
+        StarredArtistSyncDialog(::refreshUiState, ::refreshUiState).show(
+            parentFragmentManager,
+            null
+        )
     }
 
     private fun handleDownloadDirectoryAction() {
@@ -948,7 +1443,11 @@ class SettingsFragment : Fragment() {
             Preferences.setDownloadDirectoryUri(null)
             Preferences.setDownloadStoragePreference(0)
             ExternalAudioReader.refreshCache()
-            Toast.makeText(requireContext(), R.string.settings_download_folder_cleared, Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                R.string.settings_download_folder_cleared,
+                Toast.LENGTH_SHORT
+            ).show()
             refreshUiState()
             return
         }
@@ -1023,7 +1522,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun isBuiltinEqualizerVisible(): Boolean {
-        val equalizerManager: EqualizerManager = mediaServiceBinder?.getEqualizerManager() ?: return false
+        val equalizerManager: EqualizerManager =
+            mediaServiceBinder?.getEqualizerManager() ?: return false
         return equalizerManager.getNumberOfBands() > 0
     }
 
@@ -1134,7 +1634,8 @@ class SettingsFragment : Fragment() {
         private const val KEY_PODCAST_SECTION_VISIBILITY = "podcast_section_visibility"
         private const val KEY_RADIO_SECTION_VISIBILITY = "radio_section_visibility"
         private const val KEY_AUTO_DOWNLOAD_LYRICS = "auto_download_lyrics"
-        private const val KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY = "music_directory_section_visibility"
+        private const val KEY_MUSIC_DIRECTORY_SECTION_VISIBILITY =
+            "music_directory_section_visibility"
         private const val KEY_ALBUM_DETAIL = "album_detail"
         private const val KEY_ARTIST_SORT_BY_ALBUM_COUNT = "artist_sort_by_album_count"
         private const val KEY_SORT_SEARCH_CHRONOLOGICALLY = "sort_search_chronologically"
@@ -1170,7 +1671,8 @@ class SettingsFragment : Fragment() {
         private const val KEY_AUDIO_TRANSCODE_FORMAT_MOBILE = "audio_transcode_format_mobile"
         private const val KEY_MAX_BITRATE_MOBILE = "max_bitrate_mobile"
         private const val KEY_AUDIO_TRANSCODE_DOWNLOAD = "audio_transcode_download"
-        private const val KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY = "audio_transcode_download_priority"
+        private const val KEY_AUDIO_TRANSCODE_DOWNLOAD_PRIORITY =
+            "audio_transcode_download_priority"
         private const val KEY_AUDIO_TRANSCODE_FORMAT_DOWNLOAD = "audio_transcode_format_download"
         private const val KEY_MAX_BITRATE_DOWNLOAD = "max_bitrate_download"
         private const val KEY_SCROBBLING = "scrobbling"
@@ -1187,9 +1689,11 @@ class SettingsFragment : Fragment() {
         private const val KEY_ANDROID_AUTO_RADIO_VIEW = "androidauto_radio_view"
         private const val KEY_ANDROID_AUTO_PODCAST_VIEW = "androidauto_podcast_view"
         private const val KEY_ANDROID_AUTO_SHUFFLE_GENRE_SONGS = "androidauto_shuffle_genre_songs"
-        private const val KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS = "androidauto_shuffle_starred_tracks"
+        private const val KEY_ANDROID_AUTO_SHUFFLE_STARRED_TRACKS =
+            "androidauto_shuffle_starred_tracks"
         private const val KEY_ANDROID_AUTO_SHUFFLE_PLAYLISTS = "androidauto_shuffle_playlists"
-        private const val KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU = "androidauto_starred_for_made_for_you"
+        private const val KEY_ANDROID_AUTO_STARRED_FOR_MADE_FOR_YOU =
+            "androidauto_starred_for_made_for_you"
         private const val KEY_GITHUB_UPDATE_CHECK = "github_update_check"
         private const val KEY_VERSION = "version"
         private const val KEY_ABOUT_GITHUB = "about_github"

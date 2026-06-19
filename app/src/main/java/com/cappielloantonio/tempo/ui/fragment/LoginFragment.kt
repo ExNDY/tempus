@@ -82,7 +82,10 @@ class LoginFragment : Fragment() {
                     serverToEdit = null
                     showDialog = true
                 }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Server")
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.login_add_server_content_description)
+                    )
                 }
             }
         ) { padding ->
@@ -93,7 +96,7 @@ class LoginFragment : Fragment() {
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No servers added yet. Click + to add one.")
+                    Text(text = stringResource(R.string.login_no_servers_message))
                 }
             } else {
                 LazyColumn(
@@ -182,7 +185,17 @@ class LoginFragment : Fragment() {
 
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(text = if (server == null) "Add Server" else "Edit Server") },
+            title = {
+                Text(
+                    text = stringResource(
+                        if (server == null) {
+                            R.string.server_signup_dialog_title
+                        } else {
+                            R.string.server_signup_dialog_title_edit
+                        }
+                    )
+                )
+            },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -191,19 +204,19 @@ class LoginFragment : Fragment() {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Server Name") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_name)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Username") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_username)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_password)) },
                         modifier = Modifier.fillMaxWidth(),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -211,14 +224,14 @@ class LoginFragment : Fragment() {
                     OutlinedTextField(
                         value = url,
                         onValueChange = { url = it },
-                        label = { Text("Server URL") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_url)) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("https://...") }
                     )
                     OutlinedTextField(
                         value = localUrl,
                         onValueChange = { localUrl = it },
-                        label = { Text("Local URL (Optional)") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_local_address)) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("http://...") }
                     )
@@ -227,13 +240,13 @@ class LoginFragment : Fragment() {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Checkbox(checked = isLowSecurity, onCheckedChange = { isLowSecurity = it })
-                        Text("Low Security (Hex Encoding)")
+                        Text(stringResource(R.string.server_signup_dialog_action_low_security))
                     }
                     OutlinedTextField(
                         value = clientCertAlias,
                         onValueChange = { },
                         readOnly = true,
-                        label = { Text("Client Certificate") },
+                        label = { Text(stringResource(R.string.server_signup_dialog_hint_client_certificate)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -244,7 +257,10 @@ class LoginFragment : Fragment() {
                         trailingIcon = {
                             if (clientCertAlias.isNotEmpty()) {
                                 IconButton(onClick = { clientCertAlias = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = stringResource(R.string.server_signup_dialog_clear_certificate)
+                                    )
                                 }
                             }
                         }
@@ -267,18 +283,21 @@ class LoginFragment : Fragment() {
                     )
                     onSave(newServer)
                 }) {
-                    Text("Save")
+                    Text(stringResource(R.string.server_signup_dialog_positive_button))
                 }
             },
             dismissButton = {
                 Row {
                     if (server != null) {
                         TextButton(onClick = { onDelete(server) }) {
-                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                            Text(
+                                stringResource(R.string.server_signup_dialog_neutral_button),
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.server_signup_dialog_negative_button))
                     }
                 }
             }

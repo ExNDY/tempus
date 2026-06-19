@@ -362,7 +362,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
         List<Child> queueSongs = playerSongQueueAdapter.getItems();
 
         if (queueSongs == null || queueSongs.isEmpty()) {
-            Toast.makeText(requireContext(), "Queue is empty", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.player_queue_empty, Toast.LENGTH_SHORT).show();
             toggleFabMenu();
             return;
         }
@@ -383,7 +383,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
         List<Child> queueSongs = playerSongQueueAdapter.getItems();
 
         if (queueSongs == null || queueSongs.isEmpty()) {
-            Toast.makeText(requireContext(), "Queue is empty", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.player_queue_empty, Toast.LENGTH_SHORT).show();
             toggleFabMenu();
             return;
         }
@@ -419,7 +419,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
                 }, 1000);
             } else {
                 Log.e(TAG, "DownloaderManager not initialized. Check DownloadUtil.");
-                Toast.makeText(requireContext(), "Download service unavailable.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), R.string.player_queue_download_service_unavailable, Toast.LENGTH_SHORT).show();
             }
         } else {
             for (Child song : queueSongs) {
@@ -440,7 +440,7 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
                     }
                 }, 2000);
             } else {
-                Toast.makeText(requireContext(), "All songs already downloaded", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), R.string.player_queue_all_songs_downloaded, Toast.LENGTH_SHORT).show();
             }
         }
         
@@ -472,9 +472,9 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
                     
                     MediaManager.startQueue(mediaBrowserListenableFuture, playQueue.getEntries(), currentIndex);
                     
-                    Toast.makeText(requireContext(), "Queue loaded", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), R.string.player_queue_loaded, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(requireContext(), "No saved queue found", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), R.string.player_queue_not_found, Toast.LENGTH_SHORT).show();
                 }
                 
                 toggleFabMenu();

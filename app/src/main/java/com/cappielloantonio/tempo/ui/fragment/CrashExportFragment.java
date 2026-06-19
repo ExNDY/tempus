@@ -57,7 +57,7 @@ public class CrashExportFragment extends Fragment {
         ClipboardManager clipboard =
                 (ClipboardManager) requireContext()
                         .getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("SimpleText", text);
+        ClipData clip = ClipData.newPlainText(getString(R.string.ca_export_clipboard_label), text);
         clipboard.setPrimaryClip(clip);
         Toast.makeText(requireContext(), R.string.ca_export_toast_log_copied_to_clipboard, Toast.LENGTH_SHORT).show();
     }
@@ -66,7 +66,7 @@ public class CrashExportFragment extends Fragment {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT, text);
-        Intent chooser = Intent.createChooser(shareIntent, "Share via");
+        Intent chooser = Intent.createChooser(shareIntent, getString(R.string.share_chooser_title));
         startActivity(chooser);
     }
 

@@ -86,7 +86,7 @@
     <string name="battery_optimization_negative_button">Ignore</string>
     <string name="battery_optimization_neutral_button">Don\'t ask again</string>
     <string name="battery_optimization_positive_button">Disable</string>
-    <string name="bottom_sheet_generating_instant_mix">Generating instant mix...</string>
+    <string name="bottom_sheet_generating_instant_mix">Generating instant mix…</string>
     <string name="bottom_sheet_problem_generating_instant_mix">Could not retrieve tracks from subsonic server.</string>
     <string name="connection_alert_dialog_negative_button">Cancel</string>
     <string name="connection_alert_dialog_neutral_button">Enable data saver</string>
@@ -262,12 +262,14 @@
     <string name="player_queue_save_queue_success">Saved play queue</string>
     <string name="player_queue_save_to_playlist">Save Queue to Playlist</string>
     <string name="player_queue_load_queue">Load Queue</string>
+    <string name="player_queue_toggle_fab_menu_content_description">Toggle FAB action menu</string>
     <string name="player_lyrics_download_content_description">Download lyrics for offline playback</string>
     <string name="player_lyrics_downloaded_content_description">Lyrics downloaded for offline playback</string>
     <string name="player_lyrics_download_success">Lyrics saved for offline playback.</string>
     <string name="player_lyrics_download_failure">Lyrics are not available to download.</string>
     <string name="player_server_priority">Server Priority</string>
     <string name="player_unknown_format">Unknown format</string>
+    <string name="player_unknown">Unknown</string>
     <string name="player_transcoding">Transcoding</string>
     <string name="player_transcoding_requested">requested</string>
     <string name="playlist_catalogue_title">Playlist Catalogue</string>
@@ -675,7 +677,7 @@
 
     <string name="search_sort_title">Sort recent searches chronologically</string>
     <string name="search_sort_summary">If enabled, sort searches chronologically. Sort by name if disabled.</string>
-    <string name="search_all_songs_loading">Getting all songs ...</string>
+    <string name="search_all_songs_loading">Getting all songs …</string>
     <string name="search_all_songs">all %1$s songs</string>
     <string name="search_all_songs_play">Play %1$s</string>
 
@@ -723,6 +725,7 @@
     <string name="ca_export_button_copy">Copy log</string>
     <string name="ca_export_button_share">Share log</string>
     <string name="ca_export_toast_log_copied_to_clipboard">Log copied to clipboard</string>
+    <string name="ca_export_clipboard_label">Crash log</string>
 
     <string name="ca_export_label">Export</string>
     <string name="ca_export_title">Logs retrival</string>
@@ -746,4 +749,34 @@
     <string name="downloader_errors_loading">Download errors (%1$d files)</string>
     <string name="downloader_downloaded_and_errors">Downloaded: %1$d, errors: %2$d</string>
     <string name="downloader_retry">Retry</string>
+    <string name="download_notification_no_folder_title">No download folder set</string>
+    <string name="download_notification_no_folder_text">Tap to set one in settings</string>
+    <string name="download_notification_failed">Download failed</string>
+    <string name="download_notification_already_downloaded">Already downloaded</string>
+    <string name="download_notification_cannot_write_to_folder">Cannot write to folder.</string>
+    <string name="download_notification_invalid_media_uri">Invalid media URI.</string>
+    <string name="download_notification_server_returned">Server returned %1$d</string>
+    <string name="download_notification_unsupported_media_uri">Unsupported media URI.</string>
+    <string name="download_notification_failed_to_create_file">Failed to create file.</string>
+    <string name="download_notification_cannot_open_output_stream">Cannot open output stream.</string>
+    <string name="download_notification_empty_download">Empty download.</string>
+    <string name="download_notification_incomplete_download">Incomplete download.</string>
+    <string name="login_add_server_content_description">Add server</string>
+    <string name="login_no_servers_message">No servers added yet. Tap + to add one.</string>
+    <string name="server_signup_dialog_title_edit">Edit server</string>
+    <string name="server_signup_dialog_clear_certificate">Clear certificate</string>
+    <string name="settings_download_folder_set_with_path">Download folder set:\n%1$s</string>
+    <string name="share_chooser_title">Share via</string>
+    <string name="podcast_episode_open_channel">Open the channel</string>
+    <string name="player_queue_empty">Queue is empty</string>
+    <string name="player_queue_download_service_unavailable">Download service unavailable.</string>
+    <string name="player_queue_all_songs_downloaded">All songs already downloaded</string>
+    <string name="player_queue_loaded">Queue loaded</string>
+    <string name="player_queue_not_found">No saved queue found</string>
+    <string name="download_directory_picker_summary">Choose a folder where downloaded songs will be stored.</string>
+    <string name="download_directory_picker_positive_button">Choose folder</string>
+    <plurals name="artist_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
 </resources>

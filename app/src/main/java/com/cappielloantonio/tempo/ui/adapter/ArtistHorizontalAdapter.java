@@ -10,6 +10,7 @@ import android.widget.Filterable;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.ItemHorizontalArtistBinding;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
@@ -82,7 +83,13 @@ public class ArtistHorizontalAdapter extends RecyclerView.Adapter<ArtistHorizont
         holder.item.artistNameTextView.setText(artist.getName());
 
         if (artist.getAlbumCount() > 0) {
-            holder.item.artistInfoTextView.setText("Album count: " + artist.getAlbumCount());
+            holder.item.artistInfoTextView.setText(
+                    holder.itemView.getResources().getQuantityString(
+                            R.plurals.artist_album_count,
+                            artist.getAlbumCount(),
+                            artist.getAlbumCount()
+                    )
+            );
         } else {
             holder.item.artistInfoTextView.setVisibility(View.GONE);
         }
