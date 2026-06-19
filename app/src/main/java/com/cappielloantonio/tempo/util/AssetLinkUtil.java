@@ -154,7 +154,7 @@ public final class AssetLinkUtil {
             if (textView.getTag(R.id.tag_link_original_color) == null) {
                 textView.setTag(R.id.tag_link_original_color, textView.getCurrentTextColor());
             }
-            int accent = MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimary,
+            int accent = MaterialColors.getColor(view, R.attr.colorPrimary,
                     ContextCompat.getColor(view.getContext(), android.R.color.holo_blue_light));
             textView.setTextColor(accent);
         }
