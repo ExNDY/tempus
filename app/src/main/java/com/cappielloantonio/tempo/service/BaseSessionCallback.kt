@@ -186,16 +186,19 @@ open class BaseSessionCallback(
 
         val previousButton =
             CommandButton.Builder(CommandButton.ICON_PREVIOUS)
+                .setDisplayName(context.getString(R.string.exo_controls_previous_description))
                 .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
                 .build()
 
         val playPauseButton =
             CommandButton.Builder(CommandButton.ICON_PLAY)
+                .setDisplayName(context.getString(R.string.exo_controls_play_description))
                 .setPlayerCommand(Player.COMMAND_PLAY_PAUSE)
                 .build()
 
         val nextButton =
             CommandButton.Builder(CommandButton.ICON_NEXT)
+                .setDisplayName(context.getString(R.string.exo_controls_next_description))
                 .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
                 .build()
 
