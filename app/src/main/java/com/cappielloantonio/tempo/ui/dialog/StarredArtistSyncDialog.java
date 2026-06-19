@@ -27,9 +27,15 @@ public class StarredArtistSyncDialog extends DialogFragment {
     private StarredArtistsSyncViewModel starredArtistsSyncViewModel;
 
     private Runnable onCancel;
+    private Runnable onResult;
 
     public StarredArtistSyncDialog(Runnable onCancel) {
+        this(onCancel, null);
+    }
+
+    public StarredArtistSyncDialog(Runnable onCancel, Runnable onResult) {
         this.onCancel = onCancel;
+        this.onResult = onResult;
     }
 
     @NonNull
@@ -67,6 +73,7 @@ public class StarredArtistSyncDialog extends DialogFragment {
                                 allSongs.stream().map(Download::new).collect(Collectors.toList())
                         );
                     }
+                    if (onResult != null) onResult.run();
                     dialog.dismiss();
                 });
             });
@@ -74,6 +81,7 @@ public class StarredArtistSyncDialog extends DialogFragment {
             Button neutralButton = dialog.getButton(Dialog.BUTTON_NEUTRAL);
             neutralButton.setOnClickListener(v -> {
                 Preferences.setStarredArtistsSyncEnabled(true);
+                if (onResult != null) onResult.run();
                 dialog.dismiss();
             });
 
@@ -81,6 +89,7 @@ public class StarredArtistSyncDialog extends DialogFragment {
             negativeButton.setOnClickListener(v -> {
                 Preferences.setStarredArtistsSyncEnabled(false);
                 if (onCancel != null) onCancel.run();
+                if (onResult != null) onResult.run();
                 dialog.dismiss();
             });
         }

@@ -31,6 +31,11 @@ object TempusTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalTempusPainters.current
+
+    val spacing: TempusSpacing
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalTempusSpacing.current
 }
 
 private val LightColorScheme = lightColorScheme(
@@ -158,6 +163,7 @@ fun TempusTheme(
             CompositionLocalProvider(
                 LocalTempusIcons provides TempusIcons(),
                 LocalTempusPainters provides painters,
+                LocalTempusSpacing provides TempusSpacing(),
                 content = content
             )
         }

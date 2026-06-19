@@ -27,9 +27,15 @@ public class StarredSyncDialog extends DialogFragment {
     private StarredSyncViewModel starredSyncViewModel;
 
     private Runnable onCancel;
+    private Runnable onResult;
 
     public StarredSyncDialog(Runnable onCancel) {
+        this(onCancel, null);
+    }
+
+    public StarredSyncDialog(Runnable onCancel, Runnable onResult) {
         this.onCancel = onCancel;
+        this.onResult = onResult;
     }
 
     @NonNull
@@ -67,7 +73,7 @@ public class StarredSyncDialog extends DialogFragment {
                                 songs.stream().map(Download::new).collect(Collectors.toList())
                         );
                     }
-
+                    if (onResult != null) onResult.run();
                     dialog.dismiss();
                 });
             });
@@ -75,6 +81,7 @@ public class StarredSyncDialog extends DialogFragment {
             Button neutralButton = dialog.getButton(Dialog.BUTTON_NEUTRAL);
             neutralButton.setOnClickListener(v -> {
                 Preferences.setStarredSyncEnabled(true);
+                if (onResult != null) onResult.run();
                 dialog.dismiss();
             });
 
@@ -82,6 +89,7 @@ public class StarredSyncDialog extends DialogFragment {
             negativeButton.setOnClickListener(v -> {
                 Preferences.setStarredSyncEnabled(false);
                 if (onCancel != null) onCancel.run();
+                if (onResult != null) onResult.run();
                 dialog.dismiss();
             });
         }

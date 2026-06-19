@@ -29,6 +29,15 @@ import java.util.Map;
 
 @OptIn(markerClass = UnstableApi.class)
 public class DeleteDownloadStorageDialog extends DialogFragment {
+    private final Runnable onResult;
+
+    public DeleteDownloadStorageDialog() {
+        this(null);
+    }
+
+    public DeleteDownloadStorageDialog(Runnable onResult) {
+        this.onResult = onResult;
+    }
 
     @NonNull
     @Override
@@ -83,6 +92,9 @@ public class DeleteDownloadStorageDialog extends DialogFragment {
                         }
                         ExternalAudioReader.refreshCache();
                         ExternalDownloadMetadataStore.clear();
+                        if (onResult != null) {
+                            requireActivity().runOnUiThread(onResult);
+                        }
                     }
                 }).start();
                 dialog.dismiss();
