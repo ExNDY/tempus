@@ -1,106 +1,151 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
+import androidx.documentfile.provider.DocumentFile
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.model.DownloadStack
 import com.cappielloantonio.tempo.repository.DownloadRepository
 import com.cappielloantonio.tempo.subsonic.models.Child
+import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.ExternalAudioReader
 import com.cappielloantonio.tempo.util.Preferences
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import android.net.Uri
+
+data class DownloadUiState(
+    val songs: List<Child> = emptyList(),
+    val viewStack: List<DownloadStack> = emptyList(),
+    val isLoading: Boolean = true,
+)
 
 class DownloadViewModel(
     private val downloadRepository: DownloadRepository,
 ) : ViewModel() {
 
-    private val downloadedTrackSample = MutableLiveData<List<Child>?>(null)
-    private val viewStack = MutableLiveData<ArrayList<DownloadStack>?>(null)
-    private val refreshResult = MutableLiveData<Int>()
+    private val _uiState = MutableStateFlow(DownloadUiState())
+    val uiState = _uiState.asStateFlow()
 
-    init {
-        initViewStack(DownloadStack(Preferences.getDefaultDownloadViewType(), null))
+    private val _refreshResults = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val refreshResults: SharedFlow<Int> = _refreshResults.asSharedFlow()
+
+    private var started = false
+
+    fun onStart() {
+        if (started) return
+        started = true
+
+        _uiState.value = DownloadUiState(
+            songs = emptyList(),
+            viewStack = listOf(
+                DownloadStack(
+                    id = Preferences.getDefaultDownloadViewType(),
+                    view = null,
+                )
+            ),
+            isLoading = true,
+        )
+
+        observeDownloads()
     }
 
-    fun getDownloadedTracks(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Child>?> {
-        downloadRepository.getLiveDownload().observe(owner) { downloads ->
-            downloadedTrackSample.postValue(downloads.map { it as Child })
+    fun setRootView(downloadType: String) {
+        Preferences.setDefaultDownloadViewType(downloadType)
+        _uiState.update {
+            it.copy(
+                viewStack = listOf(DownloadStack(id = downloadType, view = null)),
+            )
         }
-        return downloadedTrackSample
-    }
-
-    fun getViewStack(): LiveData<ArrayList<DownloadStack>?> = viewStack
-
-    fun getRefreshResult(): LiveData<Int> = refreshResult
-
-    fun initViewStack(level: DownloadStack) {
-        viewStack.value = arrayListOf(level)
     }
 
     fun pushViewStack(level: DownloadStack) {
-        val stack = viewStack.value ?: arrayListOf()
-        stack.add(level)
-        viewStack.value = stack
+        _uiState.update { state ->
+            state.copy(viewStack = state.viewStack + level)
+        }
     }
 
     fun popViewStack() {
-        val stack = viewStack.value ?: return
-        if (stack.isNotEmpty()) {
-            stack.removeAt(stack.lastIndex)
-            viewStack.value = stack
+        _uiState.update { state ->
+            if (state.viewStack.size <= 1) {
+                state
+            } else {
+                state.copy(viewStack = state.viewStack.dropLast(1))
+            }
+        }
+    }
+
+    fun canPopViewStack(): Boolean = _uiState.value.viewStack.size > 1
+
+    private fun observeDownloads() {
+        viewModelScope.launch {
+            downloadRepository.getLiveDownload().asFlow().collectLatest { downloads ->
+                _uiState.update {
+                    it.copy(
+                        songs = downloads.map { download -> download as Child },
+                        isLoading = false,
+                    )
+                }
+            }
         }
     }
 
     fun refreshExternalDownloads() {
-        Thread {
+        viewModelScope.launch {
             val directoryUri = Preferences.getDownloadDirectoryUri()
-            if (directoryUri == null) {
-                refreshResult.postValue(-1)
-                return@Thread
+            if (directoryUri.isNullOrBlank()) {
+                _refreshResults.emit(-1)
+                return@launch
             }
 
             val downloads = downloadRepository.getAllDownloads()
-            if (downloads.isNullOrEmpty()) {
-                refreshResult.postValue(0)
-                return@Thread
+            if (downloads.isEmpty()) {
+                _refreshResults.emit(0)
+                return@launch
             }
 
-            val toRemove = arrayListOf<Download>()
-
-            for (download in downloads) {
-                val uriString = download.downloadUri
-                if (uriString.isNullOrEmpty()) continue
-
-                val uri = Uri.parse(uriString)
-                if (uri.scheme.isNullOrEmpty() || !uri.scheme.equals("content", ignoreCase = true)) continue
-
-                val file = try {
-                    DocumentFile.fromSingleUri(App.getContext(), uri)
-                } catch (_: SecurityException) {
-                    null
-                }
-
-                if (file == null || !file.exists()) {
-                    toRemove.add(download)
-                }
+            val toRemove = downloads.filter { download ->
+                shouldRemoveExternalDownload(download)
             }
 
-            if (toRemove.isNotEmpty()) {
-                val ids = arrayListOf<String>()
-                for (download in toRemove) {
-                    ids.add(download.id)
-                    ExternalAudioReader.removeMetadata(download)
-                }
-
-                downloadRepository.delete(ids)
-                ExternalAudioReader.refreshCache()
-                refreshResult.postValue(ids.size)
-            } else {
-                refreshResult.postValue(0)
+            if (toRemove.isEmpty()) {
+                _refreshResults.emit(0)
+                return@launch
             }
-        }.start()
+
+            val ids = toRemove.map { it.id }
+            toRemove.forEach(ExternalAudioReader::removeMetadata)
+            downloadRepository.delete(ids)
+            ExternalAudioReader.refreshCache()
+            _refreshResults.emit(ids.size)
+        }
+    }
+
+    private fun shouldRemoveExternalDownload(download: Download): Boolean {
+        val uriString = download.downloadUri
+        if (uriString.isNullOrBlank()) {
+            return false
+        }
+
+        val uri = Uri.parse(uriString)
+        if (!uri.scheme.equals("content", ignoreCase = true)) {
+            return false
+        }
+
+        val file = try {
+            DocumentFile.fromSingleUri(App.getContext(), uri)
+        } catch (_: SecurityException) {
+            null
+        }
+
+        return file == null || !file.exists()
     }
 }

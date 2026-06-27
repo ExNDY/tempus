@@ -35,9 +35,8 @@ open class BaseActivity : AppCompatActivity() {
     var mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>? = null
         private set
 
-    override fun getDefaultViewModelProviderFactory(): ViewModelProvider.Factory {
-        return KoinViewModelFactory()
-    }
+    override val defaultViewModelProviderFactory: ViewModelProvider.Factory
+        get() = KoinViewModelFactory()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val theme = Preferences.getTheme()

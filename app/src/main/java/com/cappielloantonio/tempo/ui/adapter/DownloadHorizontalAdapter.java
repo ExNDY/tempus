@@ -302,18 +302,9 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
             String coverArtId = playlistCoverCache.get(playlistId);
 
             if (coverArtId == null) {
-                // Async lookup from local playlist cache
-                new Thread(() -> {
-                    String cachedCover = com.cappielloantonio.tempo.database.AppDatabase.getInstance().playlistDao().getPlaylistCoverArtId(playlistId);
-                    if (cachedCover != null) {
-                        playlistCoverCache.put(playlistId, cachedCover);
-                        if (holder.itemView.getContext() instanceof android.app.Activity) {
-                            ((android.app.Activity) holder.itemView.getContext()).runOnUiThread(() -> notifyItemChanged(position));
-                        }
-                    }
-                }).start();
-                // Fallback to track cover art while loading
                 coverArtId = download.getCoverArtId();
+            } else {
+                playlistCoverCache.put(playlistId, coverArtId);
             }
 
             CustomGlideRequest.Builder

@@ -2,37 +2,35 @@ package com.cappielloantonio.tempo.viewmodel
 
 import android.text.TextUtils
 import android.util.Log
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.interfaces.StarCallback
 import com.cappielloantonio.tempo.model.LyricsCache
 import com.cappielloantonio.tempo.model.Queue
-import com.cappielloantonio.tempo.repository.AlbumRepository
-import com.cappielloantonio.tempo.repository.ArtistRepository
-import com.cappielloantonio.tempo.repository.FavoriteRepository
-import com.cappielloantonio.tempo.repository.LyricsRepository
-import com.cappielloantonio.tempo.repository.OpenRepository
-import com.cappielloantonio.tempo.repository.QueueRepository
-import com.cappielloantonio.tempo.repository.SongRepository
-import com.cappielloantonio.tempo.subsonic.models.AlbumID3
-import com.cappielloantonio.tempo.subsonic.models.ArtistID3
-import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.subsonic.models.LyricsList
-import com.cappielloantonio.tempo.subsonic.models.PlayQueue
-import com.cappielloantonio.tempo.util.Constants
-import com.cappielloantonio.tempo.util.NetworkUtil
-import com.cappielloantonio.tempo.util.OpenSubsonicExtensionsUtil
-import com.cappielloantonio.tempo.util.Preferences
+import com.cappielloantonio.tempo.repository.*
+import com.cappielloantonio.tempo.subsonic.models.*
+import com.cappielloantonio.tempo.util.*
 import com.google.gson.Gson
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
-import java.util.Collections
-import java.util.Date
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.*
+
+data class PlayerUiState(
+    val currentSong: Child? = null,
+    val currentAlbum: AlbumID3? = null,
+    val currentArtist: ArtistID3? = null,
+    val lyrics: String? = null,
+    val lyricsList: LyricsList? = null,
+    val isLyricsCached: Boolean = false,
+    val description: String? = null,
+    val isLyricsSynced: Boolean = true,
+    val instantMix: List<Child> = emptyList(),
+    val queue: List<Queue> = emptyList()
+)
 
 @OptIn(UnstableApi::class)
 class PlayerBottomSheetViewModel(
@@ -48,25 +46,22 @@ class PlayerBottomSheetViewModel(
         data class RequestDownload(val media: Child) : Action
     }
 
-    private val lyricsLiveData = MutableLiveData<String?>(null)
-    private val lyricsListLiveData = MutableLiveData<LyricsList?>(null)
-    private val lyricsCachedLiveData = MutableLiveData(false)
-    private val descriptionLiveData = MutableLiveData<String?>(null)
-    private val liveMedia = MutableLiveData<Child?>(null)
-    private val liveAlbum = MutableLiveData<AlbumID3?>(null)
-    private val liveArtist = MutableLiveData<ArtistID3?>(null)
-    private val instantMix = MutableLiveData<List<Child>?>(null)
-    private val gson = Gson()
-    private val _actions = Channel<Action>(Channel.BUFFERED)
-    val actions: LiveData<Action> = _actions.receiveAsFlow().asLiveData()
+    private val _uiState = MutableStateFlow(PlayerUiState())
+    val uiState = _uiState.asStateFlow()
 
-    private var lyricsSyncState = true
-    private var cachedLyricsSource: LiveData<LyricsCache?>? = null
+    private val _actions = Channel<Action>(Channel.BUFFERED)
+    val actions = _actions.receiveAsFlow()
+
+    private val gson = Gson()
     private var currentSongId: String? = null
 
-    private val cachedLyricsObserver = Observer<LyricsCache?> { onCachedLyricsChanged(it) }
-
-    fun getQueueSong(): LiveData<List<Queue>> = queueRepository.getLiveQueue()
+    init {
+        viewModelScope.launch {
+            queueRepository.getLiveQueue().asFlow().collect { queue ->
+                _uiState.update { it.copy(queue = queue) }
+            }
+        }
+    }
 
     fun setFavorite(media: Child?) {
         if (media == null) return
@@ -89,53 +84,54 @@ class PlayerBottomSheetViewModel(
     private fun removeFavoriteOffline(media: Child) {
         favoriteRepository.starLater(media.id, null, null, false)
         media.starred = null
+        _uiState.update { it.copy(currentSong = if (it.currentSong?.id == media.id) media else it.currentSong) }
     }
 
     private fun removeFavoriteOnline(media: Child) {
         favoriteRepository.unstar(media.id, null, null, object : StarCallback {
+            override fun onSuccess() {}
             override fun onError() {
                 favoriteRepository.starLater(media.id, null, null, false)
             }
         })
         media.starred = null
+        _uiState.update { it.copy(currentSong = if (it.currentSong?.id == media.id) media else it.currentSong) }
     }
 
     private fun setFavoriteOffline(media: Child) {
         favoriteRepository.starLater(media.id, null, null, true)
         media.starred = Date()
+        _uiState.update { it.copy(currentSong = if (it.currentSong?.id == media.id) media else it.currentSong) }
     }
 
     private fun setFavoriteOnline(media: Child) {
         favoriteRepository.star(media.id, null, null, object : StarCallback {
+            override fun onSuccess() {}
             override fun onError() {
                 favoriteRepository.starLater(media.id, null, null, true)
             }
         })
 
         media.starred = Date()
+        _uiState.update { it.copy(currentSong = if (it.currentSong?.id == media.id) media else it.currentSong) }
 
         if (Preferences.isStarredSyncEnabled() && Preferences.getDownloadDirectoryUri() == null) {
-            sendAction(_actions, Action.RequestDownload(media))
+            viewModelScope.launch { _actions.send(Action.RequestDownload(media)) }
         }
     }
 
-    fun getLiveLyrics(): LiveData<String?> = lyricsLiveData
-
-    fun getLiveLyricsList(): LiveData<LyricsList?> = lyricsListLiveData
-
-    fun refreshMediaInfo(owner: LifecycleOwner?, media: Child?) {
-        lyricsLiveData.postValue(null)
-        lyricsListLiveData.postValue(null)
-        lyricsCachedLiveData.postValue(false)
-
-        clearCachedLyricsObserver()
-
+    fun refreshMediaInfo(media: Child?) {
         val songId = media?.id ?: currentSongId
-        if (TextUtils.isEmpty(songId) || owner == null) return
+        if (TextUtils.isEmpty(songId)) return
         val resolvedSongId = songId ?: return
 
         currentSongId = resolvedSongId
-        observeCachedLyrics(owner, resolvedSongId)
+        
+        _uiState.update { it.copy(
+            lyrics = null,
+            lyricsList = null,
+            isLyricsCached = false
+        ) }
 
         val cachedLyrics = lyricsRepository.getLyrics(resolvedSongId)
         if (cachedLyrics != null) {
@@ -145,98 +141,118 @@ class PlayerBottomSheetViewModel(
         if (NetworkUtil.isOffline() || media == null) return
 
         if (OpenSubsonicExtensionsUtil.isSongLyricsExtensionAvailable()) {
-            openRepository.getLyricsBySongId(media.id).observe(owner) { lyricsList ->
-                lyricsListLiveData.postValue(lyricsList)
-                lyricsLiveData.postValue(null)
+            viewModelScope.launch {
+                openRepository.getLyricsBySongId(media.id).asFlow().collect { lyricsList: LyricsList? ->
+                    _uiState.update { it.copy(lyricsList = lyricsList, lyrics = null) }
 
-                if (shouldAutoDownloadLyrics() && hasStructuredLyrics(lyricsList)) {
-                    saveLyricsToCache(media, null, lyricsList)
+                    if (shouldAutoDownloadLyrics() && hasStructuredLyrics(lyricsList)) {
+                        saveLyricsToCache(media, null, lyricsList)
+                    }
                 }
             }
         } else {
-            songRepository.getSongLyrics(media).observe(owner) { lyrics ->
-                lyricsLiveData.postValue(lyrics)
-                lyricsListLiveData.postValue(null)
+            viewModelScope.launch {
+                songRepository.getSongLyrics(media).asFlow().collect { lyrics: String? ->
+                    _uiState.update { it.copy(lyrics = lyrics, lyricsList = null) }
 
-                if (shouldAutoDownloadLyrics() && !TextUtils.isEmpty(lyrics)) {
-                    saveLyricsToCache(media, lyrics, null)
+                    if (shouldAutoDownloadLyrics() && !TextUtils.isEmpty(lyrics)) {
+                        saveLyricsToCache(media, lyrics, null)
+                    }
                 }
             }
         }
     }
 
-    fun getLiveMedia(): LiveData<Child?> = liveMedia
-
-    fun setLiveMedia(owner: LifecycleOwner, mediaType: String?, mediaId: String?) {
+    fun setLiveMedia(mediaType: String?, mediaId: String?, placeholder: Child? = null) {
         currentSongId = mediaId
 
-        if (!TextUtils.isEmpty(mediaId)) {
-            refreshMediaInfo(owner, null)
-        } else {
-            clearCachedLyricsObserver()
-            lyricsLiveData.postValue(null)
-            lyricsListLiveData.postValue(null)
-            lyricsCachedLiveData.postValue(false)
+        if (TextUtils.isEmpty(mediaId)) {
+            _uiState.update { it.copy(
+                lyrics = null,
+                lyricsList = null,
+                isLyricsCached = false,
+                currentSong = null
+            ) }
+            return
         }
 
-        if (mediaType != null) {
-            when (mediaType) {
-                Constants.MEDIA_TYPE_MUSIC -> {
-                    songRepository.getSong(mediaId ?: "").observe(owner) { liveMedia.postValue(it) }
-                    descriptionLiveData.postValue(null)
+        // Set placeholder immediately to avoid empty UI
+        if (placeholder != null) {
+            _uiState.update { it.copy(currentSong = placeholder) }
+        }
+
+        refreshMediaInfo(placeholder)
+
+        if (mediaType == Constants.MEDIA_TYPE_MUSIC) {
+            viewModelScope.launch {
+                songRepository.getSong(mediaId ?: "").asFlow().collect { song: Child? ->
+                    if (song != null) {
+                        _uiState.update { it.copy(currentSong = song) }
+                        refreshMediaInfo(song)
+                    }
                 }
-                Constants.MEDIA_TYPE_PODCAST -> liveMedia.postValue(null)
-                else -> liveMedia.postValue(null)
             }
+            _uiState.update { it.copy(description = null) }
         } else {
-            liveMedia.postValue(null)
-        }
-    }
-
-    fun getLiveAlbum(): LiveData<AlbumID3?> = liveAlbum
-
-    fun setLiveAlbum(owner: LifecycleOwner, mediaType: String?, albumId: String?) {
-        if (mediaType != null) {
-            when (mediaType) {
-                Constants.MEDIA_TYPE_MUSIC -> albumRepository.getAlbum(albumId ?: "").observe(owner) {
-                    liveAlbum.postValue(it)
-                }
-                Constants.MEDIA_TYPE_PODCAST -> liveAlbum.postValue(null)
+            if (placeholder == null) {
+                _uiState.update { it.copy(currentSong = null) }
             }
         }
     }
 
-    fun getLiveArtist(): LiveData<ArtistID3?> = liveArtist
-
-    fun setLiveArtist(owner: LifecycleOwner, mediaType: String?, artistId: String?) {
+    fun setLiveAlbum(mediaType: String?, albumId: String?) {
         if (mediaType != null) {
             when (mediaType) {
-                Constants.MEDIA_TYPE_MUSIC -> artistRepository.getArtist(artistId ?: "").observe(owner) {
-                    liveArtist.postValue(it)
+                Constants.MEDIA_TYPE_MUSIC -> viewModelScope.launch {
+                    albumRepository.getAlbum(albumId ?: "").asFlow().collect { album: AlbumID3? ->
+                        _uiState.update { state -> state.copy(currentAlbum = album) }
+                    }
                 }
-                Constants.MEDIA_TYPE_PODCAST -> liveArtist.postValue(null)
+                else -> _uiState.update { it.copy(currentAlbum = null) }
+            }
+        }
+    }
+
+    fun setLiveArtist(mediaType: String?, artistId: String?) {
+        if (mediaType != null) {
+            when (mediaType) {
+                Constants.MEDIA_TYPE_MUSIC -> viewModelScope.launch {
+                    artistRepository.getArtist(artistId ?: "").asFlow().collect { artist: ArtistID3? ->
+                        _uiState.update { state -> state.copy(currentArtist = artist) }
+                    }
+                }
+                else -> _uiState.update { it.copy(currentArtist = null) }
             }
         }
     }
 
     fun setLiveDescription(description: String?) {
-        descriptionLiveData.postValue(description)
+        _uiState.update { it.copy(description = description) }
     }
 
-    fun getLiveDescription(): LiveData<String?> = descriptionLiveData
-
-    fun getMediaInstantMix(owner: LifecycleOwner, media: Child): LiveData<List<Child>?> {
-        instantMix.value = Collections.emptyList()
-        songRepository.getInstantMix(media.id, Constants.SeedType.TRACK, 20).observe(owner) {
-            instantMix.postValue(it)
+    fun clearLiveMedia() {
+        currentSongId = null
+        _uiState.update {
+            it.copy(
+                currentSong = null,
+                currentAlbum = null,
+                currentArtist = null,
+                lyrics = null,
+                lyricsList = null,
+                isLyricsCached = false,
+                description = null
+            )
         }
-        return instantMix
+    }
+
+    fun getMediaInstantMix(media: Child): Flow<List<Child>> {
+        return songRepository.getInstantMix(media.id, Constants.SeedType.TRACK, 20).asFlow()
     }
 
     fun getPlayQueue(): LiveData<PlayQueue?> = queueRepository.getPlayQueue()
 
     fun savePlayQueue(): Boolean {
-        val media = liveMedia.value
+        val media = _uiState.value.currentSong
         val queue = queueRepository.getMedia()
         val ids = queue.map { it.id }
 
@@ -249,38 +265,23 @@ class PlayerBottomSheetViewModel(
         }
     }
 
-    private fun observeCachedLyrics(owner: LifecycleOwner, songId: String) {
-        if (TextUtils.isEmpty(songId)) return
-
-        cachedLyricsSource = lyricsRepository.observeLyrics(songId)
-        cachedLyricsSource?.observe(owner, cachedLyricsObserver)
-    }
-
-    private fun clearCachedLyricsObserver() {
-        cachedLyricsSource?.removeObserver(cachedLyricsObserver)
-        cachedLyricsSource = null
-    }
-
     private fun onCachedLyricsChanged(lyricsCache: LyricsCache?) {
         if (lyricsCache == null) {
-            lyricsCachedLiveData.postValue(false)
+            _uiState.update { it.copy(isLyricsCached = false) }
             return
         }
 
-        lyricsCachedLiveData.postValue(true)
+        _uiState.update { it.copy(isLyricsCached = true) }
 
         if (!TextUtils.isEmpty(lyricsCache.structuredLyrics)) {
             try {
                 val cachedList = gson.fromJson(lyricsCache.structuredLyrics, LyricsList::class.java)
-                lyricsListLiveData.postValue(cachedList)
-                lyricsLiveData.postValue(null)
+                _uiState.update { it.copy(lyricsList = cachedList, lyrics = null) }
             } catch (_: Exception) {
-                lyricsListLiveData.postValue(null)
-                lyricsLiveData.postValue(lyricsCache.lyrics)
+                _uiState.update { it.copy(lyricsList = null, lyrics = lyricsCache.lyrics) }
             }
         } else {
-            lyricsListLiveData.postValue(null)
-            lyricsLiveData.postValue(lyricsCache.lyrics)
+            _uiState.update { it.copy(lyricsList = null, lyrics = lyricsCache.lyrics) }
         }
     }
 
@@ -302,7 +303,7 @@ class PlayerBottomSheetViewModel(
         }
 
         lyricsRepository.insert(lyricsCache)
-        lyricsCachedLiveData.postValue(true)
+        _uiState.update { it.copy(isLyricsCached = true) }
     }
 
     private fun hasStructuredLyrics(lyricsList: LyricsList?): Boolean {
@@ -312,9 +313,9 @@ class PlayerBottomSheetViewModel(
     private fun shouldAutoDownloadLyrics(): Boolean = Preferences.isAutoDownloadLyricsEnabled()
 
     fun downloadCurrentLyrics(): Boolean {
-        val media = liveMedia.value ?: return false
-        val lyricsList = lyricsListLiveData.value
-        val lyrics = lyricsLiveData.value
+        val media = _uiState.value.currentSong ?: return false
+        val lyricsList = _uiState.value.lyricsList
+        val lyrics = _uiState.value.lyrics
 
         if ((lyricsList == null || !hasStructuredLyrics(lyricsList)) && TextUtils.isEmpty(lyrics)) {
             return false
@@ -324,13 +325,9 @@ class PlayerBottomSheetViewModel(
         return true
     }
 
-    fun getLyricsCachedState(): LiveData<Boolean> = lyricsCachedLiveData
-
     fun changeSyncLyricsState() {
-        lyricsSyncState = !lyricsSyncState
+        _uiState.update { it.copy(isLyricsSynced = !it.isLyricsSynced) }
     }
-
-    fun getSyncLyricsState(): Boolean = lyricsSyncState
 
     companion object {
         private const val TAG = "PlayerBottomSheetViewModel"

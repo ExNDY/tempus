@@ -1,24 +1,19 @@
 package com.cappielloantonio.tempo.ui.activity
 
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.Color
-import android.net.ConnectivityManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.View
-import android.view.ViewGroup
-import androidx.activity.EdgeToEdge
 import androidx.activity.SystemBarStyle
-import androidx.core.graphics.Insets
+import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
@@ -27,9 +22,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.cappielloantonio.tempo.App
-import com.cappielloantonio.tempo.BuildConfig
 import com.cappielloantonio.tempo.R
-import com.cappielloantonio.tempo.broadcast.receiver.ConnectivityStatusBroadcastReceiver
 import com.cappielloantonio.tempo.databinding.ActivityMainBinding
 import com.cappielloantonio.tempo.github.utils.UpdateUtil
 import com.cappielloantonio.tempo.navigation.BottomSheetController
@@ -38,9 +31,7 @@ import com.cappielloantonio.tempo.navigation.NavigationController
 import com.cappielloantonio.tempo.navigation.NavigationHelper
 import com.cappielloantonio.tempo.service.MediaManager
 import com.cappielloantonio.tempo.ui.activity.base.BaseActivity
-import com.cappielloantonio.tempo.ui.dialog.ConnectionAlertDialog
 import com.cappielloantonio.tempo.ui.dialog.GithubTempoUpdateDialog
-import com.cappielloantonio.tempo.ui.dialog.ServerUnreachableDialog
 import com.cappielloantonio.tempo.ui.fragment.PlayerBottomSheetFragment
 import com.cappielloantonio.tempo.util.AssetLinkNavigator
 import com.cappielloantonio.tempo.util.AssetLinkUtil
@@ -49,13 +40,15 @@ import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.viewmodel.MainViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.concurrent.ExecutionException
 
 @UnstableApi
 class MainActivity : BaseActivity() {
 
     lateinit var bind: ActivityMainBinding
-    private lateinit var mainViewModel: MainViewModel
+    private val mainViewModel: MainViewModel by viewModel()
     private var bottomSystemBarInset: Int = 0
 
     lateinit var navController: NavController
@@ -66,7 +59,6 @@ class MainActivity : BaseActivity() {
     private var assetLinkNavigator: AssetLinkNavigator? = null
     private var pendingAssetLink: AssetLinkUtil.AssetLink? = null
 
-    private lateinit var connectivityStatusBroadcastReceiver: ConnectivityStatusBroadcastReceiver
     private var pendingDownloadPlaybackIntent: Intent? = null
 
     override fun isEdgeToEdgeEnabled(): Boolean = true
@@ -74,34 +66,28 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { false }
-        EdgeToEdge.enable(
-            this,
-            SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
-            SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
 
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
+        window.isNavigationBarContrastEnforced = false
 
         bind = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bind.root)
         applyEdgeToEdgeInsets()
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         assetLinkNavigator = AssetLinkNavigator(this)
-
-        connectivityStatusBroadcastReceiver = ConnectivityStatusBroadcastReceiver(this)
-        connectivityStatusReceiverManager(true)
 
         isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         init()
-        checkConnectionType()
         getOpenSubsonicExtensions()
         checkTempoUpdate()
+
+        observeNetworkStatus()
 
         maybeSchedulePlaybackIntent(intent)
     }
@@ -171,7 +157,7 @@ class MainActivity : BaseActivity() {
         if (!::bottomSheetBehavior.isInitialized) return
 
         val playerHeaderPeekHeight = resources.getDimensionPixelSize(R.dimen.bottom_sheet_peek_height)
-        val bottomOverlayHeight = if (bind.bottomNavigation.visibility == View.VISIBLE) {
+        val bottomOverlayHeight = if (bind.bottomNavigation.isVisible) {
             bind.bottomNavigation.layoutParams.height
         } else {
             bottomSystemBarInset
@@ -182,20 +168,17 @@ class MainActivity : BaseActivity() {
 
     override fun onStart() {
         super.onStart()
-        pingServer()
         initService()
         consumePendingPlaybackIntent()
     }
 
     override fun onResume() {
         super.onResume()
-        pingServer()
         toggleNavigationDrawerLockOnOrientationChange()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        connectivityStatusReceiverManager(false)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -205,10 +188,12 @@ class MainActivity : BaseActivity() {
         consumePendingPlaybackIntent()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
             collapseBottomSheetDelayed()
         } else {
+            @Suppress("DEPRECATION")
             super.onBackPressed()
         }
     }
@@ -407,7 +392,7 @@ class MainActivity : BaseActivity() {
     }
 
     fun goFromLogin() {
-        setBottomSheetInPeek(mainViewModel.isQueueLoaded)
+        setBottomSheetInPeek(mainViewModel.isQueueLoaded())
         goToHome()
         consumePendingAssetLink()
     }
@@ -461,63 +446,23 @@ class MainActivity : BaseActivity() {
         viewModelStore.clear()
     }
 
-    private fun connectivityStatusReceiverManager(isActive: Boolean) {
-        if (isActive) {
-            val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-            registerReceiver(connectivityStatusBroadcastReceiver, filter)
-        } else {
-            unregisterReceiver(connectivityStatusBroadcastReceiver)
-        }
-    }
+    private fun observeNetworkStatus() {
+        lifecycleScope.launch {
+            mainViewModel.connectionState.collect { state ->
+                bind.offlineModeTextView.isVisible = !state.isNetworkAvailable || !state.isServerAvailable
 
-    private fun pingServer() {
-        if (Preferences.getToken() == null && Preferences.getPassword() == null) return
-
-        if (Preferences.isInUseServerAddressLocal) {
-            mainViewModel.ping().observe(this) { subsonicResponse ->
-                if (subsonicResponse == null) {
-                    Preferences.setServerSwitchableTimer()
-                    Preferences.switchInUseServerAddress()
-                    App.refreshSubsonicClient()
-                    pingServer()
-                    resetView()
-                } else {
-                    Preferences.setOpenSubsonic(subsonicResponse.openSubsonic ?: false)
-                }
-            }
-        } else {
-            if (Preferences.isServerSwitchable()) {
-                Preferences.setServerSwitchableTimer()
-                Preferences.switchInUseServerAddress()
-                App.refreshSubsonicClient()
-                pingServer()
-                resetView()
-            } else {
-                mainViewModel.ping().observe(this) { subsonicResponse ->
-                    if (subsonicResponse == null) {
-                        if (Preferences.showServerUnreachableDialog()) {
-                            val dialog = ServerUnreachableDialog()
-                            dialog.show(supportFragmentManager, null)
-                        }
-                    } else {
-                        Preferences.setOpenSubsonic(subsonicResponse.openSubsonic ?: false)
-                    }
+                if (!state.isNetworkAvailable) {
+                    bind.offlineModeTextView.setText(R.string.no_internet)
+                } else if (!state.isServerAvailable) {
+                    bind.offlineModeTextView.setText(R.string.server_unreachable)
                 }
             }
         }
-    }
-
-    private fun resetView() {
-        resetViewModel()
-        val nc = navigationController.navController
-        val id = nc.currentDestination?.id ?: return
-        nc.popBackStack(id, true)
-        nc.navigate(id)
     }
 
     private fun getOpenSubsonicExtensions() {
         if (Preferences.getToken() != null || Preferences.getPassword() != null) {
-            mainViewModel.openSubsonicExtensions.observe(this) { openSubsonicExtensions ->
+            mainViewModel.getOpenSubsonicExtensions().observe(this) { openSubsonicExtensions ->
                 if (openSubsonicExtensions != null) {
                     Preferences.setOpenSubsonicExtensions(openSubsonicExtensions)
                 }
@@ -526,24 +471,12 @@ class MainActivity : BaseActivity() {
     }
 
     private fun checkTempoUpdate() {
-        if (BuildConfig.FLAVOR == "tempus" && Preferences.isGithubUpdateEnabled() && Preferences.showTempusUpdateDialog()) {
+        if (Preferences.isGithubUpdateEnabled() && Preferences.showTempusUpdateDialog()) {
             mainViewModel.checkTempoUpdate().observe(this) { latestRelease ->
                 if (latestRelease != null && UpdateUtil.showUpdateDialog(latestRelease)) {
                     val dialog = GithubTempoUpdateDialog(latestRelease)
                     dialog.show(supportFragmentManager, null)
                 }
-            }
-        }
-    }
-
-    private fun checkConnectionType() {
-        if (Preferences.isWifiOnly) {
-            val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val networkInfo = connectivityManager.activeNetworkInfo
-
-            if (networkInfo != null && networkInfo.type != ConnectivityManager.TYPE_WIFI) {
-                val dialog = ConnectionAlertDialog()
-                dialog.show(supportFragmentManager, null)
             }
         }
     }

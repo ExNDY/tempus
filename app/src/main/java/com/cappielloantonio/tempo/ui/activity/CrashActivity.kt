@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.EdgeToEdge
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -35,7 +35,7 @@ class CrashActivity : AppCompatActivity() {
     private var _bind: ActivityCrashBinding? = null
     private val bind get() = _bind!!
 
-    var stackTraceFromIntent: String? = null
+    var stackTrace: String? = null
         private set
 
     var configFromIntent: CaocConfig? = null
@@ -48,24 +48,21 @@ class CrashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
-        EdgeToEdge.enable(
-            this,
-            SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
-            SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         DynamicColors.applyToActivityIfAvailable(this)
 
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
+        window.isNavigationBarContrastEnforced = false
 
         _bind = ActivityCrashBinding.inflate(layoutInflater)
         setContentView(bind.root)
         applyEdgeToEdgeInsets()
 
-        stackTraceFromIntent = CustomActivityOnCrash.getStackTraceFromIntent(intent)
+        stackTrace = CustomActivityOnCrash.getStackTraceFromIntent(intent)
         configFromIntent = CustomActivityOnCrash.getConfigFromIntent(intent)
 
         init()

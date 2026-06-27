@@ -1,69 +1,54 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class AlbumCatalogueUiState(
+    val albums: List<AlbumID3> = emptyList(),
+    val isLoading: Boolean = true,
+)
 
 @UnstableApi
 class AlbumCatalogueViewModel(
-    private val subsonicRepository: SubsonicRepository
+    private val subsonicRepository: SubsonicRepository,
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(AlbumCatalogueUiState())
+    val uiState: StateFlow<AlbumCatalogueUiState> = _uiState.asStateFlow()
 
-    private val albumList = MutableLiveData<List<AlbumID3>>(ArrayList())
-    private val loading = MutableLiveData(true)
-
+    private var started = false
     private var page = 0
-    private var status = Status.STOPPED
+    private var isAllLoaded = false
 
-    fun getAlbumList(): LiveData<List<AlbumID3>> = albumList
-    fun getLoadingStatus(): LiveData<Boolean> = loading
+    fun onStart() {
+        if (started) return
+        started = true
+        refresh()
+    }
 
-    fun loadAlbums() {
+    fun refresh() {
         page = 0
-        status = Status.RUNNING
-        albumList.value = ArrayList()
-        loadAlbumsInternal(500)
+        isAllLoaded = false
+        _uiState.value = AlbumCatalogueUiState(isLoading = true)
+        loadNextPage()
     }
 
-    fun stopLoading() {
-        status = Status.STOPPED
-    }
-
-    private fun loadAlbumsInternal(size: Int) {
+    fun loadNextPage() {
+        if (isAllLoaded) return
         viewModelScope.launch {
-            if (status == Status.STOPPED) {
-                loading.postValue(false)
-                return@launch
-            }
-
+            _uiState.update { it.copy(isLoading = true) }
+            val size = 500
             val response = subsonicRepository.getAlbumList2("alphabeticalByName", size, size * page++, null, null)
             val media = response?.albumList2?.albums ?: emptyList()
-
-            if (status == Status.STOPPED) {
-                loading.postValue(false)
-                return@launch
-            }
-
-            val currentList = albumList.value?.toMutableList() ?: mutableListOf()
-            currentList.addAll(media)
-            albumList.postValue(currentList)
-
-            if (media.size == size) {
-                loadAlbumsInternal(size)
-                loading.postValue(true)
-            } else {
-                status = Status.STOPPED
-                loading.postValue(false)
-            }
+            _uiState.update { it.copy(albums = it.albums + media, isLoading = false) }
+            if (media.size < size) isAllLoaded = true
         }
-    }
-
-    private enum class Status {
-        RUNNING, STOPPED
     }
 }

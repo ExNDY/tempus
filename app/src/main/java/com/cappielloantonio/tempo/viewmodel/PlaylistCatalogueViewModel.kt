@@ -1,72 +1,53 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.repository.PlaylistRepository
 import com.cappielloantonio.tempo.subsonic.models.Playlist
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.Preferences
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class PlaylistCatalogueArgs(val type: String = Constants.PLAYLIST_ALL)
+
+data class PlaylistCatalogueUiState(
+    val playlists: List<Playlist> = emptyList(),
+    val isLoading: Boolean = true,
+    val type: String = Constants.PLAYLIST_ALL,
+)
 
 @UnstableApi
 class PlaylistCatalogueViewModel(
-    private val playlistRepository: PlaylistRepository
+    private val playlistRepository: PlaylistRepository,
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(PlaylistCatalogueUiState())
+    val uiState: StateFlow<PlaylistCatalogueUiState> = _uiState.asStateFlow()
+    private var startedType: String? = null
 
-    private var type: String? = null
-    private val sortOrder = MutableLiveData<String>()
-    private val playlistList = MutableLiveData<List<Playlist>?>(null)
-    private val sortedPlaylistList = MediatorLiveData<List<Playlist>>()
-    private var sortedPlaylistSource: LiveData<List<Playlist>>? = null
-
-    init {
-        sortOrder.value = Preferences.getHomeSortPlaylists()
-        updateSortedPlaylistList()
+    fun onStart(args: PlaylistCatalogueArgs) {
+        if (startedType == args.type) return
+        startedType = args.type
+        _uiState.value = PlaylistCatalogueUiState(type = args.type, isLoading = true)
+        refresh()
     }
 
-    fun getPlaylistList(): LiveData<List<Playlist>?> {
-        if (playlistList.value == null) {
-            loadPlaylistList()
-        }
-        return playlistList
-    }
-
-    fun setSortOrder(order: String) {
-        Log.d("TempusLog", "ViewModel setSortOrder called with: $order")
-        Preferences.setHomeSortPlaylists(order)
-        sortOrder.value = order
-        updateSortedPlaylistList()
-    }
-
-    fun getSortedPlaylistList(): LiveData<List<Playlist>> = sortedPlaylistList
-
-    fun setType(type: String?) {
-        this.type = type
-    }
-
-    fun getType(): String? = type
-
-    private fun loadPlaylistList() {
-        val source = playlistRepository.getPlaylists(false, -1)
-        source.observeForever(object : Observer<List<Playlist>> {
-            override fun onChanged(value: List<Playlist>) {
-                playlistList.postValue(value)
-                source.removeObserver(this)
+    fun refresh(sortOrder: String = Preferences.getHomeSortPlaylists()) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            playlistRepository.getSortedPlaylists(sortOrder).asFlow().collectLatest { playlists ->
+                val filtered = when (_uiState.value.type) {
+                    Constants.PLAYLIST_DOWNLOADED -> playlists?.filter { it.coverArtId != null || it.songCount > 0 }
+                    else -> playlists
+                }.orEmpty()
+                _uiState.update { it.copy(playlists = filtered, isLoading = false) }
             }
-        })
-    }
-
-    private fun updateSortedPlaylistList() {
-        val order = sortOrder.value ?: return
-        sortedPlaylistSource?.let { sortedPlaylistList.removeSource(it) }
-        val source = playlistRepository.getSortedPlaylists(order)
-        sortedPlaylistSource = source
-        sortedPlaylistList.addSource(source) { playlists ->
-            sortedPlaylistList.value = playlists
         }
     }
 }

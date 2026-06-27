@@ -1371,8 +1371,8 @@ class SettingsFragment : Fragment() {
 
     private fun launchScan() {
         settingViewModel.launchScan(object : ScanCallback {
-            override fun onError(exception: Exception?) {
-                scanSummary = exception?.message
+            override fun onError(exception: Exception) {
+                scanSummary = exception.message
                 refreshUiState()
             }
 
@@ -1388,8 +1388,8 @@ class SettingsFragment : Fragment() {
 
     private fun getScanStatus() {
         settingViewModel.getScanStatus(object : ScanCallback {
-            override fun onError(exception: Exception?) {
-                scanSummary = exception?.message
+            override fun onError(exception: Exception) {
+                scanSummary = exception.message
                 refreshUiState()
             }
 

@@ -1,59 +1,62 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.cappielloantonio.tempo.repository.PodcastRepository
 import com.cappielloantonio.tempo.subsonic.models.PodcastChannel
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+data class PodcastUiState(
+    val channels: List<PodcastChannel> = emptyList(),
+    val newestEpisodes: List<PodcastEpisode> = emptyList(),
+    val isLoading: Boolean = true
+)
 
 class PodcastViewModel(
     private val podcastRepository: PodcastRepository
 ) : ViewModel() {
+    private var started = false
 
-    private val newestPodcastEpisodes = MutableLiveData<List<PodcastEpisode>?>(null)
-    private val podcastChannels = MutableLiveData<List<PodcastChannel>?>(null)
+    private val _channels = MutableStateFlow<List<PodcastChannel>>(emptyList())
+    private val _newestEpisodes = MutableStateFlow<List<PodcastEpisode>>(emptyList())
+    private val _isLoading = MutableStateFlow(true)
 
-    fun getNewestPodcastEpisodes(): LiveData<List<PodcastEpisode>?> {
-        if (newestPodcastEpisodes.value == null) {
-            loadNewestPodcastEpisodes()
+    val uiState: StateFlow<PodcastUiState> = combine(
+        _channels, _newestEpisodes, _isLoading
+    ) { channels, episodes, loading ->
+        PodcastUiState(channels, episodes, loading)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = PodcastUiState()
+    )
+
+    fun onStart() {
+        if (started) return
+        started = true
+        refresh()
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            loadChannels()
+            loadNewestEpisodes()
+            _isLoading.value = false
         }
-        return newestPodcastEpisodes
     }
 
-    fun getPodcastChannels(): LiveData<List<PodcastChannel>?> {
-        if (podcastChannels.value == null) {
-            loadPodcastChannels()
+    private fun loadChannels() {
+        podcastRepository.getPodcastChannels(false, null).observeForever {
+            _channels.value = it ?: emptyList()
         }
-        return podcastChannels
     }
 
-    fun refreshNewestPodcastEpisodes() {
-        loadNewestPodcastEpisodes()
-    }
-
-    fun refreshPodcastChannels() {
-        loadPodcastChannels()
-    }
-
-    private fun loadNewestPodcastEpisodes() {
-        val source = podcastRepository.getNewestPodcastEpisodes(20)
-        source.observeForever(object : Observer<List<PodcastEpisode>> {
-            override fun onChanged(value: List<PodcastEpisode>) {
-                newestPodcastEpisodes.postValue(value)
-                source.removeObserver(this)
-            }
-        })
-    }
-
-    private fun loadPodcastChannels() {
-        val source = podcastRepository.getPodcastChannels(false, null)
-        source.observeForever(object : Observer<List<PodcastChannel>> {
-            override fun onChanged(value: List<PodcastChannel>) {
-                podcastChannels.postValue(value)
-                source.removeObserver(this)
-            }
-        })
+    private fun loadNewestEpisodes() {
+        podcastRepository.getNewestPodcastEpisodes(20).observeForever {
+            _newestEpisodes.value = it ?: emptyList()
+        }
     }
 }

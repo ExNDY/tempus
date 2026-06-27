@@ -1,98 +1,130 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.interfaces.StarCallback
+import com.cappielloantonio.tempo.repository.AlbumRepository
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.FavoriteRepository
-import com.cappielloantonio.tempo.repository.SongRepository
-import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
-import com.cappielloantonio.tempo.subsonic.models.AlbumID3
-import com.cappielloantonio.tempo.subsonic.models.ArtistID3
-import com.cappielloantonio.tempo.subsonic.models.ArtistInfo2
-import com.cappielloantonio.tempo.subsonic.models.Child
+import com.cappielloantonio.tempo.subsonic.models.*
+import com.cappielloantonio.tempo.util.NetworkUtil
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.*
+
+data class ArtistPageUiState(
+    val artist: ArtistID3? = null,
+    val artistInfo: ArtistInfo2? = null,
+    val topSongs: List<Child> = emptyList(),
+    val albums: Map<String, List<AlbumID3>> = emptyMap(),
+    val isLoading: Boolean = true
+)
 
 @UnstableApi
 class ArtistPageViewModel(
     private val artistRepository: ArtistRepository,
-    private val songRepository: SongRepository,
+    private val albumRepository: AlbumRepository,
     private val favoriteRepository: FavoriteRepository,
-    private val subsonicRepository: SubsonicRepository,
-) : androidx.lifecycle.ViewModel() {
+) : ViewModel() {
 
-    private val artist = MutableLiveData<ArtistID3>()
-    
-    private val mainAlbums = MutableLiveData<List<AlbumID3>>()
-    private val eps = MutableLiveData<List<AlbumID3>>()
-    private val singles = MutableLiveData<List<AlbumID3>>()
-    private val compilations = MutableLiveData<List<AlbumID3>>()
-    private val soundtracks = MutableLiveData<List<AlbumID3>>()
-    private val lives = MutableLiveData<List<AlbumID3>>()
-    private val remixes = MutableLiveData<List<AlbumID3>>()
-    private val appearsOn = MutableLiveData<List<AlbumID3>>()
-    
-    private val topSongList = MutableLiveData<List<Child>>()
-    private val shuffleList = MutableLiveData<List<Child>>()
-    private val instantMixList = MutableLiveData<List<Child>>()
+    private val _artist = MutableStateFlow<ArtistID3?>(null)
+    private val _artistInfo = MutableStateFlow<ArtistInfo2?>(null)
+    private val _topSongs = MutableStateFlow<List<Child>>(emptyList())
+    private val _albums = MutableStateFlow<Map<String, List<AlbumID3>>>(emptyMap())
+    private val _isLoading = MutableStateFlow(true)
+    private var startedArtistId: String? = null
 
-    fun getArtist(): ArtistID3? = artist.value
-    fun getArtistLiveData(): LiveData<ArtistID3> = artist
+    val uiState: StateFlow<ArtistPageUiState> = combine(
+        _artist, _artistInfo, _topSongs, _albums, _isLoading
+    ) { artist, info, songs, albums, loading ->
+        ArtistPageUiState(artist, info, songs, albums, loading)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ArtistPageUiState()
+    )
 
-    fun getMainAlbums(): LiveData<List<AlbumID3>> = mainAlbums
-    fun getEPs(): LiveData<List<AlbumID3>> = eps
-    fun getSingles(): LiveData<List<AlbumID3>> = singles
-    fun getCompilations(): LiveData<List<AlbumID3>> = compilations
-    fun getSoundtracks(): LiveData<List<AlbumID3>> = soundtracks
-    fun getLives(): LiveData<List<AlbumID3>> = lives
-    fun getRemixes(): LiveData<List<AlbumID3>> = remixes
-    fun getAppearsOn(): LiveData<List<AlbumID3>> = appearsOn
-    
-    fun getArtistTopSongList(): LiveData<List<Child>> = topSongList
-    fun getArtistShuffleList(): LiveData<List<Child>> = shuffleList
-    fun getArtistInstantMix(): LiveData<List<Child>> = instantMixList
+    fun onStart(artist: ArtistID3) {
+        if (startedArtistId == artist.id && _artist.value?.id == artist.id) return
+        startedArtistId = artist.id
+        _artist.value = artist
+        loadData(artist)
+    }
 
-    fun setArtist(artist: ArtistID3) {
-        this.artist.value = artist
+    private fun loadData(artist: ArtistID3) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            
+            artistRepository.getArtistInfo(artist.id ?: "").observeForever { _artist.value = it }
+            artistRepository.getArtistFullInfo(artist.id ?: "").observeForever { _artistInfo.value = it }
+            artistRepository.getTopSongs(artist.name ?: "", 20).observeForever { _topSongs.value = it ?: emptyList() }
+            
+            albumRepository.getArtistAlbums(artist.id ?: "").observeForever { albumList ->
+                if (albumList != null) {
+                    val grouped = albumList.groupBy { it.releaseTypes?.firstOrNull() ?: "album" }
+                    _albums.value = grouped
+                }
+                _isLoading.value = false
+            }
+        }
     }
 
     fun setFavorite() {
-        val currentArtist = artist.value ?: return
-        val toStar = currentArtist.starred == null
-        
-        favoriteRepository.star(null, null, currentArtist.id, object : StarCallback {
-            override fun onSuccess() {
-                // Simplified: assuming success for UI update
-                // In reality, we should fetch fresh artist info
+        val currentArtist = _artist.value ?: return
+
+        if (currentArtist.starred != null) {
+            if (NetworkUtil.isOffline()) {
+                removeFavoriteOffline(currentArtist)
+            } else {
+                removeFavoriteOnline(currentArtist)
             }
-            override fun onError() {}
+        } else {
+            if (NetworkUtil.isOffline()) {
+                setFavoriteOffline(currentArtist)
+            } else {
+                setFavoriteOnline(currentArtist)
+            }
+        }
+    }
+
+    private fun removeFavoriteOffline(artist: ArtistID3) {
+        favoriteRepository.starLater(null, null, artist.id, false)
+        _artist.value = artist.apply { starred = null }
+    }
+
+    private fun removeFavoriteOnline(artist: ArtistID3) {
+        val artistId = artist.id ?: return
+        favoriteRepository.unstar(null, null, artistId, object : StarCallback {
+            override fun onSuccess() {
+                _artist.value = artist.apply { starred = null }
+            }
+            override fun onError() {
+                favoriteRepository.starLater(null, null, artistId, false)
+            }
         })
     }
 
-    fun getArtistInfo(id: String): LiveData<ArtistInfo2?> {
-        val result = MutableLiveData<ArtistInfo2?>()
-        viewModelScope.launch {
-            val response = subsonicRepository.getArtistInfo2(id)
-            result.postValue(response?.artistInfo2)
-        }
-        return result
+    private fun setFavoriteOffline(artist: ArtistID3) {
+        favoriteRepository.starLater(null, null, artist.id, true)
+        _artist.value = artist.apply { starred = Date() }
     }
 
-    fun fetchCategorizedAlbums() {
-        val id = artist.value?.id ?: return
-        viewModelScope.launch {
-            val response = subsonicRepository.getArtist(id)
-            val albums = response?.artist?.albums ?: emptyList()
-            
-            // Reconstruct categorization logic from typical Subsonic/MusicBrainz usage
-            // (Note: Original Java logic might have used releaseType or album naming)
-            mainAlbums.postValue(albums) // Simplification
-            
-            // For Discovery / Top Songs
-            val topSongs = subsonicRepository.getTopSongs(artist.value?.name ?: "", 20)
-            topSongList.postValue(topSongs?.topSongs?.songs ?: emptyList())
-        }
+    private fun setFavoriteOnline(artist: ArtistID3) {
+        val artistId = artist.id ?: return
+        favoriteRepository.star(null, null, artistId, object : StarCallback {
+            override fun onSuccess() {
+                _artist.value = artist.apply { starred = Date() }
+            }
+            override fun onError() {
+                favoriteRepository.starLater(null, null, artistId, true)
+            }
+        })
+    }
+
+    fun getArtistInstantMix(): Flow<List<Child>> {
+        val artist = _artist.value ?: return flowOf(emptyList())
+        return artistRepository.getInstantMix(artist, 30).asFlow()
     }
 }

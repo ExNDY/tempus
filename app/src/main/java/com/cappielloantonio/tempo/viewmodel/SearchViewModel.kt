@@ -1,57 +1,68 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.liveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.model.RecentSearch
 import com.cappielloantonio.tempo.repository.SearchingRepository
-import com.cappielloantonio.tempo.subsonic.models.PlaylistWithSongs
-import com.cappielloantonio.tempo.subsonic.models.SearchResult2
-import com.cappielloantonio.tempo.subsonic.models.SearchResult3
-import dev.icerock.moko.mvvm.viewmodel.ViewModel
-import kotlinx.coroutines.Dispatchers
+import com.cappielloantonio.tempo.subsonic.models.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+data class SearchUiState(
+    val results: SearchResult3? = null,
+    val recentSearches: List<String> = emptyList(),
+    val suggestions: List<String> = emptyList(),
+    val isLoading: Boolean = false
+)
 
 @UnstableApi
 class SearchViewModel(
     private val searchingRepository: SearchingRepository
 ) : ViewModel() {
-    private var currentQuery: String = ""
+    private val _uiState = MutableStateFlow(SearchUiState())
+    val uiState = _uiState.asStateFlow()
 
-    fun getQuery(): String = currentQuery
+    init {
+        loadRecentSearches()
+    }
 
-    fun setQuery(query: String) {
-        currentQuery = query
+    private fun loadRecentSearches() {
+        viewModelScope.launch {
+            val recents = searchingRepository.getRecentSearchSuggestion()
+            _uiState.update { it.copy(recentSearches = recents) }
+        }
+    }
 
-        if (query.isNotEmpty()) {
+    fun search(query: String) {
+        if (query.length < 3) {
+            _uiState.update { it.copy(results = null, isLoading = false) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val result = searchingRepository.search3Result(query)
+            _uiState.update { it.copy(results = result, isLoading = false) }
+            
             insertNewSearch(query)
         }
     }
 
-    fun search2(title: String): LiveData<SearchResult2?> = liveData(Dispatchers.IO) {
-        emit(searchingRepository.search2Result(title))
+    fun getSuggestions(query: String) {
+        viewModelScope.launch {
+            val suggestions = searchingRepository.searchSuggestions(query)
+            _uiState.update { it.copy(suggestions = suggestions) }
+        }
     }
 
-    fun search3(title: String): LiveData<SearchResult3?> = liveData(Dispatchers.IO) {
-        emit(searchingRepository.search3Result(title))
-    }
-
-    fun searchAllSongs(title: String): LiveData<PlaylistWithSongs> = liveData(Dispatchers.IO) {
-        emit(searchingRepository.searchAllSongs(title))
-    }
-
-    fun insertNewSearch(search: String) {
+    private fun insertNewSearch(search: String) {
         searchingRepository.insert(RecentSearch(search, System.currentTimeMillis() / 1000L))
+        loadRecentSearches()
     }
 
     fun deleteRecentSearch(search: String) {
         searchingRepository.delete(RecentSearch(search, 0))
-    }
-
-    fun getSearchSuggestion(query: String): LiveData<List<String>> = liveData(Dispatchers.IO) {
-        emit(searchingRepository.searchSuggestions(query))
-    }
-
-    fun getRecentSearchSuggestion(): List<String> {
-        return ArrayList(searchingRepository.getRecentSearchSuggestion())
+        loadRecentSearches()
     }
 }

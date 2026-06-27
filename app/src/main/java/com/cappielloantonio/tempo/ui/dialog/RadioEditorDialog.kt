@@ -18,7 +18,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.databinding.DialogRadioEditorBinding
@@ -417,10 +416,12 @@ class RadioEditorDialog(private val radioCallback: RadioCallback?) : DialogFragm
 
             val coverUrl = station.favicon
             if (!coverUrl.isNullOrEmpty()) {
-                Glide.with(holder.itemView.context)
-                    .load(coverUrl)
-                    .apply(CustomGlideRequest.createRequestOptions(holder.itemView.context, coverUrl, CustomGlideRequest.ResourceType.Radio))
-                    .into(holder.binding.stationCoverImageView)
+                CustomGlideRequest.loadInto(
+                    imageView = holder.binding.stationCoverImageView,
+                    data = coverUrl,
+                    cacheKey = coverUrl,
+                    type = CustomGlideRequest.ResourceType.Radio,
+                )
             } else {
                 holder.binding.stationCoverImageView.setImageDrawable(null)
             }

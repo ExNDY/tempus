@@ -8,70 +8,59 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.annotation.OptIn
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.equalizer.EqualizerManager
 import com.cappielloantonio.tempo.service.BaseMediaService
 import com.cappielloantonio.tempo.service.MediaService
 import com.cappielloantonio.tempo.ui.activity.MainActivity
+import com.cappielloantonio.tempo.ui.equalizer.EqualizerBandUiModel
+import com.cappielloantonio.tempo.ui.equalizer.EqualizerScreen
+import com.cappielloantonio.tempo.ui.equalizer.EqualizerUiState
+import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Preferences
-import com.google.android.material.appbar.MaterialToolbar
 
 @UnstableApi
 class EqualizerFragment : Fragment() {
 
     private lateinit var activity: MainActivity
-    private lateinit var root: View
-    private lateinit var settingsToolbar: MaterialToolbar
     private var equalizerManager: EqualizerManager? = null
-    private lateinit var eqBandsContainer: LinearLayout
-    private lateinit var eqSwitch: Switch
-    private lateinit var resetButton: Button
-    private lateinit var safeSpace: Space
-    private val bandSeekBars = mutableListOf<SeekBar>()
     private var receiverRegistered = false
+    private val _uiState = mutableStateOf(EqualizerUiState())
 
-    @OptIn(UnstableApi::class)
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = requireActivity() as MainActivity
     }
 
-
-
     private val equalizerUpdatedReceiver = object : BroadcastReceiver() {
-        @OptIn(UnstableApi::class)
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == BaseMediaService.ACTION_EQUALIZER_UPDATED) {
-                initUI()
-                restoreEqualizerPreferences()
+                updateUiStateFromManager()
             }
         }
     }
 
     private val connection = object : ServiceConnection {
-        @OptIn(UnstableApi::class)
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as BaseMediaService.LocalBinder
             equalizerManager = binder.getEqualizerManager()
-            initUI()
-            restoreEqualizerPreferences()
+            updateUiStateFromManager()
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             equalizerManager = null
+            _uiState.value = _uiState.value.copy(isSupported = false)
         }
     }
 
-    @OptIn(UnstableApi::class)
     override fun onStart() {
         super.onStart()
         Intent(requireContext(), MediaService::class.java).also { intent ->
@@ -89,7 +78,6 @@ class EqualizerFragment : Fragment() {
         }
     }
 
-    @OptIn(UnstableApi::class)
     override fun onStop() {
         super.onStop()
         requireActivity().unbindService(connection)
@@ -97,200 +85,102 @@ class EqualizerFragment : Fragment() {
         if (receiverRegistered) {
             try {
                 requireContext().unregisterReceiver(equalizerUpdatedReceiver)
-            } catch (_: Exception) {
-                // ignore if not registered
-            }
+            } catch (_: Exception) {}
             receiverRegistered = false
         }
-
-        activity.setBottomSheetVisibility(true);
+        activity.setBottomSheetVisibility(true)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        root = inflater.inflate(R.layout.fragment_equalizer, container, false)
-        eqSwitch = root.findViewById(R.id.equalizer_switch)
-        eqSwitch.isChecked = Preferences.isEqualizerEnabled()
-        eqSwitch.jumpDrawablesToCurrentState()
-
-        initAppBar()
-
-        return root
+        return ComposeView(requireContext()).apply {
+            setContent {
+                TempusTheme {
+                    val state by _uiState
+                    EqualizerScreen(
+                        uiState = state,
+                        onEnabledChange = { enabled ->
+                            equalizerManager?.setEnabled(enabled)
+                            Preferences.setEqualizerEnabled(enabled)
+                            _uiState.value = _uiState.value.copy(isEnabled = enabled)
+                        },
+                        onBandLevelChange = { bandId, level ->
+                            equalizerManager?.setBandLevel(bandId, level.toShort())
+                            updateBandInState(bandId, level)
+                        },
+                        onBandLevelChangeFinished = { bandId, level ->
+                            updateBandInState(bandId, level)
+                            saveBandLevelsToPreferences()
+                        },
+                        onResetClick = {
+                            resetEqualizer()
+                        },
+                        onNavigateBack = {
+                            activity.navController.navigateUp()
+                        }
+                    )
+                }
+            }
+        }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        eqBandsContainer = view.findViewById(R.id.eq_bands_container)
-        resetButton = view.findViewById(R.id.equalizer_reset_button)
-        safeSpace = view.findViewById(R.id.equalizer_bottom_space)
-    }
-
-    private fun initUI() {
+    private fun updateUiStateFromManager() {
         val manager = equalizerManager
-        val notSupportedView = view?.findViewById<LinearLayout>(R.id.equalizer_managed_externally_container)
-        val switchRow = view?.findViewById<View>(R.id.equalizer_switch_row)
-
         if (manager == null || manager.getNumberOfBands().toInt() == 0) {
-            switchRow?.visibility = View.GONE
-            resetButton.visibility = View.GONE
-            eqBandsContainer.visibility = View.GONE
-            safeSpace.visibility = View.GONE
-            notSupportedView?.visibility = View.VISIBLE
+            _uiState.value = _uiState.value.copy(isSupported = false)
             return
         }
 
-        notSupportedView?.visibility = View.GONE
-        switchRow?.visibility = View.VISIBLE
-        resetButton.visibility = View.VISIBLE
-        eqBandsContainer.visibility = View.VISIBLE
-        safeSpace.visibility = View.VISIBLE
+        val bandsCount = manager.getNumberOfBands()
+        val range = manager.getBandLevelRange() ?: shortArrayOf(-1500, 1500)
+        val isEnabled = Preferences.isEqualizerEnabled()
+        manager.setEnabled(isEnabled)
 
-        eqSwitch.setOnCheckedChangeListener(null)
-        updateUiEnabledState(eqSwitch.isChecked)
-        eqSwitch.setOnCheckedChangeListener { _, isChecked ->
-            manager.setEnabled(isChecked)
-            Preferences.setEqualizerEnabled(isChecked)
-            updateUiEnabledState(isChecked)
+        val savedLevels = Preferences.getEqualizerBandLevels(bandsCount)
+        val bandModels = mutableListOf<EqualizerBandUiModel>()
+
+        for (i in 0 until bandsCount) {
+            val bandId = i.toShort()
+            val freq = manager.getCenterFreq(bandId) ?: 0
+            val level = savedLevels.getOrNull(i) ?: manager.getBandLevel(bandId) ?: 0
+            manager.setBandLevel(bandId, level)
+            bandModels.add(EqualizerBandUiModel(bandId, freq, level.toInt()))
         }
 
-        createBandSliders()
-
-        resetButton.setOnClickListener {
-            resetEqualizer()
-            saveBandLevelsToPreferences()
-        }
+        _uiState.value = EqualizerUiState(
+            isEnabled = isEnabled,
+            bands = bandModels,
+            isSupported = true,
+            minLevel = range[0].toInt(),
+            maxLevel = range[1].toInt()
+        )
     }
 
-    private fun updateUiEnabledState(isEnabled: Boolean) {
-        resetButton.isEnabled = isEnabled
-        bandSeekBars.forEach { it.isEnabled = isEnabled }
-    }
-
-    private fun formatDb(value: Int): String = if (value > 0) "+$value dB" else "$value dB"
-
-    private fun createBandSliders() {
-        val manager = equalizerManager ?: return
-        eqBandsContainer.removeAllViews()
-        bandSeekBars.clear()
-        val bands = manager.getNumberOfBands()
-        val bandLevelRange = manager.getBandLevelRange() ?: shortArrayOf(-1500, 1500)
-        val minLevelDb = bandLevelRange[0] / 100
-        val maxLevelDb = bandLevelRange[1] / 100
-
-        val savedLevels = Preferences.getEqualizerBandLevels(bands)
-        for (i in 0 until bands) {
-            val band = i.toShort()
-            val freq = manager.getCenterFreq(band) ?: 0
-
-            val row = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    val topBottomMarginDp = 16
-                    topMargin = topBottomMarginDp.dpToPx(context)
-                    bottomMargin = topBottomMarginDp.dpToPx(context)
-                }
-                setPadding(0, 8, 0, 8)
-            }
-
-            val freqLabel = TextView(requireContext(), null, 0, R.style.LabelSmall).apply {
-                text = if (freq >= 1000) {
-                    if (freq % 1000 == 0) {
-                        "${freq / 1000} kHz"
-                    } else {
-                        String.format("%.1f kHz", freq / 1000f)
-                    }
-                } else {
-                    "$freq Hz"
-                }
-                gravity = Gravity.START
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f)
-            }
-            row.addView(freqLabel)
-
-            val initialLevelDb = (savedLevels.getOrNull(i) ?: (manager.getBandLevel(band) ?: 0)) / 100
-            val dbLabel = TextView(requireContext(), null, 0, R.style.LabelSmall).apply {
-                text = formatDb(initialLevelDb)
-                setPadding(12, 0, 0, 0)
-                gravity = Gravity.END
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f)
-            }
-
-            val seekBar = SeekBar(requireContext()).apply {
-                max = maxLevelDb - minLevelDb
-                progress = initialLevelDb - minLevelDb
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 6f)
-                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                        val thisLevelDb = progress + minLevelDb
-                        if (fromUser) {
-                            manager.setBandLevel(band, (thisLevelDb * 100).toShort())
-                            saveBandLevelsToPreferences()
-                        }
-                        dbLabel.text = formatDb(thisLevelDb)
-                    }
-
-                    override fun onStartTrackingTouch(seekBar: SeekBar) {}
-                    override fun onStopTrackingTouch(seekBar: SeekBar) {}
-                })
-            }
-            bandSeekBars.add(seekBar)
-            row.addView(seekBar)
-            row.addView(dbLabel)
-            eqBandsContainer.addView(row)
+    private fun updateBandInState(bandId: Short, level: Int) {
+        val currentBands = _uiState.value.bands
+        val newBands = currentBands.map {
+            if (it.id == bandId) it.copy(level = level) else it
         }
+        _uiState.value = _uiState.value.copy(bands = newBands)
     }
 
     private fun resetEqualizer() {
         val manager = equalizerManager ?: return
-        val bands = manager.getNumberOfBands()
-        val bandLevelRange = manager.getBandLevelRange() ?: shortArrayOf(-1500, 1500)
-        val minLevelDb = bandLevelRange[0] / 100
-        val midLevelDb = 0
+        val bandsCount = manager.getNumberOfBands()
 
-        for (i in 0 until bands) {
-            manager.setBandLevel(i.toShort(), (0).toShort())
-            bandSeekBars.getOrNull(i)?.progress = midLevelDb - minLevelDb
+        val newBands = _uiState.value.bands.map {
+            manager.setBandLevel(it.id, 0.toShort())
+            it.copy(level = 0)
         }
-        Preferences.setEqualizerBandLevels(ShortArray(bands.toInt()))
+
+        Preferences.setEqualizerBandLevels(ShortArray(bandsCount.toInt()) { 0 })
+        _uiState.value = _uiState.value.copy(bands = newBands)
     }
 
     private fun saveBandLevelsToPreferences() {
-        val manager = equalizerManager ?: return
-        val bands = manager.getNumberOfBands()
-        val levels = ShortArray(bands.toInt()) { i -> manager.getBandLevel(i.toShort()) ?: 0 }
+        val levels = _uiState.value.bands.map { it.level.toShort() }.toShortArray()
         Preferences.setEqualizerBandLevels(levels)
     }
-
-    private fun restoreEqualizerPreferences() {
-        val manager = equalizerManager ?: return
-        eqSwitch.isChecked = Preferences.isEqualizerEnabled()
-        updateUiEnabledState(eqSwitch.isChecked)
-
-        val bands = manager.getNumberOfBands()
-        val bandLevelRange = manager.getBandLevelRange() ?: shortArrayOf(-1500, 1500)
-        val minLevelDb = bandLevelRange[0] / 100
-
-        val savedLevels = Preferences.getEqualizerBandLevels(bands)
-        for (i in 0 until bands) {
-            val savedDb = savedLevels[i] / 100
-            manager.setBandLevel(i.toShort(), (savedDb * 100).toShort())
-            bandSeekBars.getOrNull(i)?.progress = savedDb - minLevelDb
-        }
-    }
-
-    private fun initAppBar() {
-        settingsToolbar = root.findViewById(R.id.equalizer_toolbar)
-        settingsToolbar.setNavigationOnClickListener { v ->
-            activity.navController.navigateUp()
-        }
-    }
-
 }
-
-private fun Int.dpToPx(context: Context): Int =
-    (this * context.resources.displayMetrics.density).toInt()

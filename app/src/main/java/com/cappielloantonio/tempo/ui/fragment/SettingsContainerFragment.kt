@@ -35,6 +35,7 @@ import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.helper.ThemeHelper
 import com.cappielloantonio.tempo.interfaces.DialogClickCallback
 import com.cappielloantonio.tempo.interfaces.ScanCallback
+import com.cappielloantonio.tempo.service.BaseMediaService
 import com.cappielloantonio.tempo.service.DownloaderService
 import com.cappielloantonio.tempo.service.MediaService
 import com.cappielloantonio.tempo.ui.activity.MainActivity
@@ -51,7 +52,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
     private lateinit var directoryPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var equalizerResultLauncher: ActivityResultLauncher<Intent>
 
-    private var mediaServiceBinder: MediaService.LocalBinder? = null
+    private var mediaServiceBinder: BaseMediaService.LocalBinder? = null
     private var isServiceBound = false
 
     private val expandedCategories = mutableSetOf<String>()
@@ -339,7 +340,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
         }
         networkPingTimeoutBase.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
             val input = newValue as? String
-            !input.isNullOrEmpty()
+            input?.isNotEmpty() == true
         }
     }
 
@@ -588,7 +589,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            mediaServiceBinder = service as MediaService.LocalBinder
+            mediaServiceBinder = service as? BaseMediaService.LocalBinder
             isServiceBound = true
             checkEqualizerBands()
             applyAccordionState()
@@ -602,7 +603,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
 
     private fun bindMediaService() {
         val intent = Intent(requireActivity(), MediaService::class.java).apply {
-            action = MediaService.ACTION_BIND_EQUALIZER
+            action = BaseMediaService.ACTION_BIND_EQUALIZER
         }
         requireActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         isServiceBound = true
@@ -610,7 +611,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
 
     private fun checkEqualizerBands() {
         mediaServiceBinder?.let { binder ->
-            val numBands = binder.equalizerManager.numberOfBands
+            val numBands = binder.getEqualizerManager().getNumberOfBands()
             findPreference<Preference>("app_equalizer")?.isVisible = numBands > 0
         }
     }
@@ -622,7 +623,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
             if (newValue is Int) {
                 Preferences.setLoudnessPreamp(newValue.toFloat())
                 if (isServiceBound) {
-                    mediaServiceBinder?.player?.let { player ->
+                    mediaServiceBinder?.getPlayer()?.let { player ->
                         ReplayGainUtil.reapplyCurrentTrackGain(player)
                     }
                 }
@@ -642,7 +643,7 @@ class SettingsContainerFragment : PreferenceFragmentCompat() {
             Preferences.setSelectedEqualizer(newValStr)
 
             val intent = Intent(requireContext().applicationContext, MediaService::class.java).apply {
-                action = MediaService.ACTION_RELOAD_EQUALIZER
+                action = BaseMediaService.ACTION_RELOAD_EQUALIZER
             }
             ContextCompat.startForegroundService(requireContext().applicationContext, intent)
             true

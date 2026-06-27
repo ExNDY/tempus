@@ -1,8 +1,8 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
 import com.cappielloantonio.tempo.repository.AlbumRepository
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.DirectoryRepository
@@ -11,9 +11,23 @@ import com.cappielloantonio.tempo.repository.PlaylistRepository
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Genre
-import com.cappielloantonio.tempo.subsonic.models.Indexes
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder
 import com.cappielloantonio.tempo.subsonic.models.Playlist
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class LibraryUiState(
+    val musicFolders: List<MusicFolder> = emptyList(),
+    val albums: List<AlbumID3> = emptyList(),
+    val artists: List<ArtistID3> = emptyList(),
+    val genres: List<Genre> = emptyList(),
+    val playlists: List<Playlist> = emptyList(),
+    val isLoading: Boolean = true,
+)
 
 class LibraryViewModel(
     private val directoryRepository: DirectoryRepository,
@@ -23,74 +37,68 @@ class LibraryViewModel(
     private val playlistRepository: PlaylistRepository,
 ) : ViewModel() {
 
-    private val musicFolders = MutableLiveData<List<MusicFolder>?>(null)
-    private val indexes = MutableLiveData<Indexes?>(null)
-    private val playlistSample = MutableLiveData<List<Playlist>?>(null)
-    private val sampleAlbum = MutableLiveData<List<AlbumID3>?>(null)
-    private val sampleArtist = MutableLiveData<List<ArtistID3>?>(null)
-    private val sampleGenres = MutableLiveData<List<Genre>?>(null)
+    private val _uiState = MutableStateFlow(LibraryUiState())
+    val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-    fun getMusicFolders(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<MusicFolder>?> {
-        if (musicFolders.value == null) {
-            directoryRepository.getMusicFolders().observe(owner) { musicFolders.postValue(it) }
+    private var started = false
+
+    fun onStart() {
+        if (started) return
+        started = true
+        refreshAll()
+    }
+
+    fun refreshAll() {
+        _uiState.update { it.copy(isLoading = true) }
+        refreshMusicFolders()
+        refreshAlbumSample()
+        refreshArtistSample()
+        refreshGenreSample()
+        refreshPlaylistSample(markLoadingDone = true)
+    }
+
+    fun refreshAlbumSample() {
+        viewModelScope.launch {
+            albumRepository.getAlbums("random", 10, null, null).asFlow().collectLatest { albums ->
+                _uiState.update { it.copy(albums = albums ?: emptyList(), isLoading = false) }
+            }
         }
-
-        return musicFolders
     }
 
-    fun getIndexes(owner: androidx.lifecycle.LifecycleOwner): LiveData<Indexes?> {
-        if (indexes.value == null) {
-            directoryRepository.getIndexes("0", null).observe(owner) { indexes.postValue(it) }
+    fun refreshArtistSample() {
+        viewModelScope.launch {
+            artistRepository.getArtists(true, 10).asFlow().collectLatest { artists ->
+                _uiState.update { it.copy(artists = artists ?: emptyList(), isLoading = false) }
+            }
         }
-
-        return indexes
     }
 
-    fun getAlbumSample(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<AlbumID3>?> {
-        if (sampleAlbum.value == null) {
-            albumRepository.getAlbums("random", 10, null, null).observe(owner) { sampleAlbum.postValue(it) }
+    fun refreshGenreSample() {
+        viewModelScope.launch {
+            genreRepository.getGenres(true, 15).asFlow().collectLatest { genres ->
+                _uiState.update { it.copy(genres = genres ?: emptyList(), isLoading = false) }
+            }
         }
-
-        return sampleAlbum
     }
 
-    fun getArtistSample(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<ArtistID3>?> {
-        if (sampleArtist.value == null) {
-            artistRepository.getArtists(true, 10).observe(owner) { sampleArtist.postValue(it) }
+    fun refreshPlaylistSample(markLoadingDone: Boolean = false) {
+        viewModelScope.launch {
+            playlistRepository.getPlaylists(true, 10).asFlow().collectLatest { playlists ->
+                _uiState.update {
+                    it.copy(
+                        playlists = playlists ?: emptyList(),
+                        isLoading = if (markLoadingDone) false else it.isLoading,
+                    )
+                }
+            }
         }
-
-        return sampleArtist
     }
 
-    fun getGenreSample(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Genre>?> {
-        if (sampleGenres.value == null) {
-            genreRepository.getGenres(true, 15).observe(owner) { sampleGenres.postValue(it) }
+    private fun refreshMusicFolders() {
+        viewModelScope.launch {
+            directoryRepository.getMusicFolders().asFlow().collectLatest { folders ->
+                _uiState.update { it.copy(musicFolders = folders ?: emptyList(), isLoading = false) }
+            }
         }
-
-        return sampleGenres
-    }
-
-    fun getPlaylistSample(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Playlist>?> {
-        if (playlistSample.value == null) {
-            playlistRepository.getPlaylists(true, 10).observe(owner) { playlistSample.postValue(it) }
-        }
-
-        return playlistSample
-    }
-
-    fun refreshAlbumSample(owner: androidx.lifecycle.LifecycleOwner) {
-        albumRepository.getAlbums("random", 10, null, null).observe(owner) { sampleAlbum.postValue(it) }
-    }
-
-    fun refreshArtistSample(owner: androidx.lifecycle.LifecycleOwner) {
-        artistRepository.getArtists(true, 10).observe(owner) { sampleArtist.postValue(it) }
-    }
-
-    fun refreshGenreSample(owner: androidx.lifecycle.LifecycleOwner) {
-        genreRepository.getGenres(true, 15).observe(owner) { sampleGenres.postValue(it) }
-    }
-
-    fun refreshPlaylistSample(owner: androidx.lifecycle.LifecycleOwner) {
-        playlistRepository.getPlaylists(true, 10).observe(owner) { playlistSample.postValue(it) }
     }
 }

@@ -8,8 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.signature.ObjectKey;
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.ItemHomeInternetRadioStationBinding;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
@@ -61,12 +59,8 @@ public class InternetRadioStationAdapter extends RecyclerView.Adapter<InternetRa
         if (station.getId() != null) {
             File localCover = RadioCoverArtDownloader.getLocalCoverFile(station.getId());
             if (localCover.exists()) {
-                Glide.with(holder.itemView.getContext())
-                        .load(localCover)
-                        .apply(CustomGlideRequest.createRequestOptions(holder.itemView.getContext(), station.getId(), CustomGlideRequest.ResourceType.Radio))
-                        // Cache-bust by file mtime so an edited cover (same path) refreshes.
-                        .signature(new ObjectKey(localCover.lastModified()))
-                        .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+                CustomGlideRequest.Builder
+                        .fromLocalFile(holder.itemView.getContext(), localCover, station.getId(), CustomGlideRequest.ResourceType.Radio)
                         .into(holder.item.internetRadioStationCoverImageView);
                 return;
             }
@@ -82,18 +76,19 @@ public class InternetRadioStationAdapter extends RecyclerView.Adapter<InternetRa
 
         String homePageUrl = station.getHomePageUrl();
         if (homePageUrl != null && !homePageUrl.isEmpty() && MusicUtil.isImageUrl(homePageUrl)) {
-            Glide.with(holder.itemView.getContext())
-                    .load(homePageUrl)
-                    .apply(CustomGlideRequest.createRequestOptions(holder.itemView.getContext(), homePageUrl, CustomGlideRequest.ResourceType.Radio))
-                    .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+            CustomGlideRequest.Builder
+                    .fromData(holder.itemView.getContext(), homePageUrl, homePageUrl, CustomGlideRequest.ResourceType.Radio)
                     .into(holder.item.internetRadioStationCoverImageView);
             return;
         }
 
-        Glide.with(holder.itemView.getContext())
-                .load((String) null)
-                .apply(CustomGlideRequest.createRequestOptions(holder.itemView.getContext(), null, CustomGlideRequest.ResourceType.Radio))
-                .into(holder.item.internetRadioStationCoverImageView);
+        CustomGlideRequest.loadInto(
+                holder.item.internetRadioStationCoverImageView,
+                null,
+                null,
+                CustomGlideRequest.ResourceType.Radio,
+                false
+        );
     }
 
     @Override
