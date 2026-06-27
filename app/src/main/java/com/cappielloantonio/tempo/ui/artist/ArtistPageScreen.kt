@@ -111,6 +111,17 @@ fun ArtistPageScreen(
                         onLongClick = { onSongLongClick(song) }
                     )
                 }
+            } else {
+                item {
+                    Text(
+                        text = stringResource(R.string.artist_page_title_most_streamed_song_unavailable),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             uiState.albums.forEach { (category, albums) ->
