@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
@@ -14,13 +15,13 @@ import androidx.navigation.fragment.findNavController
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getPlaylistCatalogueViewModel
 import com.cappielloantonio.tempo.di.getViewModel
-import com.cappielloantonio.tempo.interfaces.PodcastCallback
-import com.cappielloantonio.tempo.ui.components.CatalogueScreen
+import com.cappielloantonio.tempo.interfaces.PlaylistCallback
 import com.cappielloantonio.tempo.ui.dialog.PlaylistEditorDialog
+import com.cappielloantonio.tempo.ui.playlist.PlaylistCatalogueScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
+import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.viewmodel.PlaylistCatalogueArgs
-import com.cappielloantonio.tempo.subsonic.models.Child
 
 @UnstableApi
 class PlaylistCatalogueFragment : Fragment() {
@@ -39,24 +40,55 @@ class PlaylistCatalogueFragment : Fragment() {
                 TempusTheme {
                     val viewModel = getViewModel { getPlaylistCatalogueViewModel().apply { onStart(PlaylistCatalogueArgs(type)) } }
                     val uiState by viewModel.uiState.collectAsState()
-                    CatalogueScreen(
-                        items = uiState.playlists,
+
+                    DisposableEffect(viewModel) {
+                        parentFragmentManager.setFragmentResultListener(
+                            Constants.REQUEST_REFRESH_HOME_PLAYLISTS,
+                            viewLifecycleOwner,
+                        ) { _, _ ->
+                            viewModel.refresh()
+                        }
+
+                        onDispose {
+                            parentFragmentManager.clearFragmentResultListener(
+                                Constants.REQUEST_REFRESH_HOME_PLAYLISTS
+                            )
+                        }
+                    }
+
+                    val refreshPlaylistCallback = object : PlaylistCallback {
+                        override fun onDismiss() {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_PLAYLISTS,
+                                Bundle.EMPTY,
+                            )
+                        }
+                    }
+
+                    PlaylistCatalogueScreen(
+                        uiState = uiState,
                         title = getString(R.string.playlist_catalogue_title),
-                        isLoading = uiState.isLoading,
-                        onItemClick = { playlist ->
+                        onPlaylistClick = { playlist ->
                             findNavController().navigate(
                                 R.id.playlistPageFragment,
                                 Bundle().apply { putSerializable(Constants.PLAYLIST_OBJECT, playlist) }
                             )
                         },
-                        onNavigateBack = { findNavController().navigateUp() },
-                        onSearchClick = {
-                            PlaylistEditorDialog(null).apply {
+                        onPlaylistLongClick = { playlist ->
+                            findNavController().navigate(
+                                R.id.playlistBottomSheetDialog,
+                                Bundle().apply { putSerializable(Constants.PLAYLIST_OBJECT, playlist) },
+                            )
+                        },
+                        onCreatePlaylist = {
+                            PlaylistEditorDialog(refreshPlaylistCallback).apply {
                                 arguments = Bundle().apply {
                                     putSerializable(Constants.TRACKS_OBJECT, ArrayList<Child>())
                                 }
                             }.show(parentFragmentManager, null)
                         },
+                        onRefresh = viewModel::refresh,
+                        onNavigateBack = { findNavController().navigateUp() },
                     )
                 }
             }

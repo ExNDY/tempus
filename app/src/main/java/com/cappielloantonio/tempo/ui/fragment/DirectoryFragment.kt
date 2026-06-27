@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -31,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
@@ -60,29 +63,45 @@ class DirectoryFragment : Fragment() {
     ): View {
         activity = requireActivity() as MainActivity
         val directoryId = arguments?.getString(Constants.MUSIC_DIRECTORY_ID) ?: return ComposeView(requireContext())
-        val directoryName = arguments?.getString("MUSIC_DIRECTORY_NAME")
+        val directoryName = arguments?.getString(Constants.MUSIC_DIRECTORY_NAME)
+        val breadcrumb = arguments?.getString(Constants.MUSIC_DIRECTORY_BREADCRUMB)
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 TempusTheme {
                     val viewModel = getViewModel { getDirectoryViewModel().apply { onStart(directoryId) } }
                     val uiState by viewModel.uiState.collectAsState()
+                    val currentTitle = directoryName ?: uiState.directory?.name ?: getString(R.string.settings_music_directory)
+                    val currentBreadcrumb = breadcrumb ?: currentTitle
+                    val playableChildren = uiState.children.filter { !it.isDir }
+
                     DirectoryScreen(
-                        title = directoryName ?: uiState.directory?.name ?: getString(R.string.settings_music_directory),
+                        title = currentTitle,
+                        breadcrumb = currentBreadcrumb,
                         children = uiState.children,
                         isLoading = uiState.isLoading,
                         onNavigateBack = { findNavController().navigateUp() },
-                        onItemClick = { child, index ->
+                        onItemClick = { child ->
                             if (child.isDir) {
                                 findNavController().navigate(
                                     R.id.directoryFragment,
                                     Bundle().apply {
                                         putString(Constants.MUSIC_DIRECTORY_ID, child.id)
-                                        putString("MUSIC_DIRECTORY_NAME", child.title)
+                                        putString(Constants.MUSIC_DIRECTORY_NAME, child.title)
+                                        putString(
+                                            Constants.MUSIC_DIRECTORY_BREADCRUMB,
+                                            listOf(currentBreadcrumb, child.title.orEmpty())
+                                                .filter { it.isNotBlank() }
+                                                .joinToString(" / ")
+                                        )
                                     }
                                 )
                             } else {
-                                MediaManager.startQueue(mediaBrowserListenableFuture, ArrayList(uiState.children.filter { !it.isDir }), uiState.children.filter { !it.isDir }.indexOfFirst { it.id == child.id })
+                                MediaManager.startQueue(
+                                    mediaBrowserListenableFuture,
+                                    ArrayList(playableChildren),
+                                    playableChildren.indexOfFirst { it.id == child.id }
+                                )
                                 activity.setBottomSheetInPeek(true)
                             }
                         },
@@ -118,10 +137,11 @@ class DirectoryFragment : Fragment() {
 @Composable
 private fun DirectoryScreen(
     title: String,
+    breadcrumb: String,
     children: List<Child>,
     isLoading: Boolean,
     onNavigateBack: () -> Unit,
-    onItemClick: (Child, Int) -> Unit,
+    onItemClick: (Child) -> Unit,
     onItemLongClick: (Child) -> Unit,
 ) {
     Scaffold(
@@ -141,11 +161,23 @@ private fun DirectoryScreen(
                 CircularProgressIndicator()
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues()
+            ) {
+                item {
+                    Text(
+                        text = breadcrumb,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 itemsIndexed(children, key = { _, child -> child.id }) { index, child ->
                     ListItem(
                         modifier = Modifier.combinedClickable(
-                            onClick = { onItemClick(child, index) },
+                            onClick = { onItemClick(child) },
                             onLongClick = { onItemLongClick(child) },
                         ),
                         headlineContent = { Text(child.title.orEmpty()) },

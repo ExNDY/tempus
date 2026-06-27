@@ -34,6 +34,7 @@ class ArtistCatalogueFragment : Fragment() {
                     ArtistListPageScreen(
                         uiState = ArtistListUiState(
                             artists = uiState.artists,
+                            downloadedArtistIds = uiState.downloadedArtistIds,
                             isLoading = uiState.isLoading,
                             supportsSort = true,
                         ),
@@ -50,6 +51,7 @@ class ArtistCatalogueFragment : Fragment() {
                                 Bundle().apply { putSerializable(com.cappielloantonio.tempo.util.Constants.ARTIST_OBJECT, artist) }
                             )
                         },
+                        onRefresh = viewModel::refresh,
                         onNavigateBack = { findNavController().navigateUp() },
                     )
                 }

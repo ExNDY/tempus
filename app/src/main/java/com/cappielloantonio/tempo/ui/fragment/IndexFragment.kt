@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.fragment.findNavController
 import com.cappielloantonio.tempo.R
@@ -43,14 +44,13 @@ import com.cappielloantonio.tempo.di.getIndexViewModel
 import com.cappielloantonio.tempo.di.getViewModel
 import com.cappielloantonio.tempo.service.MediaManager
 import com.cappielloantonio.tempo.subsonic.models.Artist
-import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder
 import com.cappielloantonio.tempo.ui.activity.MainActivity
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.viewmodel.IndexUiState
-import org.koin.core.context.GlobalContext
 import java.util.ArrayList
+import kotlinx.coroutines.launch
 
 @UnstableApi
 class IndexFragment : Fragment() {
@@ -76,7 +76,11 @@ class IndexFragment : Fragment() {
                         onArtistClick = { artist ->
                             findNavController().navigate(
                                 R.id.directoryFragment,
-                                Bundle().apply { putString(Constants.MUSIC_DIRECTORY_ID, artist.id) },
+                                Bundle().apply {
+                                    putString(Constants.MUSIC_DIRECTORY_ID, artist.id)
+                                    putString(Constants.MUSIC_DIRECTORY_NAME, artist.name)
+                                    putString(Constants.MUSIC_DIRECTORY_BREADCRUMB, artist.name)
+                                },
                             )
                         },
                         onArtistPlayClick = { artist ->
@@ -87,68 +91,36 @@ class IndexFragment : Fragment() {
                                     getString(R.string.folder_play_collecting),
                                     Toast.LENGTH_SHORT,
                                 ).show()
-                                collectAndPlayDirectorySongs(directoryId)
+                                lifecycleScope.launch {
+                                    val collectedSongs = viewModel.collectDirectorySongs(directoryId)
+                                    val activity = requireActivity() as MainActivity
+
+                                    if (collectedSongs.isEmpty()) {
+                                        Toast.makeText(
+                                            requireContext(),
+                                            getString(R.string.folder_play_no_songs),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                        return@launch
+                                    }
+
+                                    MediaManager.startQueue(
+                                        activity.mediaBrowserListenableFuture,
+                                        ArrayList(collectedSongs),
+                                        0,
+                                    )
+                                    activity.setBottomSheetInPeek(true)
+                                    Toast.makeText(
+                                        requireContext(),
+                                        getString(R.string.folder_play_playing, collectedSongs.size),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
                             }
                         },
                     )
                 }
             }
-        }
-    }
-
-    private fun collectAndPlayDirectorySongs(directoryId: String) {
-        val directoryRepository = GlobalContext.get().get<com.cappielloantonio.tempo.repository.DirectoryRepository>()
-        val collectedSongs = linkedSetOf<Child>()
-
-        fun loadDirectory(id: String, onComplete: () -> Unit) {
-            directoryRepository.getMusicDirectory(id).observe(viewLifecycleOwner) { directory ->
-                val children = directory?.children.orEmpty()
-                children.forEach { child ->
-                    if (!child.isDir && !child.isVideo) {
-                        collectedSongs.add(child)
-                    }
-                }
-
-                val subdirectories = children.filter { it.isDir && !it.id.isNullOrEmpty() }
-                if (subdirectories.isEmpty()) {
-                    onComplete()
-                    return@observe
-                }
-
-                var remaining = subdirectories.size
-                subdirectories.forEach { child ->
-                    loadDirectory(child.id) {
-                        remaining -= 1
-                        if (remaining == 0) {
-                            onComplete()
-                        }
-                    }
-                }
-            }
-        }
-
-        loadDirectory(directoryId) {
-            val activity = requireActivity() as MainActivity
-            if (collectedSongs.isEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.folder_play_no_songs),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                return@loadDirectory
-            }
-
-            MediaManager.startQueue(
-                activity.mediaBrowserListenableFuture,
-                ArrayList(collectedSongs),
-                0,
-            )
-            activity.setBottomSheetInPeek(true)
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.folder_play_playing, collectedSongs.size),
-                Toast.LENGTH_SHORT,
-            ).show()
         }
     }
 }

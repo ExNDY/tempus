@@ -22,10 +22,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +71,7 @@ fun ArtistListPageScreen(
     title: String,
     onArtistClick: (ArtistID3) -> Unit,
     onArtistLongClick: (ArtistID3) -> Unit,
+    onRefresh: (() -> Unit)? = null,
     onNavigateBack: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -92,6 +97,14 @@ fun ArtistListPageScreen(
                     }
                 },
                 actions = {
+                    if (onRefresh != null) {
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(id = R.string.menu_refresh),
+                            )
+                        }
+                    }
                     IconButton(onClick = { isGridMode = !isGridMode }) {
                         Icon(
                             imageVector = if (isGridMode) Icons.AutoMirrored.Filled.List else Icons.Default.GridView,
@@ -101,14 +114,14 @@ fun ArtistListPageScreen(
                     if (uiState.supportsSort) {
                         Box {
                             IconButton(onClick = { sortMenuExpanded = true }) {
-                                Icon(imageVector = Icons.Default.Sort, contentDescription = null)
+                                Icon(imageVector = Icons.AutoMirrored.Filled.Sort, contentDescription = null)
                             }
                             DropdownMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(text = "Sort by name") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_name)) },
                                     onClick = {
                                         sortOrder = Constants.ARTIST_ORDER_BY_NAME
                                         Preferences.setArtistSortOrder(sortOrder)
@@ -116,7 +129,7 @@ fun ArtistListPageScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Sort by album count") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_album_count)) },
                                     onClick = {
                                         sortOrder = Constants.ARTIST_ORDER_BY_ALBUM_COUNT
                                         Preferences.setArtistSortOrder(sortOrder)
@@ -124,7 +137,7 @@ fun ArtistListPageScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Most recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_most_recently_starred)) },
                                     onClick = {
                                         sortOrder = Constants.ARTIST_ORDER_BY_MOST_RECENTLY_STARRED
                                         Preferences.setArtistSortOrder(sortOrder)
@@ -132,7 +145,7 @@ fun ArtistListPageScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Least recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_least_recently_starred)) },
                                     onClick = {
                                         sortOrder = Constants.ARTIST_ORDER_BY_LEAST_RECENTLY_STARRED
                                         Preferences.setArtistSortOrder(sortOrder)
@@ -199,6 +212,7 @@ fun ArtistListPageScreen(
                             items(filteredArtists, key = { it.id.orEmpty() }) { artist ->
                                 ArtistGridItem(
                                     artist = artist,
+                                    isDownloaded = artist.id in uiState.downloadedArtistIds || artist.name in uiState.downloadedArtistIds,
                                     onClick = { onArtistClick(artist) },
                                     onLongClick = { onArtistLongClick(artist) },
                                 )
@@ -213,6 +227,7 @@ fun ArtistListPageScreen(
                             items(filteredArtists, key = { it.id.orEmpty() }) { artist ->
                                 ArtistListItem(
                                     artist = artist,
+                                    isDownloaded = artist.id in uiState.downloadedArtistIds || artist.name in uiState.downloadedArtistIds,
                                     onClick = { onArtistClick(artist) },
                                     onLongClick = { onArtistLongClick(artist) },
                                 )
@@ -229,6 +244,7 @@ fun ArtistListPageScreen(
 @Composable
 private fun ArtistGridItem(
     artist: ArtistID3,
+    isDownloaded: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -255,11 +271,37 @@ private fun ArtistGridItem(
         )
         if (artist.albumCount > 0) {
             Text(
-                text = "${artist.albumCount} albums",
+                text = pluralStringResource(
+                    id = R.plurals.artist_album_count,
+                    count = artist.albumCount,
+                    artist.albumCount,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        if (artist.starred != null || isDownloaded) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (artist.starred != null) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
     }
 }
@@ -268,6 +310,7 @@ private fun ArtistGridItem(
 @Composable
 private fun ArtistListItem(
     artist: ArtistID3,
+    isDownloaded: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -284,7 +327,11 @@ private fun ArtistListItem(
         supportingContent = {
             if (artist.albumCount > 0) {
                 Text(
-                    text = "${artist.albumCount} albums",
+                    text = pluralStringResource(
+                        id = R.plurals.artist_album_count,
+                        count = artist.albumCount,
+                        artist.albumCount,
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -301,6 +348,22 @@ private fun ArtistListItem(
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (artist.starred != null) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
             }
         },

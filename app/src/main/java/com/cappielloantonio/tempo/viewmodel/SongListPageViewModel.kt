@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.viewmodel
 
+import com.cappielloantonio.tempo.App
+import com.cappielloantonio.tempo.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
@@ -14,6 +16,7 @@ import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.Genre
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.Preferences
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +57,7 @@ class SongListPageViewModel(
     val uiState: StateFlow<SongListUiState> = _uiState.asStateFlow()
 
     private var startedKey: String? = null
+    private var loadJob: Job? = null
 
     fun onStart(args: SongListPageArgs) {
         val key = buildKey(args)
@@ -73,7 +77,8 @@ class SongListPageViewModel(
     }
 
     private fun load(args: SongListPageArgs) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             when (args.type) {
                 Constants.MEDIA_BY_GENRE -> {
                     songRepository.getRandomSampleWithGenre(500, 0, 3000, args.genre?.genre.orEmpty())
@@ -185,16 +190,18 @@ class SongListPageViewModel(
 
     private fun resolveTitle(args: SongListPageArgs): String {
         return when (args.type) {
-            Constants.MEDIA_RECENTLY_PLAYED -> "Recently played tracks"
-            Constants.MEDIA_MOST_PLAYED -> "Most played tracks"
-            Constants.MEDIA_RECENTLY_ADDED -> "Recently added tracks"
+            Constants.MEDIA_RECENTLY_PLAYED -> App.getContext().getString(R.string.song_list_page_recently_played)
+            Constants.MEDIA_MOST_PLAYED -> App.getContext().getString(R.string.song_list_page_most_played)
+            Constants.MEDIA_RECENTLY_ADDED -> App.getContext().getString(R.string.song_list_page_recently_added)
             Constants.MEDIA_BY_GENRE -> args.genre?.genre.orEmpty()
-            Constants.MEDIA_BY_ARTIST -> args.artist?.name?.let { "${it}'s top tracks" }.orEmpty()
+            Constants.MEDIA_BY_ARTIST -> args.artist?.name?.let {
+                App.getContext().getString(R.string.song_list_page_top, it)
+            }.orEmpty()
             Constants.MEDIA_BY_GENRES -> args.filterNames.takeIf { it.isNotEmpty() }?.joinToString(", ")
                 ?: args.filters.joinToString(", ")
-            Constants.MEDIA_BY_YEAR -> "Year ${args.year}"
-            Constants.MEDIA_STARRED -> "Starred tracks"
-            Constants.MEDIA_DOWNLOADED -> "Downloaded"
+            Constants.MEDIA_BY_YEAR -> App.getContext().getString(R.string.song_list_page_year, args.year)
+            Constants.MEDIA_STARRED -> App.getContext().getString(R.string.song_list_page_starred)
+            Constants.MEDIA_DOWNLOADED -> App.getContext().getString(R.string.song_list_page_downloaded)
             Constants.MEDIA_FROM_ALBUM -> args.album?.name.orEmpty()
             else -> ""
         }

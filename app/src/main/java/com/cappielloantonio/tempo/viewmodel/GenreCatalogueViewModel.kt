@@ -5,10 +5,11 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.cappielloantonio.tempo.repository.GenreRepository
 import com.cappielloantonio.tempo.subsonic.models.Genre
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -23,6 +24,7 @@ class GenreCatalogueViewModel(
     private val _uiState = MutableStateFlow(GenreCatalogueUiState())
     val uiState: StateFlow<GenreCatalogueUiState> = _uiState.asStateFlow()
     private var started = false
+    private var refreshJob: Job? = null
 
     fun onStart() {
         if (started) return
@@ -31,11 +33,11 @@ class GenreCatalogueViewModel(
     }
 
     fun refresh() {
-        viewModelScope.launch {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            genreRepository.getGenres(false, -1).asFlow().collectLatest { genres ->
-                _uiState.update { it.copy(genres = genres ?: emptyList(), isLoading = false) }
-            }
+            val genres = genreRepository.getGenres(false, -1).asFlow().first().orEmpty()
+            _uiState.update { it.copy(genres = genres, isLoading = false) }
         }
     }
 }

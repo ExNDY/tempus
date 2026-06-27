@@ -7,8 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.util.UnstableApi
@@ -27,6 +30,9 @@ import com.cappielloantonio.tempo.ui.activity.MainActivity
 import com.cappielloantonio.tempo.ui.song.SongListPageScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
+import com.cappielloantonio.tempo.util.DownloadUtil
+import com.cappielloantonio.tempo.util.ExternalAudioReader
+import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.viewmodel.PlaybackViewModel
 import com.cappielloantonio.tempo.viewmodel.SongListPageArgs
 import com.google.common.util.concurrent.ListenableFuture
@@ -61,14 +67,34 @@ class SongListPageFragment : Fragment() {
                     val uiState by viewModel.uiState.collectAsState()
                     val currentSongId by playbackViewModel.currentSongId.collectAsState()
                     val isPlaying by playbackViewModel.isPlaying.collectAsState()
+                    val refreshEvent by ExternalAudioReader.getRefreshEvents().observeAsState()
+                    val downloadedSongIds = remember(
+                        uiState.songs,
+                        refreshEvent,
+                        Preferences.getDownloadDirectoryUri(),
+                    ) {
+                        uiState.songs
+                            .asSequence()
+                            .filter(::isSongDownloaded)
+                            .map { it.id }
+                            .toSet()
+                    }
 
                     SongListPageScreen(
                         uiState = uiState,
+                        downloadedSongIds = downloadedSongIds,
                         currentSongId = currentSongId,
                         isPlaying = isPlaying,
                         onSongClick = { songs, index ->
-                            MediaManager.startQueue(mediaBrowserListenableFuture, ArrayList(songs), index)
-                            activity.setBottomSheetInPeek(true)
+                            val targetSongId = songs.getOrNull(index)?.id
+                            if (targetSongId != null && targetSongId == currentSongId) {
+                                mediaBrowserListenableFuture?.get()?.let { browser ->
+                                    if (browser.isPlaying) browser.pause() else browser.play()
+                                }
+                            } else {
+                                MediaManager.startQueue(mediaBrowserListenableFuture, ArrayList(songs), index)
+                                activity.setBottomSheetInPeek(true)
+                            }
                         },
                         onSongLongClick = { song, index ->
                             val bundle = Bundle().apply {
@@ -128,17 +154,30 @@ class SongListPageFragment : Fragment() {
             Constants.MEDIA_BY_GENRES,
             Constants.MEDIA_BY_YEAR,
             Constants.MEDIA_FROM_ALBUM,
-        ).firstOrNull { bundle.getString(it) != null || (it == Constants.MEDIA_FROM_ALBUM && bundle.getSerializable(Constants.ALBUM_OBJECT) != null) }
+        ).firstOrNull {
+            bundle.getString(it) != null || (
+                it == Constants.MEDIA_FROM_ALBUM &&
+                    BundleCompat.getSerializable(bundle, Constants.ALBUM_OBJECT, AlbumID3::class.java) != null
+                )
+        }
             ?: return null
 
         return SongListPageArgs(
             type = type,
-            artist = bundle.getSerializable(Constants.ARTIST_OBJECT) as? ArtistID3,
-            genre = bundle.getSerializable(Constants.GENRE_OBJECT) as? Genre,
-            album = bundle.getSerializable(Constants.ALBUM_OBJECT) as? AlbumID3,
+            artist = BundleCompat.getSerializable(bundle, Constants.ARTIST_OBJECT, ArtistID3::class.java),
+            genre = BundleCompat.getSerializable(bundle, Constants.GENRE_OBJECT, Genre::class.java),
+            album = BundleCompat.getSerializable(bundle, Constants.ALBUM_OBJECT, AlbumID3::class.java),
             filters = bundle.getStringArrayList("filters_list") ?: emptyList(),
             filterNames = bundle.getStringArrayList("filter_name_list") ?: emptyList(),
             year = bundle.getInt("year_object"),
         )
+    }
+
+    private fun isSongDownloaded(song: com.cappielloantonio.tempo.subsonic.models.Child): Boolean {
+        return if (Preferences.getDownloadDirectoryUri() == null) {
+            DownloadUtil.getDownloadTracker(requireContext()).isDownloaded(song.id)
+        } else {
+            ExternalAudioReader.getUri(song) != null
+        }
     }
 }

@@ -14,7 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getGenreCatalogueViewModel
 import com.cappielloantonio.tempo.di.getViewModel
-import com.cappielloantonio.tempo.ui.components.CatalogueScreen
+import com.cappielloantonio.tempo.ui.genre.GenreCatalogueScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
 
@@ -31,11 +31,10 @@ class GenreCatalogueFragment : Fragment() {
                 TempusTheme {
                     val viewModel = getViewModel { getGenreCatalogueViewModel().apply { onStart() } }
                     val uiState by viewModel.uiState.collectAsState()
-                    CatalogueScreen(
-                        items = uiState.genres,
+                    GenreCatalogueScreen(
+                        uiState = uiState,
                         title = getString(R.string.genre_catalogue_title),
-                        isLoading = uiState.isLoading,
-                        onItemClick = { genre ->
+                        onGenreClick = { genre ->
                             findNavController().navigate(
                                 R.id.songListPageFragment,
                                 Bundle().apply {
@@ -44,9 +43,9 @@ class GenreCatalogueFragment : Fragment() {
                                 }
                             )
                         },
+                        onRefresh = viewModel::refresh,
+                        onOpenFilter = { findNavController().navigate(R.id.action_genreCatalogueFragment_to_filterFragment) },
                         onNavigateBack = { findNavController().navigateUp() },
-                        onSearchClick = { findNavController().navigate(R.id.searchFragment) },
-                        onFilterClick = { findNavController().navigate(R.id.action_genreCatalogueFragment_to_filterFragment) },
                     )
                 }
             }

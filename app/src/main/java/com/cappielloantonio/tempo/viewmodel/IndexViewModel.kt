@@ -1,10 +1,16 @@
 package com.cappielloantonio.tempo.viewmodel
 
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.repository.DirectoryRepository
 import com.cappielloantonio.tempo.subsonic.models.Index
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class IndexUiState(
@@ -19,6 +25,7 @@ class IndexViewModel(
 
     private val _uiState = MutableStateFlow(IndexUiState())
     val uiState = _uiState.asStateFlow()
+    private var loadJob: Job? = null
 
     fun onStart(musicFolderId: String? = null) {
         if (_uiState.value.musicFolderId == musicFolderId && !_uiState.value.isLoading) {
@@ -28,16 +35,42 @@ class IndexViewModel(
     }
 
     private fun loadIndexes(musicFolderId: String? = null) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, musicFolderId = musicFolderId) }
-            directoryRepository.getIndexes(musicFolderId, null).observeForever { indexes ->
-                _uiState.update {
-                    it.copy(
-                        indices = indexes?.indices ?: emptyList(),
-                        isLoading = false,
-                    )
-                }
+            val indexes = directoryRepository.getIndexes(musicFolderId, null).asFlow().first()
+            _uiState.update {
+                it.copy(
+                    indices = indexes?.indices ?: emptyList(),
+                    isLoading = false,
+                )
             }
         }
+    }
+
+    suspend fun collectDirectorySongs(directoryId: String): List<Child> {
+        val collectedSongs = linkedSetOf<Child>()
+        collectDirectorySongsRecursive(directoryId, collectedSongs)
+        return collectedSongs.toList()
+    }
+
+    private suspend fun collectDirectorySongsRecursive(
+        directoryId: String,
+        collectedSongs: LinkedHashSet<Child>,
+    ) {
+        val directory = directoryRepository.getMusicDirectory(directoryId).asFlow().first()
+        val children = directory?.children.orEmpty()
+
+        children.forEach { child ->
+            if (!child.isDir && !child.isVideo) {
+                collectedSongs.add(child)
+            }
+        }
+
+        children
+            .filter { it.isDir && !it.id.isNullOrEmpty() }
+            .forEach { child ->
+                child.id?.let { collectDirectorySongsRecursive(it, collectedSongs) }
+            }
     }
 }

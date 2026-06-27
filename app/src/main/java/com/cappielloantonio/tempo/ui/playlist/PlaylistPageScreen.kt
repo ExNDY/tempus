@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ import com.cappielloantonio.tempo.viewmodel.PlaylistPageUiState
 @Composable
 fun PlaylistPageScreen(
     uiState: PlaylistPageUiState,
+    downloadedSongIds: Set<String>,
     searchQuery: String,
     currentSongId: String?,
     isPlaying: Boolean,
@@ -36,6 +38,7 @@ fun PlaylistPageScreen(
     onSongLongClick: (Child, Int) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
+    onPinClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onNavigateBack: () -> Unit,
@@ -63,11 +66,20 @@ fun PlaylistPageScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onEditClick) {
-                        Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+                    IconButton(onClick = onPinClick) {
+                        Icon(
+                            imageVector = if (uiState.isPinned) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = if (uiState.isPinned) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        )
                     }
-                    IconButton(onClick = onDeleteClick) {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                    if (uiState.isEditable) {
+                        IconButton(onClick = onEditClick) {
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+                        }
+                        IconButton(onClick = onDeleteClick) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                        }
                     }
                 }
             )
@@ -114,6 +126,7 @@ fun PlaylistPageScreen(
                     itemsIndexed(filteredSongs) { index, song ->
                         SongListItem(
                             song = song,
+                            isDownloaded = song.id in downloadedSongIds,
                             isCurrent = song.id == currentSongId,
                             isPlaying = isPlaying && song.id == currentSongId,
                             onClick = { onSongClick(uiState.songs.indexOfFirst { it.id == song.id }.coerceAtLeast(index)) },
@@ -197,6 +210,7 @@ fun PlaylistHeader(
 @Composable
 fun SongListItem(
     song: Child,
+    isDownloaded: Boolean,
     isCurrent: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
@@ -228,8 +242,28 @@ fun SongListItem(
             )
         },
         trailingContent = {
-            IconButton(onClick = onLongClick) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (isCurrent) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.Pause,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                IconButton(onClick = onLongClick) {
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                }
             }
         }
     )

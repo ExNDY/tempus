@@ -17,7 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
@@ -66,6 +69,7 @@ enum class SongListSort {
 @Composable
 fun SongListPageScreen(
     uiState: SongListUiState,
+    downloadedSongIds: Set<String>,
     currentSongId: String?,
     isPlaying: Boolean,
     onSongClick: (List<Child>, Int) -> Unit,
@@ -107,21 +111,21 @@ fun SongListPageScreen(
                                 onDismissRequest = { sortMenuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(text = "Sort by title") },
+                                    text = { Text(text = stringResource(id = R.string.song_list_page_sort_by_title)) },
                                     onClick = {
                                         selectedSort = SongListSort.TITLE
                                         sortMenuExpanded = false
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Most recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.song_list_page_sort_most_recently_starred)) },
                                     onClick = {
                                         selectedSort = SongListSort.MOST_RECENTLY_STARRED
                                         sortMenuExpanded = false
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Least recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.song_list_page_sort_least_recently_starred)) },
                                     onClick = {
                                         selectedSort = SongListSort.LEAST_RECENTLY_STARRED
                                         sortMenuExpanded = false
@@ -180,6 +184,7 @@ fun SongListPageScreen(
                                 val originalIndex = uiState.songs.indexOfFirst { it.id == song.id }
                                 SongListItem(
                                     song = song,
+                                    isDownloaded = song.id in downloadedSongIds,
                                     isCurrent = song.id == currentSongId,
                                     isPlaying = isPlaying && song.id == currentSongId,
                                     onClick = {
@@ -260,6 +265,7 @@ private fun SongListHeader(
 @Composable
 private fun SongListItem(
     song: Child,
+    isDownloaded: Boolean,
     isCurrent: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
@@ -299,9 +305,25 @@ private fun SongListItem(
             )
         },
         trailingContent = {
-            if (isCurrent && isPlaying) {
-                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
-            } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (isCurrent) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.Pause,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
                 IconButton(onClick = onLongClick) {
                     Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
                 }
