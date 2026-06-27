@@ -34,9 +34,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Genre
@@ -73,7 +75,7 @@ fun LibraryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Library") },
+                title = { Text(text = stringResource(R.string.menu_library_label)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -102,7 +104,7 @@ fun LibraryScreen(
                 if (uiState.musicFolders.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Music folders",
+                            title = stringResource(R.string.library_title_music_folder),
                             onRefresh = null,
                             onSeeAll = null,
                         )
@@ -120,9 +122,10 @@ fun LibraryScreen(
                 if (uiState.albums.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Albums",
+                            title = stringResource(R.string.library_title_album),
                             onRefresh = onRefreshAlbums,
                             onSeeAll = onSeeAllAlbumsClick,
+                            seeAllLabel = stringResource(R.string.library_title_album_see_all_button),
                         )
                     }
                     item {
@@ -141,9 +144,10 @@ fun LibraryScreen(
                 if (uiState.artists.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Artists",
+                            title = stringResource(R.string.library_title_artist),
                             onRefresh = onRefreshArtists,
                             onSeeAll = onSeeAllArtistsClick,
+                            seeAllLabel = stringResource(R.string.library_title_artist_see_all_button),
                         )
                     }
                     item {
@@ -162,9 +166,10 @@ fun LibraryScreen(
                 if (uiState.genres.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Genres",
+                            title = stringResource(R.string.library_title_genre),
                             onRefresh = onRefreshGenres,
                             onSeeAll = onSeeAllGenresClick,
+                            seeAllLabel = stringResource(R.string.library_title_genre_see_all_button),
                         )
                     }
                     item {
@@ -190,9 +195,10 @@ fun LibraryScreen(
                 if (uiState.playlists.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Playlists",
+                            title = stringResource(R.string.library_title_playlist),
                             onRefresh = onRefreshPlaylists,
                             onSeeAll = onSeeAllPlaylistsClick,
+                            seeAllLabel = stringResource(R.string.library_title_playlist_see_all_button),
                         )
                     }
                     item {
@@ -217,6 +223,7 @@ private fun SectionHeader(
     title: String,
     onRefresh: (() -> Unit)?,
     onSeeAll: (() -> Unit)?,
+    seeAllLabel: String? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -235,7 +242,7 @@ private fun SectionHeader(
         }
         if (onSeeAll != null) {
             Text(
-                text = "See all",
+                text = seeAllLabel ?: stringResource(R.string.common_see_all),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.combinedClickable(onClick = onSeeAll),
             )

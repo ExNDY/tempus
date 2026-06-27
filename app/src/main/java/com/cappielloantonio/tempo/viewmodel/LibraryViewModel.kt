@@ -13,6 +13,7 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Genre
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder
 import com.cappielloantonio.tempo.subsonic.models.Playlist
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +42,11 @@ class LibraryViewModel(
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
     private var started = false
+    private var musicFoldersJob: Job? = null
+    private var albumsJob: Job? = null
+    private var artistsJob: Job? = null
+    private var genresJob: Job? = null
+    private var playlistsJob: Job? = null
 
     fun onStart() {
         if (started) return
@@ -58,7 +64,8 @@ class LibraryViewModel(
     }
 
     fun refreshAlbumSample() {
-        viewModelScope.launch {
+        albumsJob?.cancel()
+        albumsJob = viewModelScope.launch {
             albumRepository.getAlbums("random", 10, null, null).asFlow().collectLatest { albums ->
                 _uiState.update { it.copy(albums = albums ?: emptyList(), isLoading = false) }
             }
@@ -66,7 +73,8 @@ class LibraryViewModel(
     }
 
     fun refreshArtistSample() {
-        viewModelScope.launch {
+        artistsJob?.cancel()
+        artistsJob = viewModelScope.launch {
             artistRepository.getArtists(true, 10).asFlow().collectLatest { artists ->
                 _uiState.update { it.copy(artists = artists ?: emptyList(), isLoading = false) }
             }
@@ -74,7 +82,8 @@ class LibraryViewModel(
     }
 
     fun refreshGenreSample() {
-        viewModelScope.launch {
+        genresJob?.cancel()
+        genresJob = viewModelScope.launch {
             genreRepository.getGenres(true, 15).asFlow().collectLatest { genres ->
                 _uiState.update { it.copy(genres = genres ?: emptyList(), isLoading = false) }
             }
@@ -82,7 +91,8 @@ class LibraryViewModel(
     }
 
     fun refreshPlaylistSample(markLoadingDone: Boolean = false) {
-        viewModelScope.launch {
+        playlistsJob?.cancel()
+        playlistsJob = viewModelScope.launch {
             playlistRepository.getPlaylists(true, 10).asFlow().collectLatest { playlists ->
                 _uiState.update {
                     it.copy(
@@ -95,7 +105,8 @@ class LibraryViewModel(
     }
 
     private fun refreshMusicFolders() {
-        viewModelScope.launch {
+        musicFoldersJob?.cancel()
+        musicFoldersJob = viewModelScope.launch {
             directoryRepository.getMusicFolders().asFlow().collectLatest { folders ->
                 _uiState.update { it.copy(musicFolders = folders ?: emptyList(), isLoading = false) }
             }

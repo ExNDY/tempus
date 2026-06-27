@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.model.RecentSearch
 import com.cappielloantonio.tempo.repository.SearchingRepository
-import com.cappielloantonio.tempo.subsonic.models.*
-import kotlinx.coroutines.flow.*
+import com.cappielloantonio.tempo.subsonic.models.SearchResult3
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SearchUiState(
@@ -22,6 +25,7 @@ class SearchViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState = _uiState.asStateFlow()
+    private var searchJob: Job? = null
 
     init {
         loadRecentSearches()
@@ -34,18 +38,22 @@ class SearchViewModel(
         }
     }
 
-    fun search(query: String) {
+    fun search(query: String, saveToRecents: Boolean = false) {
         if (query.length < 3) {
-            _uiState.update { it.copy(results = null, isLoading = false) }
+            searchJob?.cancel()
+            _uiState.update { it.copy(results = null, isLoading = false, suggestions = emptyList()) }
             return
         }
 
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val result = searchingRepository.search3Result(query)
             _uiState.update { it.copy(results = result, isLoading = false) }
-            
-            insertNewSearch(query)
+
+            if (saveToRecents) {
+                insertNewSearch(query)
+            }
         }
     }
 

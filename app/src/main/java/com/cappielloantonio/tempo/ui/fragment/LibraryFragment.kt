@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
@@ -14,8 +15,6 @@ import androidx.navigation.fragment.findNavController
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getLibraryViewModel
 import com.cappielloantonio.tempo.di.getViewModel
-import com.cappielloantonio.tempo.interfaces.PlaylistCallback
-import com.cappielloantonio.tempo.ui.dialog.PlaylistEditorDialog
 import com.cappielloantonio.tempo.ui.home.LibraryScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
@@ -34,6 +33,21 @@ class LibraryFragment : Fragment() {
                 TempusTheme {
                     val viewModel = getViewModel { getLibraryViewModel().apply { onStart() } }
                     val uiState by viewModel.uiState.collectAsState()
+
+                    DisposableEffect(viewModel) {
+                        parentFragmentManager.setFragmentResultListener(
+                            Constants.REQUEST_REFRESH_HOME_PLAYLISTS,
+                            viewLifecycleOwner,
+                        ) { _, _ ->
+                            viewModel.refreshPlaylistSample()
+                        }
+
+                        onDispose {
+                            parentFragmentManager.clearFragmentResultListener(
+                                Constants.REQUEST_REFRESH_HOME_PLAYLISTS
+                            )
+                        }
+                    }
 
                     LibraryScreen(
                         uiState = uiState,
@@ -85,15 +99,10 @@ class LibraryFragment : Fragment() {
                             )
                         },
                         onPlaylistLongClick = { playlist ->
-                            PlaylistEditorDialog(object : PlaylistCallback {
-                                override fun onDismiss() {
-                                    viewModel.refreshPlaylistSample()
-                                }
-                            }).apply {
-                                arguments = Bundle().apply {
-                                    putSerializable(Constants.PLAYLIST_OBJECT, playlist)
-                                }
-                            }.show(parentFragmentManager, null)
+                            findNavController().navigate(
+                                R.id.playlistBottomSheetDialog,
+                                Bundle().apply { putSerializable(Constants.PLAYLIST_OBJECT, playlist) },
+                            )
                         },
                         onSeeAllAlbumsClick = {
                             findNavController().navigate(R.id.action_libraryFragment_to_albumCatalogueFragment)

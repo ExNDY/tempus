@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
@@ -31,16 +32,29 @@ import com.cappielloantonio.tempo.ui.home.HomeTabRadioScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.Preferences
+import com.cappielloantonio.tempo.viewmodel.HomeViewModel
 import com.cappielloantonio.tempo.viewmodel.PlaybackViewModel
 import com.cappielloantonio.tempo.interfaces.PodcastCallback
 import com.cappielloantonio.tempo.interfaces.RadioCallback
 import java.util.ArrayList
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 @UnstableApi
 class HomeFragment : Fragment() {
 
     private lateinit var activity: MainActivity
     private lateinit var playbackViewModel: PlaybackViewModel
+    private val homeViewModel: HomeViewModel by viewModel()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(Constants.REQUEST_REFRESH_HOME_SHARES, this) { _, _ ->
+            homeViewModel.refreshShares()
+        }
+        parentFragmentManager.setFragmentResultListener(Constants.REQUEST_REFRESH_HOME_PLAYLISTS, this) { _, _ ->
+            homeViewModel.refreshSector(Constants.HOME_SECTOR_PINNED_PLAYLISTS)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,14 +68,29 @@ class HomeFragment : Fragment() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 TempusTheme {
-                    val homeViewModel = getViewModel { getHomeViewModel().apply { onStart() } }
+                    val routeHomeViewModel = getViewModel { getHomeViewModel().apply { onStart() } }
                     val podcastViewModel = getViewModel { getPodcastViewModel().apply { onStart() } }
                     val radioViewModel = getViewModel { getRadioViewModel().apply { onStart() } }
-                    val musicUiState by homeViewModel.musicUiState.collectAsState()
+                    val musicUiState by routeHomeViewModel.musicUiState.collectAsState()
                     val podcastUiState by podcastViewModel.uiState.collectAsState()
                     val radioUiState by radioViewModel.uiState.collectAsState()
                     val currentSongId by playbackViewModel.currentSongId.collectAsState()
                     val isPlaying by playbackViewModel.isPlaying.collectAsState()
+
+                    DisposableEffect(podcastViewModel) {
+                        parentFragmentManager.setFragmentResultListener(
+                            Constants.REQUEST_REFRESH_PODCASTS,
+                            viewLifecycleOwner,
+                        ) { _, _ ->
+                            podcastViewModel.refresh()
+                        }
+
+                        onDispose {
+                            parentFragmentManager.clearFragmentResultListener(
+                                Constants.REQUEST_REFRESH_PODCASTS
+                            )
+                        }
+                    }
 
                     HomeScreen(
                         onSettingsClick = {
@@ -75,7 +104,7 @@ class HomeFragment : Fragment() {
                                 uiState = musicUiState,
                                 currentSongId = currentSongId,
                                 isPlaying = isPlaying,
-                                onSectorRefresh = { id -> homeViewModel.refreshSector(id) },
+                                onSectorRefresh = { id -> routeHomeViewModel.refreshSector(id) },
                                 onMediaClick = { song, list ->
                                     val position = list.indexOf(song)
                                     MediaManager.startQueue(activity.mediaBrowserListenableFuture, ArrayList(list), position)
@@ -134,7 +163,10 @@ class HomeFragment : Fragment() {
                                     onEpisodeLongClick = { episode ->
                                         val bundle = Bundle().apply { putSerializable(Constants.PODCAST_OBJECT, episode) }
                                         findNavController().navigate(R.id.podcastEpisodeBottomSheetDialog, bundle)
-                                    }
+                                    },
+                                    onEpisodeDownloadClick = { episode ->
+                                        podcastViewModel.requestEpisodeDownload(episode)
+                                    },
                                 )
                             }
                         } else null,
