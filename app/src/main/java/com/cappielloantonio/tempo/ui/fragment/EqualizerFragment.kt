@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
@@ -33,6 +34,7 @@ class EqualizerFragment : Fragment() {
     private lateinit var activity: MainActivity
     private var equalizerManager: EqualizerManager? = null
     private var receiverRegistered = false
+    private var isServiceBound = false
     private val _uiState = mutableStateOf(EqualizerUiState())
 
     override fun onAttach(context: Context) {
@@ -52,11 +54,13 @@ class EqualizerFragment : Fragment() {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as BaseMediaService.LocalBinder
             equalizerManager = binder.getEqualizerManager()
+            isServiceBound = true
             updateUiStateFromManager()
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             equalizerManager = null
+            isServiceBound = false
             _uiState.value = _uiState.value.copy(isSupported = false)
         }
     }
@@ -80,7 +84,10 @@ class EqualizerFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        requireActivity().unbindService(connection)
+        if (isServiceBound) {
+            requireActivity().unbindService(connection)
+            isServiceBound = false
+        }
         equalizerManager = null
         if (receiverRegistered) {
             try {
@@ -96,6 +103,7 @@ class EqualizerFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 TempusTheme {
                     val state by _uiState

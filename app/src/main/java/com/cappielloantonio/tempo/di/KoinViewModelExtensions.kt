@@ -11,6 +11,7 @@ import com.cappielloantonio.tempo.viewmodel.ArtistListPageViewModel
 import com.cappielloantonio.tempo.viewmodel.ArtistPageViewModel
 import com.cappielloantonio.tempo.viewmodel.DirectoryViewModel
 import com.cappielloantonio.tempo.viewmodel.DownloadViewModel
+import com.cappielloantonio.tempo.viewmodel.DownloadedBottomSheetViewModel
 import com.cappielloantonio.tempo.viewmodel.GenreCatalogueViewModel
 import com.cappielloantonio.tempo.viewmodel.FilterViewModel
 import com.cappielloantonio.tempo.viewmodel.HomeViewModel
@@ -122,3 +123,6 @@ fun Koin.getDirectoryViewModel(): DirectoryViewModel = get()
 
 @UnstableApi
 fun Koin.getDownloadViewModel(): DownloadViewModel = get()
+
+@UnstableApi
+fun Koin.getDownloadedBottomSheetViewModel(): DownloadedBottomSheetViewModel = get()

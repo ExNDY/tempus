@@ -19,6 +19,8 @@ object Constants {
     const val MUSIC_DIRECTORY_OBJECT = "MUSIC_DIRECTORY_OBJECT"
     const val MUSIC_INDEX_OBJECT = "MUSIC_DIRECTORY_OBJECT"
     const val MUSIC_DIRECTORY_ID = "MUSIC_DIRECTORY_ID"
+    const val MUSIC_DIRECTORY_NAME = "MUSIC_DIRECTORY_NAME"
+    const val MUSIC_DIRECTORY_BREADCRUMB = "MUSIC_DIRECTORY_BREADCRUMB"
     const val ALBUMS_OBJECT = "ALBUMS_OBJECT"
     const val ALBUM_LIST_TITLE = "ALBUM_LIST_TITLE"
 
@@ -105,6 +107,9 @@ object Constants {
     const val DOWNLOAD_GROUP_SUBTITLE = "download_group_subtitle"
 
     const val SHARE_OBJECT = "share_object"
+    const val REQUEST_REFRESH_HOME_SHARES = "request_refresh_home_shares"
+    const val REQUEST_REFRESH_HOME_PLAYLISTS = "request_refresh_home_playlists"
+    const val REQUEST_REFRESH_PODCASTS = "request_refresh_podcasts"
 
     const val PLAYABLE_MEDIA_LIMIT = 100
     const val PRE_PLAYABLE_MEDIA = 15
