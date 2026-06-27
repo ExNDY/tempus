@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.fragment.findNavController
@@ -77,8 +78,10 @@ class AlbumListPageFragment : Fragment() {
     private fun resolveArgs(bundle: Bundle?): AlbumListPageArgs? {
         bundle ?: return null
 
-        val artist = bundle.getSerializable(Constants.ARTIST_OBJECT) as? ArtistID3
-        val customAlbums = (bundle.getSerializable(Constants.ALBUMS_OBJECT) as? ArrayList<*>)?.filterIsInstance<AlbumID3>()
+        val artist = BundleCompat.getSerializable(bundle, Constants.ARTIST_OBJECT, ArtistID3::class.java)
+        val customAlbums = BundleCompat
+            .getSerializable(bundle, Constants.ALBUMS_OBJECT, ArrayList::class.java)
+            ?.filterIsInstance<AlbumID3>()
 
         val type = when {
             bundle.getString(Constants.ALBUM_RECENTLY_PLAYED) != null -> Constants.ALBUM_RECENTLY_PLAYED

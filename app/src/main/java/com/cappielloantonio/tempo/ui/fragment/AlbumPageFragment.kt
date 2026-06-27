@@ -8,8 +8,13 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -52,7 +57,7 @@ class AlbumPageFragment : Fragment() {
         activity = requireActivity() as MainActivity
         playbackViewModel = ViewModelProvider(requireActivity())[PlaybackViewModel::class.java]
 
-        val album = arguments?.getSerializable(Constants.ALBUM_OBJECT) as? AlbumID3
+        val album = arguments?.let { BundleCompat.getSerializable(it, Constants.ALBUM_OBJECT, AlbumID3::class.java) }
         if (album == null) {
             findNavController().navigateUp()
             return ComposeView(requireContext())
@@ -66,13 +71,26 @@ class AlbumPageFragment : Fragment() {
                     val uiState by albumPageViewModel.uiState.collectAsState()
                     val currentSongId by playbackViewModel.currentSongId.collectAsState()
                     val isPlaying by playbackViewModel.isPlaying.collectAsState()
+                    val refreshEvent by ExternalAudioReader.getRefreshEvents().observeAsState()
+                    var pendingDownloadedSongIds by remember(album.id) { mutableStateOf(emptySet<String>()) }
+                    val downloadedSongIds = remember(
+                        uiState.songs,
+                        refreshEvent,
+                        pendingDownloadedSongIds,
+                        Preferences.getDownloadDirectoryUri(),
+                    ) {
+                        uiState.songs
+                            .asSequence()
+                            .filter(::isSongDownloaded)
+                            .map { it.id }
+                            .toSet() + pendingDownloadedSongIds
+                    }
 
                     AlbumPageScreen(
                         uiState = uiState,
-                        searchQuery = "",
+                        downloadedSongIds = downloadedSongIds,
                         currentSongId = currentSongId,
                         isPlaying = isPlaying,
-                        onSearchQueryChange = { /* Handle search */ },
                         onFavoriteClick = {
                             albumPageViewModel.setFavorite()
                         },
@@ -86,6 +104,7 @@ class AlbumPageFragment : Fragment() {
                             activity.setBottomSheetInPeek(true)
                         },
                         onDownloadClick = {
+                            pendingDownloadedSongIds = pendingDownloadedSongIds + uiState.songs.map { it.id }
                             downloadAlbum(uiState.songs)
                         },
                         onRateClick = {
@@ -174,6 +193,14 @@ class AlbumPageFragment : Fragment() {
             } else {
                 Toast.makeText(requireContext(), getString(R.string.album_error_retrieving_artist), Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun isSongDownloaded(song: Child): Boolean {
+        return if (Preferences.getDownloadDirectoryUri() == null) {
+            DownloadUtil.getDownloadTracker(requireContext()).isDownloaded(song.id)
+        } else {
+            ExternalAudioReader.getUri(song) != null
         }
     }
 }

@@ -31,10 +31,9 @@ import com.cappielloantonio.tempo.viewmodel.AlbumPageUiState
 @Composable
 fun AlbumPageScreen(
     uiState: AlbumPageUiState,
-    searchQuery: String,
+    downloadedSongIds: Set<String>,
     currentSongId: String?,
     isPlaying: Boolean,
-    onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: () -> Unit,
     onPlayClick: () -> Unit,
     onShuffleClick: () -> Unit,
@@ -108,6 +107,7 @@ fun AlbumPageScreen(
             itemsIndexed(uiState.songs) { index, song ->
                 SongItem(
                     song = song,
+                    isDownloaded = song.id in downloadedSongIds,
                     isCurrent = song.id == currentSongId,
                     isPlaying = isPlaying && song.id == currentSongId,
                     onClick = { onSongClick(index) },
@@ -125,9 +125,10 @@ private fun AlbumDetails(uiState: AlbumPageUiState) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        if (!uiState.album?.genre.isNullOrEmpty()) {
+        val genre = uiState.album?.genre
+        if (!genre.isNullOrEmpty()) {
             Text(
-                text = uiState.album?.genre.orEmpty(),
+                text = genre,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -176,11 +177,12 @@ fun AlbumHeader(
             modifier = Modifier.clickable(onClick = onArtistClick)
         )
         if (uiState.album?.year != null) {
+            val year = uiState.album.year
             Text(
-                text = uiState.album.year.toString(),
+                text = year.toString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.clickable { onYearClick(uiState.album.year ?: 0) }
+                modifier = Modifier.clickable { onYearClick(year) }
             )
         }
         
@@ -209,6 +211,7 @@ fun AlbumHeader(
 @Composable
 fun SongItem(
     song: Child,
+    isDownloaded: Boolean,
     isCurrent: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
@@ -248,8 +251,20 @@ fun SongItem(
             }
         },
         trailingContent = {
-            IconButton(onClick = onLongClick) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                IconButton(onClick = onLongClick) {
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                }
             }
         }
     )

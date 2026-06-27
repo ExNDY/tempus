@@ -9,6 +9,8 @@ import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.FavoriteRepository
 import com.cappielloantonio.tempo.subsonic.models.*
 import com.cappielloantonio.tempo.util.NetworkUtil
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -31,6 +33,7 @@ class AlbumPageViewModel(
     private val _songs = MutableStateFlow<List<Child>>(emptyList())
     private val _isLoading = MutableStateFlow(true)
     private var startedAlbumId: String? = null
+    private var loadJob: Job? = null
 
     val uiState: StateFlow<AlbumPageUiState> = combine(
         _album, _albumInfo, _songs, _isLoading
@@ -48,22 +51,27 @@ class AlbumPageViewModel(
         _album.value = album
         _songs.value = emptyList()
         _albumInfo.value = null
-        loadData(album.id ?: "")
+        loadData(album)
     }
 
-    private fun loadData(id: String) {
-        viewModelScope.launch {
+    private fun loadData(album: AlbumID3) {
+        val albumId = album.id.orEmpty()
+        if (albumId.isBlank()) {
+            _isLoading.value = false
+            return
+        }
+
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _isLoading.value = true
-            albumRepository.getAlbum(id).observeForever { fetchedAlbum ->
-                if (fetchedAlbum != null) _album.value = fetchedAlbum
-            }
-            albumRepository.getAlbumTracks(id).observeForever { tracks ->
-                _songs.value = tracks ?: emptyList()
-                _isLoading.value = false
-            }
-            albumRepository.getAlbumInfo(id).observeForever { info ->
-                _albumInfo.value = info
-            }
+            val albumDeferred = async { albumRepository.getAlbum(albumId).asFlow().first() }
+            val tracksDeferred = async { albumRepository.getAlbumTracks(albumId).asFlow().first().orEmpty() }
+            val infoDeferred = async { albumRepository.getAlbumInfo(albumId).asFlow().first() }
+
+            _album.value = albumDeferred.await() ?: album
+            _songs.value = tracksDeferred.await().filter { !it.isDir && !it.isVideo }
+            _albumInfo.value = infoDeferred.await()
+            _isLoading.value = false
         }
     }
 

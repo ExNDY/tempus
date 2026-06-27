@@ -9,6 +9,7 @@ import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.util.Constants
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,7 @@ data class AlbumListPageArgs(
 
 data class AlbumListUiState(
     val albums: List<AlbumID3> = emptyList(),
+    val downloadedAlbumIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val supportsSort: Boolean = false,
     val preferListLayout: Boolean = false,
@@ -41,6 +43,12 @@ class AlbumListPageViewModel(
     val uiState: StateFlow<AlbumListUiState> = _uiState.asStateFlow()
 
     private var startedKey: String? = null
+    private var albumsJob: Job? = null
+    private var downloadsJob: Job? = null
+
+    init {
+        observeDownloads()
+    }
 
     fun onStart(args: AlbumListPageArgs) {
         val key = buildKey(args)
@@ -58,7 +66,8 @@ class AlbumListPageViewModel(
     }
 
     private fun load(args: AlbumListPageArgs) {
-        viewModelScope.launch {
+        albumsJob?.cancel()
+        albumsJob = viewModelScope.launch {
             when (args.type) {
                 Constants.ALBUM_RECENTLY_PLAYED -> {
                     albumRepository.getAlbums("recent", 500, null, null)
@@ -99,6 +108,7 @@ class AlbumListPageViewModel(
                         .collectLatest { downloads ->
                             val groupedAlbums = downloads
                                 .map { it as Child }
+                                .filter { !it.albumId.isNullOrEmpty() }
                                 .groupBy { it.albumId }
                                 .map { (_, albumSongs) ->
                                     val first = albumSongs.first()
@@ -112,6 +122,7 @@ class AlbumListPageViewModel(
                                         duration = albumSongs.sumOf { it.duration ?: 0 },
                                     )
                                 }
+                                .sortedBy { it.name?.lowercase().orEmpty() }
                             updateAlbums(groupedAlbums)
                         }
                 }
@@ -140,6 +151,24 @@ class AlbumListPageViewModel(
                 albums = albums,
                 isLoading = false,
             )
+        }
+    }
+
+    private fun observeDownloads() {
+        downloadsJob?.cancel()
+        downloadsJob = viewModelScope.launch {
+            downloadRepository.getLiveDownload()
+                .asFlow()
+                .collectLatest { downloads ->
+                    _uiState.update { state ->
+                        state.copy(
+                            downloadedAlbumIds = downloads
+                                .mapNotNull { (it as? Child)?.albumId }
+                                .filter { it.isNotBlank() }
+                                .toSet()
+                        )
+                    }
+                }
         }
     }
 

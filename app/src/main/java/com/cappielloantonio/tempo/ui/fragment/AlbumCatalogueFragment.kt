@@ -50,6 +50,8 @@ class AlbumCatalogueFragment : Fragment() {
                                 Bundle().apply { putSerializable(com.cappielloantonio.tempo.util.Constants.ALBUM_OBJECT, album) }
                             )
                         },
+                        onRefresh = viewModel::refresh,
+                        onLoadMore = viewModel::loadNextPage,
                         onNavigateBack = { findNavController().navigateUp() },
                     )
                 }

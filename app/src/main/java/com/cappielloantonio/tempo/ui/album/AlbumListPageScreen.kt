@@ -17,14 +17,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -39,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +73,8 @@ fun AlbumListPageScreen(
     title: String,
     onAlbumClick: (AlbumID3) -> Unit,
     onAlbumLongClick: (AlbumID3) -> Unit,
+    onRefresh: (() -> Unit)? = null,
+    onLoadMore: (() -> Unit)? = null,
     onNavigateBack: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -92,6 +100,14 @@ fun AlbumListPageScreen(
                     }
                 },
                 actions = {
+                    if (onRefresh != null) {
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(id = R.string.menu_refresh),
+                            )
+                        }
+                    }
                     IconButton(onClick = { isGridMode = !isGridMode }) {
                         Icon(
                             imageVector = if (isGridMode) Icons.AutoMirrored.Filled.List else Icons.Default.GridView,
@@ -108,7 +124,7 @@ fun AlbumListPageScreen(
                                 onDismissRequest = { sortMenuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(text = "Sort by name") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_name)) },
                                     onClick = {
                                         sortOrder = Constants.ALBUM_ORDER_BY_NAME
                                         Preferences.setAlbumSortOrder(sortOrder)
@@ -116,7 +132,7 @@ fun AlbumListPageScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Most recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_most_recently_starred)) },
                                     onClick = {
                                         sortOrder = Constants.ALBUM_ORDER_BY_MOST_RECENTLY_STARRED
                                         Preferences.setAlbumSortOrder(sortOrder)
@@ -124,7 +140,7 @@ fun AlbumListPageScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Least recently starred") },
+                                    text = { Text(text = stringResource(id = R.string.menu_sort_least_recently_starred)) },
                                     onClick = {
                                         sortOrder = Constants.ALBUM_ORDER_BY_LEAST_RECENTLY_STARRED
                                         Preferences.setAlbumSortOrder(sortOrder)
@@ -188,9 +204,13 @@ fun AlbumListPageScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
-                            items(filteredAlbums, key = { it.id.orEmpty() }) { album ->
+                            itemsIndexed(filteredAlbums, key = { _, album -> album.id.orEmpty() }) { index, album ->
+                                if (onLoadMore != null && index >= filteredAlbums.lastIndex - 6) {
+                                    LoadMoreTrigger(key = "${album.id}:${filteredAlbums.size}", onLoadMore = onLoadMore)
+                                }
                                 AlbumGridItem(
                                     album = album,
+                                    isDownloaded = album.id in uiState.downloadedAlbumIds,
                                     onClick = { onAlbumClick(album) },
                                     onLongClick = { onAlbumLongClick(album) },
                                 )
@@ -202,9 +222,13 @@ fun AlbumListPageScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(filteredAlbums, key = { it.id.orEmpty() }) { album ->
+                            itemsIndexed(filteredAlbums, key = { _, album -> album.id.orEmpty() }) { index, album ->
+                                if (onLoadMore != null && index >= filteredAlbums.lastIndex - 6) {
+                                    LoadMoreTrigger(key = "${album.id}:${filteredAlbums.size}", onLoadMore = onLoadMore)
+                                }
                                 AlbumListItem(
                                     album = album,
+                                    isDownloaded = album.id in uiState.downloadedAlbumIds,
                                     onClick = { onAlbumClick(album) },
                                     onLongClick = { onAlbumLongClick(album) },
                                 )
@@ -217,10 +241,21 @@ fun AlbumListPageScreen(
     }
 }
 
+@Composable
+private fun LoadMoreTrigger(
+    key: String,
+    onLoadMore: () -> Unit,
+) {
+    LaunchedEffect(key) {
+        onLoadMore()
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AlbumGridItem(
     album: AlbumID3,
+    isDownloaded: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -251,6 +286,28 @@ private fun AlbumGridItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        if (album.starred != null || isDownloaded) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (album.starred != null) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -258,6 +315,7 @@ private fun AlbumGridItem(
 @Composable
 private fun AlbumListItem(
     album: AlbumID3,
+    isDownloaded: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -289,6 +347,22 @@ private fun AlbumListItem(
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (album.starred != null) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                if (isDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(id = R.string.song_list_page_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 album.songCount?.takeIf { it > 0 }?.let {
                     Text(
                         text = "$it",
