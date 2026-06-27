@@ -266,6 +266,7 @@
     <string name="menu_sort_most_played">Most played</string>
     <string name="menu_sort_most_recently_starred">Most recently starred</string>
     <string name="menu_sort_least_recently_starred">Least recently starred</string>
+    <string name="menu_refresh">Refresh</string>
     <string name="menu_pin_button">Add to faves</string>
     <string name="menu_unpin_button">Remove from faves</string>
     <string name="playlist_sort_pinned">Faves</string>
@@ -274,6 +275,7 @@
     <string name="playback_speed_dialog_title">Playback Speed</string>
     <string name="playback_speed_dialog_negative_button">Cancel</string>
     <string name="player_queue_clean_all_button">Clean play queue</string>
+    <string name="player_queue_save_queue">Save Queue</string>
     <string name="player_queue_save_queue_success">Saved play queue</string>
     <string name="player_queue_save_to_playlist">Save Queue to Playlist</string>
     <string name="player_queue_load_queue">Load Queue</string>
@@ -600,6 +602,9 @@
     <string name="song_list_page_most_played">Most played tracks</string>
     <string name="song_list_page_recently_added">Recently added tracks</string>
     <string name="song_list_page_recently_played">Recently played tracks</string>
+    <string name="song_list_page_sort_by_title">Sort by title</string>
+    <string name="song_list_page_sort_least_recently_starred">Least recently starred</string>
+    <string name="song_list_page_sort_most_recently_starred">Most recently starred</string>
     <string name="song_list_page_starred">Starred tracks</string>
     <string name="song_list_page_top">%1$s\'s top tracks</string>
     <string name="song_list_page_year">Year %1$d</string>
@@ -788,6 +793,9 @@
     <string name="player_queue_all_songs_downloaded">All songs already downloaded</string>
     <string name="player_queue_loaded">Queue loaded</string>
     <string name="player_queue_not_found">No saved queue found</string>
+    <string name="player_status_playing">Playing</string>
+    <string name="player_status_paused">Paused</string>
+    <string name="player_status_loading">Loading</string>
     <string name="download_directory_picker_summary">Choose a folder where downloaded songs will be stored.</string>
     <string name="download_directory_picker_positive_button">Choose folder</string>
     <plurals name="artist_album_count">

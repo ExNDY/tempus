@@ -9,7 +9,7 @@ val viewModelModule = module {
     viewModel { LoginViewModel(get()) }
     viewModel { SearchViewModel(get()) }
     viewModel { AlbumCatalogueViewModel(get()) }
-    viewModel { ArtistCatalogueViewModel(get()) }
+    viewModel { ArtistCatalogueViewModel(get(), get()) }
     viewModel { AlbumListPageViewModel(get(), get()) }
     viewModel { ArtistListPageViewModel(get(), get()) }
     viewModel { DirectoryViewModel(get()) }
@@ -26,7 +26,7 @@ val viewModelModule = module {
     viewModel { RatingViewModel(get(), get(), get()) }
     viewModel { PodcastChannelCatalogueViewModel(get()) }
     viewModel { PodcastViewModel(get()) }
-    viewModel { PlaylistCatalogueViewModel(get()) }
+    viewModel { PlaylistCatalogueViewModel(get(), get()) }
     viewModel { PlaylistPageViewModel(get()) }
     viewModel { PlaylistBottomSheetViewModel(get(), get()) }
     viewModel { PodcastChannelEditorViewModel(get()) }
@@ -34,12 +34,13 @@ val viewModelModule = module {
     viewModel { PodcastEpisodeBottomSheetViewModel(get()) }
     viewModel { StarredArtistsSyncViewModel(get()) }
     viewModel { ArtistPageViewModel(get(), get(), get()) }
-    viewModel { ArtistBottomSheetViewModel(get(), get()) }
+    viewModel { ArtistBottomSheetViewModel(get(), get(), get()) }
     viewModel { HomeRearrangementViewModel() }
     viewModel { PlaylistChooserViewModel(get()) }
     viewModel { SongListPageViewModel(get(), get(), get(), get(), get()) }
     viewModel { PlaylistEditorViewModel(get(), get()) }
     viewModel { DownloadViewModel(get()) }
+    viewModel { DownloadedBottomSheetViewModel() }
     viewModel { LibraryViewModel(get(), get(), get(), get(), get()) }
     viewModel { AlbumPageViewModel(get(), get(), get()) }
     viewModel { AlbumBottomSheetViewModel(get(), get(), get(), get()) }
