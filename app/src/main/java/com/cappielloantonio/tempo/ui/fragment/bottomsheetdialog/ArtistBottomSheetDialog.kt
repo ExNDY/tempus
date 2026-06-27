@@ -14,6 +14,7 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.ui.activity.MainActivity
 import com.cappielloantonio.tempo.ui.artist.ArtistBottomSheetRoute
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
+import com.cappielloantonio.tempo.util.AssetLinkUtil
 import com.cappielloantonio.tempo.util.Constants
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
@@ -53,6 +54,23 @@ class ArtistBottomSheetDialog : BottomSheetDialogFragment() {
                             val activity = requireActivity() as MainActivity
                             MediaManager.startQueue(activity.mediaBrowserListenableFuture, songs, 0)
                             activity.setBottomSheetInPeek(true)
+                        },
+                        onOpenAssetLink = { assetLink, collapsePlayer ->
+                            (requireActivity() as MainActivity).openAssetLink(assetLink, collapsePlayer)
+                        },
+                        onCopyAssetLink = { assetLink ->
+                            AssetLinkUtil.copyToClipboard(requireContext(), assetLink)
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                getString(R.string.asset_link_copied_toast, assetLink.id),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onRefreshShares = {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_SHARES,
+                                Bundle.EMPTY
+                            )
                         }
                     )
                 }

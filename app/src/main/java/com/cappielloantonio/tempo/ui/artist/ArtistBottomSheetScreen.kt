@@ -1,6 +1,9 @@
 package com.cappielloantonio.tempo.ui.artist
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -9,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -32,7 +36,9 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.AssetLinkChips
 import com.cappielloantonio.tempo.ui.components.TempusImageType
+import com.cappielloantonio.tempo.util.AssetLinkUtil
 import com.cappielloantonio.tempo.util.DownloadUtil
 import com.cappielloantonio.tempo.util.ExternalAudioWriter
 import com.cappielloantonio.tempo.util.MappingUtil
@@ -50,6 +56,9 @@ fun ArtistBottomSheetRoute(
     onNavigateToArtist: (ArtistID3) -> Unit,
     onShufflePlay: (List<Child>) -> Unit,
     onStartInstantMix: (List<Child>) -> Unit,
+    onOpenAssetLink: (AssetLinkUtil.AssetLink, Boolean) -> Unit,
+    onCopyAssetLink: (AssetLinkUtil.AssetLink) -> Unit,
+    onRefreshShares: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -101,6 +110,51 @@ fun ArtistBottomSheetRoute(
                 }
                 onDismiss()
             }
+        },
+        showShare = Preferences.isSharingEnabled(),
+        onShareClick = {
+            scope.launch {
+                val share = viewModel.shareArtist()
+                if (share != null) {
+                    copyToClipboard(context, context.getString(R.string.app_name), share.url)
+                    onRefreshShares()
+                } else {
+                    Toast.makeText(context, R.string.share_unsupported_error, Toast.LENGTH_SHORT).show()
+                }
+                onDismiss()
+            }
+        },
+        onCoverClick = {
+            uiState.artist?.id?.let { artistId ->
+                AssetLinkUtil.buildAssetLink(AssetLinkUtil.TYPE_ARTIST, artistId)?.let { assetLink ->
+                    onOpenAssetLink(assetLink, false)
+                }
+            }
+        },
+        onCoverLongClick = {
+            uiState.artist?.id?.let { artistId ->
+                AssetLinkUtil.buildAssetLink(AssetLinkUtil.TYPE_ARTIST, artistId)?.let(onCopyAssetLink)
+            }
+        },
+        onTitleClick = {
+            uiState.artist?.id?.let { artistId ->
+                AssetLinkUtil.buildAssetLink(AssetLinkUtil.TYPE_ARTIST, artistId)?.let { assetLink ->
+                    onOpenAssetLink(assetLink, false)
+                }
+            }
+        },
+        onTitleLongClick = {
+            uiState.artist?.id?.let { artistId ->
+                AssetLinkUtil.buildAssetLink(AssetLinkUtil.TYPE_ARTIST, artistId)?.let(onCopyAssetLink)
+            }
+        },
+        onChipClick = { type, id ->
+            AssetLinkUtil.buildAssetLink(type, id)?.let { assetLink ->
+                onOpenAssetLink(assetLink, true)
+            }
+        },
+        onChipLongClick = { type, id ->
+            AssetLinkUtil.buildAssetLink(type, id)?.let(onCopyAssetLink)
         }
     )
 }
@@ -114,6 +168,14 @@ fun ArtistBottomSheetContent(
     onInstantMixClick: () -> Unit,
     onGoToArtistClick: () -> Unit,
     onDownloadAllClick: () -> Unit,
+    showShare: Boolean,
+    onShareClick: () -> Unit,
+    onCoverClick: () -> Unit,
+    onCoverLongClick: () -> Unit,
+    onTitleClick: () -> Unit,
+    onTitleLongClick: () -> Unit,
+    onChipClick: (String, String) -> Unit,
+    onChipLongClick: (String, String) -> Unit,
 ) {
     val artist = uiState.artist
     ActionBottomSheetContent(
@@ -140,6 +202,12 @@ fun ArtistBottomSheetContent(
                 icon = Icons.Default.Download,
                 label = stringResource(R.string.menu_download_all_button),
                 onClick = onDownloadAllClick
+            ),
+            ActionItemUiModel(
+                icon = Icons.Default.Share,
+                label = stringResource(R.string.song_bottom_sheet_share),
+                onClick = onShareClick,
+                isVisible = showShare,
             )
         ),
         trailingContent = {
@@ -158,7 +226,20 @@ fun ArtistBottomSheetContent(
                     tint = if (artist?.starred != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
+        },
+        headerExtraContent = {
+            AssetLinkChips(
+                songId = null,
+                albumId = null,
+                artistId = artist?.id,
+                onChipClick = onChipClick,
+                onChipLongClick = onChipLongClick,
+            )
+        },
+        onCoverClick = onCoverClick,
+        onCoverLongClick = onCoverLongClick,
+        onTitleClick = onTitleClick,
+        onTitleLongClick = onTitleLongClick,
     )
 }
 
@@ -172,4 +253,10 @@ private fun downloadSongs(context: Context, songs: List<Child>) {
     } else {
         songs.forEach { ExternalAudioWriter.downloadToUserDirectory(context, it) }
     }
+}
+
+private fun copyToClipboard(context: Context, label: String, value: String?) {
+    if (value.isNullOrEmpty()) return
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+    clipboardManager.setPrimaryClip(ClipData.newPlainText(label, value))
 }

@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 fun PlaylistBottomSheetRoute(
     playlist: Playlist,
     onDismiss: () -> Unit,
-    onPlayNext: (List<Child>) -> Unit,
+    onPlay: (List<Child>) -> Unit,
     onAddToQueue: (List<Child>) -> Unit,
     onShufflePlay: (List<Child>) -> Unit,
     onOpenEditor: (Playlist) -> Unit,
@@ -78,9 +78,9 @@ fun PlaylistBottomSheetRoute(
         isEditable = editable,
         hasLocalDownloads = hasLocalDownloads,
         showShare = Preferences.isSharingEnabled(),
-        onPlayNextClick = {
+        onPlayClick = {
             if (uiState.songs.isNotEmpty()) {
-                onPlayNext(uiState.songs)
+                onPlay(uiState.songs)
                 onDismiss()
             }
         },
@@ -134,7 +134,7 @@ fun PlaylistBottomSheetContent(
     isEditable: Boolean,
     hasLocalDownloads: Boolean,
     showShare: Boolean,
-    onPlayNextClick: () -> Unit,
+    onPlayClick: () -> Unit,
     onAddToQueueClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onPinToggleClick: () -> Unit,
@@ -154,7 +154,7 @@ fun PlaylistBottomSheetContent(
             ActionItemUiModel(
                 icon = Icons.Default.PlayArrow,
                 label = stringResource(R.string.playlist_page_play_button),
-                onClick = onPlayNextClick
+                onClick = onPlayClick
             ),
             ActionItemUiModel(
                 icon = Icons.AutoMirrored.Filled.QueueMusic,

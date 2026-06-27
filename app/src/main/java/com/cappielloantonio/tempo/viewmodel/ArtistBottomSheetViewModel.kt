@@ -6,8 +6,10 @@ import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.interfaces.StarCallback
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.FavoriteRepository
+import com.cappielloantonio.tempo.repository.SharingRepository
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
+import com.cappielloantonio.tempo.subsonic.models.Share
 import com.cappielloantonio.tempo.util.NetworkUtil
 import com.cappielloantonio.tempo.util.Preferences
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -35,6 +38,7 @@ data class ArtistBottomSheetUiState(
 class ArtistBottomSheetViewModel(
     private val artistRepository: ArtistRepository,
     private val favoriteRepository: FavoriteRepository,
+    private val sharingRepository: SharingRepository,
 ) : ViewModel() {
 
     sealed interface Action {
@@ -102,6 +106,12 @@ class ArtistBottomSheetViewModel(
             }
             awaitClose {}
         }
+    }
+
+    suspend fun shareArtist(): Share? {
+        val artist = _artist.value ?: return null
+        val artistId = artist.id ?: return null
+        return sharingRepository.createShare(artistId, artist.name, null).asFlow().first()
     }
 
     private fun removeFavoriteOffline(artist: ArtistID3) {

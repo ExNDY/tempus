@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.media3.common.util.UnstableApi
-import androidx.lifecycle.ViewModelProvider
+import com.cappielloantonio.tempo.interfaces.PlaylistCallback
 import com.cappielloantonio.tempo.service.MediaManager
 import com.cappielloantonio.tempo.subsonic.models.Playlist
 import com.cappielloantonio.tempo.ui.activity.MainActivity
@@ -15,21 +15,16 @@ import com.cappielloantonio.tempo.ui.dialog.PlaylistEditorDialog
 import com.cappielloantonio.tempo.ui.playlist.PlaylistBottomSheetRoute
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
-import com.cappielloantonio.tempo.viewmodel.HomeViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 @UnstableApi
 class PlaylistBottomSheetDialog : BottomSheetDialogFragment() {
-
-    private lateinit var homeViewModel: HomeViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        homeViewModel = ViewModelProvider(requireActivity())[HomeViewModel::class.java]
-
         val playlist = arguments?.getSerializable(Constants.PLAYLIST_OBJECT) as? Playlist
         if (playlist == null) {
             dismiss()
@@ -40,12 +35,21 @@ class PlaylistBottomSheetDialog : BottomSheetDialogFragment() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 TempusTheme {
+                    val refreshHomePlaylistsCallback = object : PlaylistCallback {
+                        override fun onDismiss() {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_PLAYLISTS,
+                                Bundle.EMPTY
+                            )
+                        }
+                    }
+
                     PlaylistBottomSheetRoute(
                         playlist = playlist,
                         onDismiss = ::dismiss,
-                        onPlayNext = { songs ->
+                        onPlay = { songs ->
                             val activity = requireActivity() as MainActivity
-                            MediaManager.enqueue(activity.mediaBrowserListenableFuture, songs, true)
+                            MediaManager.startQueue(activity.mediaBrowserListenableFuture, ArrayList(songs), 0)
                             activity.setBottomSheetInPeek(true)
                         },
                         onAddToQueue = { songs ->
@@ -55,24 +59,33 @@ class PlaylistBottomSheetDialog : BottomSheetDialogFragment() {
                         },
                         onShufflePlay = { songs ->
                             val activity = requireActivity() as MainActivity
-                            MediaManager.startQueue(activity.mediaBrowserListenableFuture, songs, 0)
+                            MediaManager.startQueue(activity.mediaBrowserListenableFuture, ArrayList(songs), 0)
                             activity.setBottomSheetInPeek(true)
                         },
                         onOpenEditor = { targetPlaylist ->
-                            PlaylistEditorDialog(null).apply {
+                            PlaylistEditorDialog(refreshHomePlaylistsCallback).apply {
                                 arguments = Bundle().apply {
                                     putSerializable(Constants.PLAYLIST_OBJECT, targetPlaylist)
                                 }
                             }.show(requireActivity().supportFragmentManager, null)
                         },
                         onDeletePlaylist = { targetPlaylist ->
-                            PlaylistEditorDialog(null).apply {
+                            PlaylistEditorDialog(refreshHomePlaylistsCallback).apply {
                                 arguments = Bundle().apply {
                                     putSerializable(Constants.PLAYLIST_OBJECT, targetPlaylist)
                                 }
                             }.show(requireActivity().supportFragmentManager, null)
                         },
-                        onRefreshAfterMutation = { homeViewModel.refreshShares() }
+                        onRefreshAfterMutation = {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_SHARES,
+                                Bundle.EMPTY
+                            )
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_PLAYLISTS,
+                                Bundle.EMPTY
+                            )
+                        }
                     )
                 }
             }

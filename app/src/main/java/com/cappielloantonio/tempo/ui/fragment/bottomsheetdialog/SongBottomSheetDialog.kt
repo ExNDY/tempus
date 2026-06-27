@@ -18,21 +18,15 @@ import com.cappielloantonio.tempo.ui.song.SongBottomSheetRoute
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.AssetLinkUtil
 import com.cappielloantonio.tempo.util.Constants
-import com.cappielloantonio.tempo.viewmodel.HomeViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import androidx.lifecycle.ViewModelProvider
 
 @UnstableApi
 class SongBottomSheetDialog : BottomSheetDialogFragment() {
-    private lateinit var homeViewModel: HomeViewModel
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        homeViewModel = ViewModelProvider(requireActivity())[HomeViewModel::class.java]
-
         val song = arguments?.getSerializable(Constants.TRACK_OBJECT) as? Child
         if (song == null) {
             dismiss()
@@ -103,7 +97,12 @@ class SongBottomSheetDialog : BottomSheetDialogFragment() {
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
                         },
-                        onRefreshShares = { homeViewModel.refreshShares() }
+                        onRefreshShares = {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_SHARES,
+                                Bundle.EMPTY
+                            )
+                        }
                     )
                 }
             }

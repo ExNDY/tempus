@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.fragment.NavHostFragment
 import com.cappielloantonio.tempo.R
@@ -17,21 +16,16 @@ import com.cappielloantonio.tempo.ui.album.AlbumBottomSheetRoute
 import com.cappielloantonio.tempo.ui.dialog.PlaylistChooserDialog
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
-import com.cappielloantonio.tempo.viewmodel.HomeViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 @UnstableApi
 class AlbumBottomSheetDialog : BottomSheetDialogFragment() {
-
-    private lateinit var homeViewModel: HomeViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        homeViewModel = ViewModelProvider(requireActivity())[HomeViewModel::class.java]
-
         val album = arguments?.getSerializable(Constants.ALBUM_OBJECT) as? AlbumID3
         if (album == null) {
             dismiss()
@@ -78,7 +72,12 @@ class AlbumBottomSheetDialog : BottomSheetDialogFragment() {
                             MediaManager.startQueue(activity.mediaBrowserListenableFuture, songs, 0)
                             activity.setBottomSheetInPeek(true)
                         },
-                        onRefreshShares = { homeViewModel.refreshShares() }
+                        onRefreshShares = {
+                            parentFragmentManager.setFragmentResult(
+                                Constants.REQUEST_REFRESH_HOME_SHARES,
+                                Bundle.EMPTY
+                            )
+                        }
                     )
                 }
             }
