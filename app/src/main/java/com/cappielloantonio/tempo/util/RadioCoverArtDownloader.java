@@ -1,13 +1,10 @@
 package com.cappielloantonio.tempo.util;
 
 import android.content.Context;
-import android.net.Uri;
 import android.util.Log;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.signature.ObjectKey;
 import com.cappielloantonio.tempo.App;
+import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,15 +32,6 @@ public class RadioCoverArtDownloader {
         return new File(getCoverDir(), stationId);
     }
 
-    // Cache-bust Glide by the cover file's mtime so an edited cover (written to the same path)
-    // is reloaded instead of served stale from cache. No-op for non-file uris (server covers).
-    public static <T> RequestBuilder<T> applyLocalFileSignature(RequestBuilder<T> request, Uri uri) {
-        if (uri != null && "file".equals(uri.getScheme()) && uri.getPath() != null) {
-            return request.signature(new ObjectKey(new File(uri.getPath()).lastModified()));
-        }
-        return request;
-    }
-
     public static void downloadCoverArt(String stationId, String coverArtUrl) {
         if (coverArtUrl == null || coverArtUrl.isEmpty()) return;
 
@@ -55,7 +43,7 @@ public class RadioCoverArtDownloader {
                 if (urlString == null) return;
 
                 if (urlString.contains("/rest/getCoverArt")) {
-                    downloadViaGlide(urlString, targetFile);
+                    downloadViaCoil(urlString, targetFile);
                 } else {
                     downloadDirect(urlString, targetFile);
                 }
@@ -69,7 +57,7 @@ public class RadioCoverArtDownloader {
         if (coverArtUrl.startsWith("http://") || coverArtUrl.startsWith("https://")) {
             return coverArtUrl;
         }
-        return com.cappielloantonio.tempo.glide.CustomGlideRequest.createUrl(
+        return CustomGlideRequest.createUrl(
                 coverArtUrl, Preferences.getImageSize());
     }
 
@@ -107,15 +95,10 @@ public class RadioCoverArtDownloader {
         }
     }
 
-    private static boolean downloadViaGlide(String urlString, File targetFile) {
+    private static boolean downloadViaCoil(String urlString, File targetFile) {
         try {
             Context context = App.getContext();
-            File cachedFile = Glide.with(context)
-                    .asFile()
-                    .load(urlString)
-                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.DATA)
-                    .submit()
-                    .get();
+            File cachedFile = CustomGlideRequest.getCachedFileBlocking(context, urlString, urlString);
 
             if (cachedFile != null && cachedFile.exists()) {
                 try (InputStream in = new java.io.FileInputStream(cachedFile);
@@ -130,7 +113,7 @@ public class RadioCoverArtDownloader {
             }
             return false;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to download cover via Glide from " + urlString, e);
+            Log.e(TAG, "Failed to download cover via Coil from " + urlString, e);
             return false;
         }
     }

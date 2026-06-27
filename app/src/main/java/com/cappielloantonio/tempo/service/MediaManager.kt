@@ -10,6 +10,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
+import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.interfaces.MediaIndexCallback
 import com.cappielloantonio.tempo.model.Chronology
 import com.cappielloantonio.tempo.repository.ChronologyRepository
@@ -123,12 +124,13 @@ object MediaManager {
     }
 
     @JvmStatic
+    @OptIn(UnstableApi::class)
     fun check(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?) {
         mediaBrowserListenableFuture?.addListener({
             val browser = getResolvedBrowser(mediaBrowserListenableFuture, "check")
             if (browser != null && browser.mediaItemCount < 1) {
-                val media = queueRepository.media
-                if (media != null && media.size >= 1) {
+                val media = queueRepository.getMedia()
+                if (media.isNotEmpty()) {
                     init(mediaBrowserListenableFuture, media)
                 }
             }
@@ -136,13 +138,14 @@ object MediaManager {
     }
 
     @JvmStatic
+    @OptIn(UnstableApi::class)
     fun init(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>) {
         mediaBrowserListenableFuture?.addListener({
             val browser = getResolvedBrowser(mediaBrowserListenableFuture, "init")
             if (browser != null) {
                 browser.clearMediaItems()
                 browser.setMediaItems(MappingUtil.mapMediaItems(media))
-                browser.seekTo(queueRepository.lastPlayedMediaIndex, queueRepository.lastPlayedMediaTimestamp)
+                browser.seekTo(queueRepository.getLastPlayedMediaIndex(), queueRepository.getLastPlayedMediaTimestamp())
                 browser.prepare()
             }
         }, MoreExecutors.directExecutor())
@@ -392,6 +395,7 @@ object MediaManager {
     }
 
     @JvmStatic
+    @OptIn(UnstableApi::class)
     fun removeRange(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, fromItem: Int, toItem: Int) {
         mediaBrowserListenableFuture?.addListener({
             try {
@@ -418,20 +422,19 @@ object MediaManager {
     }
 
     @JvmStatic
-    fun setLastPlayedTimestamp(mediaItem: MediaItem?) {
-        if (mediaItem != null) queueRepository.setLastPlayedTimestamp(mediaItem.mediaId)
+    fun setLastPlayedTimestamp(mediaItem: MediaItem) {
+        queueRepository.setLastPlayedTimestamp(mediaItem.mediaId)
     }
 
     @JvmStatic
-    fun setPlayingPausedTimestamp(mediaItem: MediaItem?, ms: Long) {
-        if (mediaItem != null)
-            queueRepository.setPlayingPausedTimestamp(mediaItem.mediaId, ms)
+    fun setPlayingPausedTimestamp(mediaItem: MediaItem, ms: Long) {
+        queueRepository.setPlayingPausedTimestamp(mediaItem.mediaId, ms)
     }
 
     @JvmStatic
-    fun scrobble(mediaItem: MediaItem?, submission: Boolean) {
-        if (mediaItem != null && mediaItem.mediaMetadata.extras != null && Preferences.isScrobblingEnabled()) {
-            songRepository.scrobble(mediaItem.mediaMetadata.extras!!.getString("id"), submission)
+    fun scrobble(mediaItem: MediaItem, submission: Boolean) {
+        if (mediaItem.mediaMetadata.extras != null && Preferences.isScrobblingEnabled()) {
+            songRepository.scrobble(mediaItem.mediaMetadata.extras!!.getString("id") ?: "", submission)
         }
     }
 
@@ -463,9 +466,9 @@ object MediaManager {
 
         val instantMix = songRepository.getContinuousMix(mediaItem.mediaId, 25)
 
-        instantMix.observeForever(object : Observer<List<Child>> {
-            override fun onChanged(value: List<Child>) {
-                if (value.isEmpty()) {
+        instantMix.observeForever(object : Observer<List<Child>?> {
+            override fun onChanged(value: List<Child>?) {
+                if (value == null || value.isEmpty()) {
                     Log.w(TAG, "Continuous Play: no similar track found. Is server correctly configured?")
                 } else {
                     if (existingBrowserFuture != null) {
@@ -506,17 +509,15 @@ object MediaManager {
     }
 
     @JvmStatic
-    fun saveChronology(mediaItem: MediaItem?) {
-        if (mediaItem != null) {
-            chronologyRepository.insert(Chronology(mediaItem))
-        }
+    fun saveChronology(mediaItem: MediaItem) {
+        chronologyRepository.insert(Chronology(mediaItem))
     }
 
     private val queueRepository: QueueRepository
         get() = QueueRepository()
 
     private val songRepository: SongRepository
-        get() = SongRepository()
+        get() = SongRepository(App.get(com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository::class.java))
 
     private val chronologyRepository: ChronologyRepository
         get() = ChronologyRepository()

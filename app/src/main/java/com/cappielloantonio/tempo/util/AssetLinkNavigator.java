@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 
@@ -24,7 +23,6 @@ import com.cappielloantonio.tempo.subsonic.models.Playlist;
 import com.cappielloantonio.tempo.subsonic.models.Genre;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.fragment.bottomsheetdialog.SongBottomSheetDialog;
-import com.cappielloantonio.tempo.viewmodel.SongBottomSheetViewModel;
 
 public final class AssetLinkNavigator {
     private final MainActivity activity;
@@ -76,8 +74,6 @@ public final class AssetLinkNavigator {
                     Toast.makeText(activity, R.string.asset_link_error_song, Toast.LENGTH_SHORT).show();
                     return;
                 }
-                SongBottomSheetViewModel viewModel = new ViewModelProvider(activity).get(SongBottomSheetViewModel.class);
-                viewModel.setSong(child);
                 SongBottomSheetDialog dialog = new SongBottomSheetDialog();
                 Bundle args = new Bundle();
                 args.putSerializable(Constants.TRACK_OBJECT, child);

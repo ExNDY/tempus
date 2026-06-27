@@ -3,8 +3,8 @@ package com.cappielloantonio.tempo.network
 import kotlinx.coroutines.flow.Flow
 
 data class ConnectionState(
-    val isNetworkAvailable: Boolean = false,
-    val isServerAvailable: Boolean = false
+    val isNetworkAvailable: Boolean = true,
+    val isServerAvailable: Boolean = true
 )
 
 interface NetworkConnectivityService {

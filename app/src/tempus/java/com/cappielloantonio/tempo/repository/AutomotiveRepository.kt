@@ -512,7 +512,7 @@ class AutomotiveRepository {
                 val response = subsonicRepository.getInternetRadioStations()
                 val radioStations = (response?.internetRadioStations?.internetRadioStations ?: emptyList()).toMutableList()
 
-                val localCaches = AppDatabase.getInstance().internetRadioStationDao().local
+                val localCaches = AppDatabase.getInstance().internetRadioStationDao().getLocal()
                 radioStations.addAll(localCaches.map { it.toInternetRadioStation() })
 
                 radioStations.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name ?: "" })

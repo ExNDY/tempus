@@ -4,12 +4,9 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.R;
 
@@ -98,9 +95,8 @@ public final class WidgetUpdateManager {
                     appCtx,
                     coverArtId,
                     WIDGET_SAFE_ART_SIZE,
-                    new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                    resource -> {
+                        if (resource != null) {
                             AppWidgetManager mgr = AppWidgetManager.getInstance(appCtx);
                             int[] ids = mgr.getAppWidgetIds(new ComponentName(appCtx, WidgetProvider4x1.class));
                             for (int id : ids) {
@@ -109,10 +105,7 @@ public final class WidgetUpdateManager {
                                 WidgetProvider.attachIntents(appCtx, rv, id, songLinkFinal, albumLinkFinal, artistLinkFinal);
                                 mgr.updateAppWidget(id, rv);
                             }
-                        }
-
-                        @Override
-                        public void onLoadCleared(Drawable placeholder) {
+                        } else {
                             AppWidgetManager mgr = AppWidgetManager.getInstance(appCtx);
                             int[] ids = mgr.getAppWidgetIds(new ComponentName(appCtx, WidgetProvider4x1.class));
                             for (int id : ids) {

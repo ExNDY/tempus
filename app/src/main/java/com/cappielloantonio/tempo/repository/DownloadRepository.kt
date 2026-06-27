@@ -13,11 +13,11 @@ import kotlinx.coroutines.runBlocking
 class DownloadRepository {
     private val downloadDao = AppDatabase.getInstance().downloadDao()
 
-    fun getLiveDownload(): LiveData<List<Download>> = downloadDao.all
+    fun getLiveDownload(): LiveData<List<Download>> = downloadDao.getAll()
 
     fun getAllDownloads(): List<Download> {
         return runBlocking(Dispatchers.IO) {
-            downloadDao.allSync
+            downloadDao.getAllSync()
         }
     }
 

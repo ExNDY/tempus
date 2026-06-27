@@ -46,7 +46,7 @@ class RadioRepository(
     }
 
     private suspend fun mergeWithLocal(subsonicStations: List<InternetRadioStation>): List<InternetRadioStation> = withContext(Dispatchers.IO) {
-        val localCaches = AppDatabase.getInstance().internetRadioStationDao().local
+        val localCaches = AppDatabase.getInstance().internetRadioStationDao().getLocal()
         val localStations = localCaches.map { it.toInternetRadioStation() }
 
         val merged = ArrayList(subsonicStations)
@@ -56,7 +56,7 @@ class RadioRepository(
     }
 
     private suspend fun fallbackToCache(): List<InternetRadioStation> = withContext(Dispatchers.IO) {
-        val cached = AppDatabase.getInstance().internetRadioStationDao().all.map { it.toInternetRadioStation() }.toMutableList()
+        val cached = AppDatabase.getInstance().internetRadioStationDao().getAll().map { it.toInternetRadioStation() }.toMutableList()
         if (cached.isNotEmpty()) {
             sortByName(cached)
         }

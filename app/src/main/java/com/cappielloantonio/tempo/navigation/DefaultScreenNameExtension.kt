@@ -2,14 +2,14 @@ package com.cappielloantonio.tempo.navigation
 
 object DefaultScreenNameExtension {
     /**
-     * Default realisation of screen name for compose navigation, without parameters
+     * Default realization of screen name for compose navigation, without parameters
      *
      * @return the simple name of the underlying class
      */
     fun Screen.defaultScreenName(): String = this::class.java.simpleName
 
     /**
-     * Default realisation of screen name for compose navigation, with required parameters
+     * Default realization of screen name for compose navigation, with required parameters
      *
      * @return the string with parameters of navigation like in web: "screenName/argument"
      */
@@ -22,7 +22,7 @@ object DefaultScreenNameExtension {
     }
 
     /**
-     * Default realisation of screen name for compose navigation,
+     * Default realization of screen name for compose navigation,
      * with required and optional parameters
      *
      * @return the string with parameters of navigation like in web: "screenName/argument" or
@@ -37,7 +37,7 @@ object DefaultScreenNameExtension {
     }
 
     /**
-     * Default realisation of screen name for compose navigation,
+     * Default realization of screen name for compose navigation,
      * with optional parameters
      *
      * @return the string with parameters of navigation like in web:

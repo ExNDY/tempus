@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="aa_albums">Albums</string>
     <string name="aa_album_most_played">Albums most played</string>
 	<string name="aa_album_recently_added">Albums added</string>
@@ -24,6 +24,9 @@
     <string name="aa_quick_mix">Quick mix</string>
     <string name="aa_my_mix">My mix</string>
     <string name="aa_discovery_mix">Discovery mix</string>
+
+    <string name="no_internet">No internet connection</string>
+    <string name="server_unreachable">Server is unreachable</string>
 
     <string name="activity_battery_optimizations_conclusion">If in trouble visit https://dontkillmyapp.com. It provides detailed instructions on how to disable any power-saving features that may affect app\'s performance.</string>
     <string name="activity_battery_optimizations_summary">Please disable battery optimizations for media playback while the screen is off.</string>
@@ -80,6 +83,7 @@
     <string name="artist_page_title_appears_on_section">Appears On</string>
     <string name="artist_page_title_biography_more_button">More</string>
     <string name="artist_page_title_biography_section">Biography</string>
+    <string name="artist_page_title_similar_artists_section">Similar artists</string>
     <string name="artist_page_title_most_streamed_song_section">Top Songs</string>
     <string name="artist_page_title_most_streamed_song_see_all_button">See all</string>
     <string name="artist_page_title_most_streamed_song_unavailable">No top songs available\n\nTap to hide</string>
@@ -136,6 +140,14 @@
     <string name="exo_download_notification_channel_name">Downloads</string>
     <string name="exo_controls_heart_off_description">Toggle Heart off</string>
     <string name="exo_controls_heart_on_description">Toggle Heart on</string>
+    <string name="exo_controls_shuffle_on_description" tools:override="true" translatable="false">Shuffle on</string>
+    <string name="exo_controls_shuffle_off_description" tools:override="true" translatable="false">Shuffle off</string>
+    <string name="exo_controls_repeat_off_description" tools:override="true" translatable="false">Repeat off</string>
+    <string name="exo_controls_repeat_one_description" tools:override="true" translatable="false">Repeat one</string>
+    <string name="exo_controls_repeat_all_description" tools:override="true" translatable="false">Repeat all</string>
+    <string name="exo_controls_previous_description" tools:override="true" translatable="false">Previous</string>
+    <string name="exo_controls_play_description" tools:override="true" translatable="false">Play</string>
+    <string name="exo_controls_next_description" tools:override="true" translatable="false">Next</string>
     <string name="cast_expanded_controller_loading">Loading…</string>
     <string name="filter_info_selection">Select two or more filters</string>
     <string name="filter_title">Filter</string>
@@ -155,6 +167,8 @@
     <string name="home_rearrangement_dialog_positive_button">Save</string>
     <string name="home_rearrangement_dialog_title">Rearrange home</string>
     <string name="home_rearrangement_dialog_subtitle">Please note that in order for the changes made to take effect, it is necessary to restart the application.</string>
+    <string name="home_rearrangement_dialog_library_carousel_title">Use material carousel for Library albums</string>
+    <string name="home_rearrangement_dialog_library_carousel_summary">Adds a wider, peeking carousel style to the Library album sample.</string>
     <string name="home_section_music">Music</string>
     <string name="home_section_podcast">Podcast</string>
     <string name="home_section_radio">Radio</string>
@@ -215,6 +229,7 @@
     <string name="library_title_music_folder">Music folders</string>
     <string name="library_title_playlist">Playlists</string>
     <string name="library_title_playlist_see_all_button">See all</string>
+    <string name="common_see_all">See all</string>
     <string name="library_toast_long_press_to_refresh">Long press to refresh</string>
     <string name="login_empty">No server added</string>
     <string name="login_title">Subsonic servers</string>

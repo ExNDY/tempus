@@ -233,7 +233,7 @@ class PlaylistRepository {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.updatePlaylist(playlistId, name, true, songsId, null)
             if (response != null && response.error == null) {
-                playlistDao.updateName(playlistId, name)
+                playlistDao.updateName(playlistId, name ?: "")
                 notifyPlaylistChanged()
                 callback?.onSuccess()
             } else {

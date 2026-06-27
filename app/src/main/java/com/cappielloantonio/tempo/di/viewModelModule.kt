@@ -1,16 +1,16 @@
 package com.cappielloantonio.tempo.di
 
 import com.cappielloantonio.tempo.viewmodel.*
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { MainViewModel(get(), get()) }
+    viewModel { MainViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { SearchViewModel(get()) }
     viewModel { AlbumCatalogueViewModel(get()) }
     viewModel { ArtistCatalogueViewModel(get()) }
-    viewModel { AlbumListPageViewModel(get()) }
+    viewModel { AlbumListPageViewModel(get(), get()) }
     viewModel { ArtistListPageViewModel(get(), get()) }
     viewModel { DirectoryViewModel(get()) }
     viewModel { RadioViewModel(get()) }
@@ -28,15 +28,16 @@ val viewModelModule = module {
     viewModel { PodcastViewModel(get()) }
     viewModel { PlaylistCatalogueViewModel(get()) }
     viewModel { PlaylistPageViewModel(get()) }
+    viewModel { PlaylistBottomSheetViewModel(get(), get()) }
     viewModel { PodcastChannelEditorViewModel(get()) }
     viewModel { PodcastChannelBottomSheetViewModel(get()) }
     viewModel { PodcastEpisodeBottomSheetViewModel(get()) }
     viewModel { StarredArtistsSyncViewModel(get()) }
-    viewModel { ArtistPageViewModel(get(), get(), get(), get()) }
-    viewModel { ArtistBottomSheetViewModel(get(), get(), get()) }
+    viewModel { ArtistPageViewModel(get(), get(), get()) }
+    viewModel { ArtistBottomSheetViewModel(get(), get()) }
     viewModel { HomeRearrangementViewModel() }
     viewModel { PlaylistChooserViewModel(get()) }
-    viewModel { SongListPageViewModel(get(), get()) }
+    viewModel { SongListPageViewModel(get(), get(), get(), get(), get()) }
     viewModel { PlaylistEditorViewModel(get(), get()) }
     viewModel { DownloadViewModel(get()) }
     viewModel { LibraryViewModel(get(), get(), get(), get(), get()) }

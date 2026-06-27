@@ -63,7 +63,7 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
                 val recentResponse = async { subsonicRepository.getAlbumList2("recent", ConstantsAA.NUMBER_OF_RECENT_ALBUMS_FOR_MIX, 0, null, null) }
                 val starredResponse = async { subsonicRepository.getStarred2() }
                 val recentTracksIds = async { 
-                    chronologyDao.getLastPlayedSync(Preferences.getServerId(), ConstantsAA.NUMBER_OF_RECENT_TRACKS_FOR_MIX).map { it.id }.toSet()
+                    chronologyDao.getLastPlayedSync(Preferences.getServerId().orEmpty(), ConstantsAA.NUMBER_OF_RECENT_TRACKS_FOR_MIX).map { it.id }.toSet()
                 }
 
                 val recentAlbums = recentResponse.await()?.albumList2?.albums?.toMutableList() ?: mutableListOf()

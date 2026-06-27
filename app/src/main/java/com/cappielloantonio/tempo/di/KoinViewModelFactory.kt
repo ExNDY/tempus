@@ -2,11 +2,11 @@ package com.cappielloantonio.tempo.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import org.koin.java.KoinJavaComponent
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
-class KoinViewModelFactory : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
+class KoinViewModelFactory : ViewModelProvider.Factory, KoinComponent {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return KoinJavaComponent.get(modelClass) as T
+        return getKoin().get(modelClass.kotlin, null, null)
     }
 }

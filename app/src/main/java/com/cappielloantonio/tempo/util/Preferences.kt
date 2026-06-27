@@ -306,6 +306,11 @@ object Preferences {
     fun setHomeSectorList(extension: List<HomeSector>?) = preferences.edit().putString(HOME_SECTOR_LIST, gson.toJson(extension)).apply()
 
     @JvmStatic
+    fun isLibraryMaterialCarouselEnabled(): Boolean = preferences.getBoolean(HOME_LIBRARY_MATERIAL_CAROUSEL, true)
+    @JvmStatic
+    fun setLibraryMaterialCarouselEnabled(enabled: Boolean) = preferences.edit().putBoolean(HOME_LIBRARY_MATERIAL_CAROUSEL, enabled).apply()
+
+    @JvmStatic
     fun showItemStarRating(): Boolean = preferences.getBoolean(SONG_RATING_PER_ITEM, false)
     @JvmStatic
     fun showItemRating(): Boolean = preferences.getBoolean(RATING_PER_ITEM, false)
@@ -370,6 +375,12 @@ object Preferences {
     fun getArtistSortOrder(): String {
         val sortByAlbumCount = preferences.getBoolean(ARTIST_SORT_BY_ALBUM_COUNT, false)
         return if (sortByAlbumCount) Constants.ARTIST_ORDER_BY_ALBUM_COUNT else Constants.ARTIST_ORDER_BY_NAME
+    }
+
+    @JvmStatic
+    fun setArtistSortOrder(sortOrder: String) {
+        val sortByAlbumCount = sortOrder == Constants.ARTIST_ORDER_BY_ALBUM_COUNT
+        preferences.edit().putBoolean(ARTIST_SORT_BY_ALBUM_COUNT, sortByAlbumCount).apply()
     }
 
     @JvmStatic
@@ -502,6 +513,7 @@ object Preferences {
     private const val ALWAYS_ON_DISPLAY = "always_on_display"
     private const val AUDIO_QUALITY_PER_ITEM = "audio_quality_per_item"
     private const val HOME_SECTOR_LIST = "home_sector_list"
+    private const val HOME_LIBRARY_MATERIAL_CAROUSEL = "home_library_material_carousel"
     private const val SONG_RATING_PER_ITEM = "song_rating_per_item"
     private const val RATING_PER_ITEM = "rating_per_item"
     private const val NEXT_UPDATE_CHECK = "next_update_check"

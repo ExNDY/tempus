@@ -41,7 +41,7 @@ class FavoriteRepository {
 
     fun getFavorites(): List<Favorite> {
         return runBlocking(Dispatchers.IO) {
-            favoriteDao.all
+            favoriteDao.getAll()
         }
     }
 

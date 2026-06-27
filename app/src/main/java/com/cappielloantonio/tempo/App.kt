@@ -2,29 +2,35 @@ package com.cappielloantonio.tempo
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.media3.common.util.UnstableApi
-import com.cappielloantonio.tempo.di.appModule
-import com.cappielloantonio.tempo.di.networkModule
-import com.cappielloantonio.tempo.di.repositoryModule
+import cat.ereza.customactivityoncrash.config.CaocConfig
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.allowHardware
+import coil3.request.bitmapConfig
+import coil3.request.crossfade
 import com.cappielloantonio.tempo.di.startDI
-import com.cappielloantonio.tempo.di.viewModelModule
+import com.cappielloantonio.tempo.di.networkModule
 import com.cappielloantonio.tempo.helper.ThemeHelper
 import com.cappielloantonio.tempo.subsonic.Subsonic
+import com.cappielloantonio.tempo.ui.activity.CrashActivity
 import com.cappielloantonio.tempo.util.ClientCertManager
 import com.cappielloantonio.tempo.util.Preferences
-import cat.ereza.customactivityoncrash.config.CaocConfig
-import com.cappielloantonio.tempo.ui.activity.CrashActivity
+import okhttp3.OkHttpClient
+import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
-import org.koin.core.parameter.ParametersHolder
-import org.koin.core.qualifier.Qualifier
-import kotlin.reflect.KClass
 
 @UnstableApi
-class App : Application() {
+class App : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
@@ -56,6 +62,33 @@ class App : Application() {
         ThemeHelper.applyTheme(themePref)
 
         ClientCertManager.setupSslSocketFactory(this)
+    }
+
+    override fun newImageLoader(context: PlatformContext): ImageLoader {
+        return ImageLoader.Builder(context)
+            .crossfade(true)
+            .bitmapConfig(Bitmap.Config.RGB_565)
+            .allowHardware(false)
+            .memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("image_cache").toOkioPath())
+                    .maxSizeBytes(Preferences.getImageCacheSize().toLong() * 1024L * 1024L)
+                    .build()
+            }
+            .components {
+                val client = OkHttpClient.Builder().apply {
+                    ClientCertManager.sslSocketFactory?.let { sslSocketFactory ->
+                        sslSocketFactory(sslSocketFactory, ClientCertManager.trustManager)
+                    }
+                }.build()
+                add(OkHttpNetworkFetcherFactory(callFactory = { client }))
+            }
+            .build()
     }
 
     companion object {

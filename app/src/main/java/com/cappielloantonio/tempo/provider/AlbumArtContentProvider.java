@@ -13,8 +13,6 @@ import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cappielloantonio.tempo.BuildConfig;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.util.Preferences;
@@ -84,15 +82,18 @@ public class AlbumArtContentProvider extends ContentProvider {
             executor.execute(() -> {
                 try (OutputStream out = new ParcelFileDescriptor.AutoCloseOutputStream(writeSide)) {
 
-                    // local radio cover: read directly from disk; otherwise fetch via Glide
+                    // local radio cover: read directly from disk; otherwise fetch via Coil's disk cache
                     File file = (localFileFinal != null)
                             ? localFileFinal
-                            : Glide.with(context)
-                                    .asFile()
-                                    .load(artworkUriFinal)
-                                    .diskCacheStrategy(DiskCacheStrategy.DATA)
-                                    .submit()
-                                    .get();
+                            : CustomGlideRequest.getCachedFileBlocking(
+                                    context,
+                                    artworkUriFinal,
+                                    artworkUriFinal != null ? artworkUriFinal.toString() : null
+                            );
+
+                    if (file == null || !file.exists()) {
+                        throw new FileNotFoundException("Artwork not cached: " + artworkUriFinal);
+                    }
 
                     // copy artwork down pipe returned by ContentProvider
                     try (InputStream in = new FileInputStream(file)) {

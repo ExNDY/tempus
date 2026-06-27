@@ -98,9 +98,9 @@ class SearchingRepository(
     fun getRecentSearchSuggestion(): List<String> {
         return runBlocking(Dispatchers.IO) {
             if (preferences.isSearchSortingChronologicallyEnabled()) {
-                recentSearchDao.recent
+                recentSearchDao.getRecent()
             } else {
-                recentSearchDao.alpha
+                recentSearchDao.getAlpha()
             }
         }
     }

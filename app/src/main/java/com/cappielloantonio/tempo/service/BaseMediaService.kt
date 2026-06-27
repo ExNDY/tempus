@@ -353,13 +353,19 @@ open class BaseMediaService : MediaLibraryService() {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 Log.d(TAG, "onIsPlayingChanged " + player.currentMediaItemIndex)
-                if (!isPlaying) {
-                    MediaManager.setPlayingPausedTimestamp(
-                        player.currentMediaItem,
-                        player.currentPosition
-                    )
+                if (isPlaying) {
+                    val currentItem = player.currentMediaItem
+                    if (currentItem != null) {
+                        MediaManager.scrobble(currentItem, false)
+                    }
                 } else {
-                    MediaManager.scrobble(player.currentMediaItem, false)
+                    val currentItem = player.currentMediaItem
+                    if (currentItem != null) {
+                        MediaManager.setPlayingPausedTimestamp(
+                            currentItem,
+                            player.currentPosition
+                        )
+                    }
                 }
                 if (isPlaying) {
                     scheduleWidgetUpdates()
@@ -378,8 +384,11 @@ open class BaseMediaService : MediaLibraryService() {
                     playbackState == Player.STATE_ENDED &&
                     player.mediaMetadata.extras?.getString("type") == Constants.MEDIA_TYPE_MUSIC
                 ) {
-                    MediaManager.scrobble(player.currentMediaItem, true)
-                    MediaManager.saveChronology(player.currentMediaItem)
+                    val currentItem = player.currentMediaItem
+                    if (currentItem != null) {
+                        MediaManager.scrobble(currentItem, true)
+                        MediaManager.saveChronology(currentItem)
+                    }
                 }
                 updateWidget(player)
             }
@@ -407,13 +416,15 @@ open class BaseMediaService : MediaLibraryService() {
                 }
 
                 if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
-                    if (oldPosition.mediaItem?.mediaMetadata?.extras?.getString("type") == Constants.MEDIA_TYPE_MUSIC) {
-                        MediaManager.scrobble(oldPosition.mediaItem, true)
-                        MediaManager.saveChronology(oldPosition.mediaItem)
+                    val oldMediaItem = oldPosition.mediaItem
+                    if (oldMediaItem != null && oldMediaItem.mediaMetadata.extras?.getString("type") == Constants.MEDIA_TYPE_MUSIC) {
+                        MediaManager.scrobble(oldMediaItem, true)
+                        MediaManager.saveChronology(oldMediaItem)
                     }
 
-                    if (newPosition.mediaItem?.mediaMetadata?.extras?.getString("type") == Constants.MEDIA_TYPE_MUSIC) {
-                        MediaManager.setLastPlayedTimestamp(newPosition.mediaItem)
+                    val newMediaItem = newPosition.mediaItem
+                    if (newMediaItem != null && newMediaItem.mediaMetadata.extras?.getString("type") == Constants.MEDIA_TYPE_MUSIC) {
+                        MediaManager.setLastPlayedTimestamp(newMediaItem)
                     }
                 }
             }
@@ -478,9 +489,11 @@ open class BaseMediaService : MediaLibraryService() {
             MediaManager.removeRange(browserFuture, currentIndex + 1, lastIndex + 1)
         }
 
-        Log.d(TAG, "onInstantMix: start Continuous Play with $currentMediaItem")
-        MediaManager.continuousPlay(currentMediaItem, browserFuture) {
-            Handler(Looper.getMainLooper()).post { onComplete?.run() }
+        if (currentMediaItem != null) {
+            Log.d(TAG, "onInstantMix: start Continuous Play with $currentMediaItem")
+            MediaManager.continuousPlay(currentMediaItem, browserFuture) {
+                Handler(Looper.getMainLooper()).post { onComplete?.run() }
+            }
         }
     }
 

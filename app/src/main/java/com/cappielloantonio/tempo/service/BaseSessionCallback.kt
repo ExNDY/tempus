@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.HeartRating
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -49,42 +50,42 @@ open class BaseSessionCallback(
     @SuppressLint("PrivateResource")
     private val customCommandToggleShuffleModeOn =
         CommandButton.Builder(CommandButton.ICON_SHUFFLE_OFF)
-            .setDisplayName(context.getString(R.string.exo_controls_shuffle_on_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_shuffle_on_description, "Shuffle On"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_ON, Bundle.EMPTY))
             .build()
 
     @SuppressLint("PrivateResource")
     private val customCommandToggleShuffleModeOff =
         CommandButton.Builder(CommandButton.ICON_SHUFFLE_ON)
-            .setDisplayName(context.getString(R.string.exo_controls_shuffle_off_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_shuffle_off_description, "Shuffle Off"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_OFF, Bundle.EMPTY))
             .build()
 
     @SuppressLint("PrivateResource")
     private val customCommandToggleRepeatModeOff =
         CommandButton.Builder(CommandButton.ICON_REPEAT_OFF)
-            .setDisplayName(context.getString(R.string.exo_controls_repeat_off_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_repeat_off_description, "Repeat Off"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_REPEAT_MODE_OFF, Bundle.EMPTY))
             .build()
 
     @SuppressLint("PrivateResource")
     private val customCommandToggleRepeatModeOne =
         CommandButton.Builder(CommandButton.ICON_REPEAT_ONE)
-            .setDisplayName(context.getString(R.string.exo_controls_repeat_one_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_repeat_one_description, "Repeat One"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_REPEAT_MODE_ONE, Bundle.EMPTY))
             .build()
 
     @SuppressLint("PrivateResource")
     private val customCommandToggleRepeatModeAll =
         CommandButton.Builder(CommandButton.ICON_REPEAT_ALL)
-            .setDisplayName(context.getString(R.string.exo_controls_repeat_all_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_repeat_all_description, "Repeat All"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_REPEAT_MODE_ALL, Bundle.EMPTY))
             .build()
 
     @Suppress("DEPRECATION")
     private val customCommandToggleHeartOn =
         CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setDisplayName(context.getString(R.string.exo_controls_heart_on_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_heart_on_description, "Favorite On"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_HEART_ON, Bundle.EMPTY))
             .setIconResId(R.drawable.ic_favorite)
             .build()
@@ -92,7 +93,7 @@ open class BaseSessionCallback(
     @Suppress("DEPRECATION")
     private val customCommandToggleHeartOff =
         CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setDisplayName(context.getString(R.string.exo_controls_heart_off_description))
+            .setDisplayName(safeDisplayName(R.string.exo_controls_heart_off_description, "Favorite Off"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_HEART_OFF, Bundle.EMPTY))
             .setIconResId(R.drawable.ic_favorites_outlined)
             .build()
@@ -100,7 +101,7 @@ open class BaseSessionCallback(
     @Suppress("DEPRECATION")
     private val customCommandToggleHeartLoading =
         CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setDisplayName(context.getString(R.string.cast_expanded_controller_loading))
+            .setDisplayName(safeDisplayName(R.string.cast_expanded_controller_loading, "Loading"))
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_TOGGLE_HEART_LOADING, Bundle.EMPTY))
             .setIconResId(R.drawable.ic_bookmark_sync)
             .build()
@@ -108,7 +109,7 @@ open class BaseSessionCallback(
     @Suppress("DEPRECATION")
     private val customCommandInstantMixOn =
         CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setDisplayName("instantmix on")
+            .setDisplayName("Instant Mix On")
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_INSTANT_MIX_ON, Bundle.EMPTY))
             .setIconResId(R.drawable.ic_instantmix_on)
             .build()
@@ -116,7 +117,7 @@ open class BaseSessionCallback(
     @Suppress("DEPRECATION")
     private val customCommandInstantMixOff =
         CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setDisplayName("instantmix off")
+            .setDisplayName("Instant Mix Off")
             .setSessionCommand(SessionCommand(Constants.CUSTOM_COMMAND_INSTANT_MIX_OFF, Bundle.EMPTY))
             .setIconResId(R.drawable.media3_icon_minus_circle_unfilled)
             .build()
@@ -186,19 +187,19 @@ open class BaseSessionCallback(
 
         val previousButton =
             CommandButton.Builder(CommandButton.ICON_PREVIOUS)
-                .setDisplayName(context.getString(R.string.exo_controls_previous_description))
+                .setDisplayName(safeDisplayName(R.string.exo_controls_previous_description, "Previous"))
                 .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
                 .build()
 
         val playPauseButton =
             CommandButton.Builder(CommandButton.ICON_PLAY)
-                .setDisplayName(context.getString(R.string.exo_controls_play_description))
+                .setDisplayName(safeDisplayName(R.string.exo_controls_play_description, "Play"))
                 .setPlayerCommand(Player.COMMAND_PLAY_PAUSE)
                 .build()
 
         val nextButton =
             CommandButton.Builder(CommandButton.ICON_NEXT)
-                .setDisplayName(context.getString(R.string.exo_controls_next_description))
+                .setDisplayName(safeDisplayName(R.string.exo_controls_next_description, "Next"))
                 .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
                 .build()
 
@@ -220,6 +221,33 @@ open class BaseSessionCallback(
         }
 
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session).build()
+    }
+
+    override fun onPlaybackResumption(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        isForPlayback: Boolean
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        Log.d(TAG, "onPlaybackResumption from ${controller.packageName}, isForPlayback: $isForPlayback")
+        val settable = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+        val mediaItems = mutableListOf<MediaItem>()
+        for (i in 0 until session.player.mediaItemCount) {
+            mediaItems.add(session.player.getMediaItemAt(i))
+        }
+
+        val startIndex = if (session.player.currentMediaItemIndex != C.INDEX_UNSET) {
+            session.player.currentMediaItemIndex
+        } else {
+            0
+        }
+
+        val startPosition = MediaSession.MediaItemsWithStartPosition(
+            mediaItems,
+            startIndex,
+            session.player.currentPosition
+        )
+        settable.set(startPosition)
+        return settable
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -434,5 +462,12 @@ open class BaseSessionCallback(
                 .build()
         }
         return Futures.immediateFuture(updatedMediaItems)
+    }
+
+    private fun safeDisplayName(stringRes: Int, fallback: String): String {
+        return runCatching { context.getString(stringRes) }
+            .getOrDefault("")
+            .trim()
+            .ifEmpty { fallback }
     }
 }

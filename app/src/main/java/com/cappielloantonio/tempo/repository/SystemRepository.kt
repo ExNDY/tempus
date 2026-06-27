@@ -35,7 +35,7 @@ class SystemRepository @JvmOverloads constructor(
                     if (response.status == ResponseStatus.FAILED) {
                         callback.onError(Exception("${response.error?.code} - ${response.error?.message}"))
                     } else if (response.status == ResponseStatus.OK) {
-                        callback.onSuccess(null, null, null)
+                        callback.onSuccess("", "", "")
                     } else {
                         callback.onError(Exception("Empty response"))
                     }
