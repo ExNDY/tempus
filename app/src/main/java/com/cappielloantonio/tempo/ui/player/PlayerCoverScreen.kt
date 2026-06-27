@@ -31,6 +31,7 @@ fun PlayerCoverScreen(
     modifier: Modifier = Modifier
 ) {
     var showOverlay by remember { mutableStateOf(false) }
+    val hasCurrentSong = currentSong != null
 
     Box(
         modifier = modifier
@@ -75,15 +76,60 @@ fun PlayerCoverScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                        OverlayButton(Icons.Default.Download, onDownloadClick)
-                        OverlayButton(Icons.AutoMirrored.Filled.PlaylistAdd, onAddToPlaylistClick)
+                        OverlayButton(
+                            icon = Icons.Default.Download,
+                            enabled = hasCurrentSong,
+                            onClick = {
+                                showOverlay = false
+                                onDownloadClick()
+                            }
+                        )
+                        OverlayButton(
+                            icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                            enabled = hasCurrentSong,
+                            onClick = {
+                                showOverlay = false
+                                onAddToPlaylistClick()
+                            }
+                        )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                        OverlayButton(Icons.Default.AutoAwesome, onInstantMixClick)
+                        OverlayButton(
+                            icon = Icons.Default.AutoAwesome,
+                            enabled = hasCurrentSong,
+                            onClick = {
+                                showOverlay = false
+                                onInstantMixClick()
+                            }
+                        )
                         if (isSyncEnabled) {
-                            OverlayButton(Icons.Default.Save, onSaveQueueClick)
+                            OverlayButton(
+                                icon = Icons.Default.Save,
+                                enabled = hasCurrentSong,
+                                onClick = {
+                                    showOverlay = false
+                                    onSaveQueueClick()
+                                }
+                            )
                         } else {
-                            OverlayButton(Icons.Default.Lyrics, onLyricsClick)
+                            OverlayButton(
+                                icon = Icons.Default.Lyrics,
+                                onClick = {
+                                    showOverlay = false
+                                    onLyricsClick()
+                                }
+                            )
+                        }
+                    }
+                    if (isSyncEnabled) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+                            OverlayButton(
+                                icon = Icons.Default.Lyrics,
+                                onClick = {
+                                    showOverlay = false
+                                    onLyricsClick()
+                                }
+                            )
                         }
                     }
                 }
@@ -95,18 +141,27 @@ fun PlayerCoverScreen(
 @Composable
 private fun OverlayButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     IconButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .size(64.dp)
-            .background(Color.White.copy(alpha = 0.1f), MaterialTheme.shapes.medium)
+            .background(
+                if (enabled) {
+                    Color.White.copy(alpha = 0.1f)
+                } else {
+                    Color.White.copy(alpha = 0.05f)
+                },
+                MaterialTheme.shapes.medium
+            )
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color.White,
+            tint = if (enabled) Color.White else Color.White.copy(alpha = 0.38f),
             modifier = Modifier.size(32.dp)
         )
     }

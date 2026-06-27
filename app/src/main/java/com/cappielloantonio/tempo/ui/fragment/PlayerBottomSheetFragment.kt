@@ -46,6 +46,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -70,6 +71,11 @@ class PlayerBottomSheetFragment : Fragment() {
     private var playerDurationMs by mutableLongStateOf(0L)
     private var shuffleModeEnabled by mutableStateOf(false)
     private var repeatMode by mutableIntStateOf(Player.REPEAT_MODE_OFF)
+    private var playbackState by mutableIntStateOf(Player.STATE_IDLE)
+    private var isPlayPauseEnabled by mutableStateOf(false)
+    private var isPreviousEnabled by mutableStateOf(false)
+    private var isNextEnabled by mutableStateOf(false)
+    private var isSeekControlsEnabled by mutableStateOf(false)
     private var lastSyncedMediaId: String? = null
 
     override fun onCreateView(
@@ -108,11 +114,15 @@ class PlayerBottomSheetFragment : Fragment() {
                     PlayerScreen(
                         uiState = uiState,
                         isPlaying = isPlaying,
+                        playbackState = playbackState,
                         progress = playerProgressMs,
                         duration = playerDurationMs,
                         shuffleModeEnabled = shuffleModeEnabled,
                         repeatMode = repeatMode,
                         currentSongId = currentSongId,
+                        isPlayPauseEnabled = isPlayPauseEnabled,
+                        isPreviousEnabled = isPreviousEnabled,
+                        isNextEnabled = isNextEnabled,
                         onPlayPauseClick = { mediaBrowserFuture?.get()?.let { if (it.isPlaying) it.pause() else it.play() } },
                         onPreviousClick = { mediaBrowserFuture?.get()?.seekToPrevious() },
                         onNextClick = { mediaBrowserFuture?.get()?.seekToNext() },
@@ -172,12 +182,17 @@ class PlayerBottomSheetFragment : Fragment() {
                         },
                         onQueueLoadQueueClick = { 
                             lifecycleScope.launch {
-                                playerBottomSheetViewModel.getPlayQueue().asFlow().collect { playQueue: com.cappielloantonio.tempo.subsonic.models.PlayQueue? ->
-                                    val entries = playQueue?.entries
-                                    if (playQueue != null && !entries.isNullOrEmpty()) {
-                                        val index = entries.indexOfFirst { it.id == playQueue.current }.coerceAtLeast(0)
-                                        MediaManager.startQueue(mediaBrowserFuture, ArrayList(entries), index)
-                                    }
+                                val playQueue = playerBottomSheetViewModel.getPlayQueue().asFlow().first()
+                                val entries = playQueue?.entries
+                                if (playQueue != null && entries != null && entries.isNotEmpty()) {
+                                    val index = entries.indexOfFirst { entry -> entry.id == playQueue.current }.coerceAtLeast(0)
+                                    MediaManager.startQueue(mediaBrowserFuture, ArrayList(entries), index)
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        requireContext(),
+                                        getString(R.string.player_queue_not_found),
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         },
@@ -191,16 +206,36 @@ class PlayerBottomSheetFragment : Fragment() {
                         onInstantMixClick = { 
                             uiState.currentSong?.let { song ->
                                 lifecycleScope.launch {
-                                    playerBottomSheetViewModel.getMediaInstantMix(song).collect { media ->
+                                    val media = playerBottomSheetViewModel.getMediaInstantMix(song).first()
+                                    if (media.isNotEmpty()) {
                                         MediaManager.enqueue(mediaBrowserFuture, ArrayList(media), true)
                                     }
                                 }
                             }
                         },
-                        onSaveQueueClick = { playerBottomSheetViewModel.savePlayQueue() },
-                        onLyricsLineClick = { position -> mediaBrowserFuture?.get()?.seekTo(position.toLong()) },
+                        onSaveQueueClick = {
+                            if (playerBottomSheetViewModel.savePlayQueue()) {
+                                android.widget.Toast.makeText(
+                                    requireContext(),
+                                    getString(R.string.player_queue_save_queue_success),
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        onLyricsLineClick = { position -> mediaBrowserFuture?.get()?.seekTo(position) },
                         onLyricsSyncToggle = { playerBottomSheetViewModel.changeSyncLyricsState() },
-                        onLyricsDownloadClick = { playerBottomSheetViewModel.downloadCurrentLyrics() },
+                        onLyricsDownloadClick = {
+                            val messageRes = if (playerBottomSheetViewModel.downloadCurrentLyrics()) {
+                                R.string.player_lyrics_download_success
+                            } else {
+                                R.string.player_lyrics_download_failure
+                            }
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                getString(messageRes),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        },
                         onChipClick = { type, id -> (requireActivity() as MainActivity).openAssetLink(AssetLinkUtil.buildAssetLink(type, id)!!) },
                         onChipLongClick = { type, id -> AssetLinkUtil.copyToClipboard(requireContext(), AssetLinkUtil.buildAssetLink(type, id)!!) },
                         isSyncEnabled = Preferences.isSyncronizationEnabled(),
@@ -230,11 +265,28 @@ class PlayerBottomSheetFragment : Fragment() {
 
                     PlayerHeader(
                         currentSong = uiState.currentSong,
+                        description = uiState.description,
                         isPlaying = isPlaying,
                         progress = progress,
+                        isNextEnabled = isNextEnabled,
+                        isSeekControlsEnabled = isSeekControlsEnabled,
                         onHeaderClick = { (requireActivity() as MainActivity).expandBottomSheet() },
                         onPlayPauseClick = { mediaBrowserFuture?.get()?.let { if (it.isPlaying) it.pause() else it.play() } },
-                        onNextClick = { mediaBrowserFuture?.get()?.seekToNext() }
+                        onNextClick = {
+                            if (isNextEnabled) {
+                                mediaBrowserFuture?.get()?.seekToNext()
+                            }
+                        },
+                        onSeekBackClick = {
+                            if (isSeekControlsEnabled) {
+                                mediaBrowserFuture?.get()?.seekBack()
+                            }
+                        },
+                        onSeekForwardClick = {
+                            if (isSeekControlsEnabled) {
+                                mediaBrowserFuture?.get()?.seekForward()
+                            }
+                        }
                     )
                 }
             }
@@ -328,8 +380,22 @@ class PlayerBottomSheetFragment : Fragment() {
     }
 
     private fun updateTransportState(player: Player) {
+        playbackState = player.playbackState
         playerProgressMs = player.currentPosition.coerceAtLeast(0L)
         playerDurationMs = player.duration.takeIf { it > 0L } ?: 0L
+        isPlayPauseEnabled =
+            player.currentMediaItem != null &&
+                player.isCommandAvailable(Player.COMMAND_PLAY_PAUSE)
+        isPreviousEnabled =
+            player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM) &&
+                player.hasPreviousMediaItem()
+        isNextEnabled =
+            player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM) &&
+                player.hasNextMediaItem()
+        isSeekControlsEnabled =
+            (player.isCommandAvailable(Player.COMMAND_SEEK_BACK) ||
+                player.isCommandAvailable(Player.COMMAND_SEEK_FORWARD)) &&
+                (player.isCurrentMediaItemSeekable || player.duration > 0L)
 
         val shouldTrackProgress = player.playbackState == Player.STATE_READY && player.playWhenReady
         if (shouldTrackProgress) {

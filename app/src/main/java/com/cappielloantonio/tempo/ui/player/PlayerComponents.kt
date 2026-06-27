@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.cappielloantonio.tempo.R
-import com.cappielloantonio.tempo.ui.components.AssetLinkChips
 import java.util.Locale
 
 @Composable
@@ -80,6 +79,9 @@ private fun formatDuration(durationMs: Long): String {
 @Composable
 fun PlaybackControls(
     isPlaying: Boolean,
+    isPlayPauseEnabled: Boolean,
+    isPreviousEnabled: Boolean,
+    isNextEnabled: Boolean,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -101,29 +103,32 @@ fun PlaybackControls(
                 tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
         }
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = onPreviousClick, enabled = isPreviousEnabled) {
             Icon(
                 imageVector = Icons.Default.SkipPrevious,
                 contentDescription = null,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(36.dp),
+                tint = if (isPreviousEnabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
             )
         }
         IconButton(
             onClick = onPlayPauseClick,
+            enabled = isPlayPauseEnabled,
             modifier = Modifier.size(64.dp)
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.PauseCircleFilled else Icons.Default.PlayCircleFilled,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                tint = MaterialTheme.colorScheme.primary
+                tint = if (isPlayPauseEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
         }
-        IconButton(onClick = onNextClick) {
+        IconButton(onClick = onNextClick, enabled = isNextEnabled) {
             Icon(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = null,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(36.dp),
+                tint = if (isNextEnabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
             )
         }
         IconButton(onClick = onRepeatClick) {
@@ -144,6 +149,7 @@ fun PlaybackControls(
 @Composable
 fun SimpleRatingBar(
     rating: Int,
+    enabled: Boolean,
     onRatingChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -151,12 +157,17 @@ fun SimpleRatingBar(
         repeat(5) { index ->
             IconButton(
                 onClick = { onRatingChange(index + 1) },
+                enabled = enabled,
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = if (index < rating) Icons.Default.Star else Icons.Default.StarBorder,
                     contentDescription = null,
-                    tint = if (index < rating) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = when {
+                        index < rating -> MaterialTheme.colorScheme.primary
+                        enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    }
                 )
             }
         }

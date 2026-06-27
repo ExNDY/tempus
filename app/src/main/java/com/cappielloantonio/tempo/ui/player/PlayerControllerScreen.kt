@@ -11,20 +11,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
+import com.cappielloantonio.tempo.R
+import com.cappielloantonio.tempo.ui.components.AssetLinkChips
+import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.viewmodel.PlayerUiState
 
 @Composable
 fun PlayerControllerScreen(
     uiState: PlayerUiState,
     isPlaying: Boolean,
+    playbackState: Int,
     progress: Long,
     duration: Long,
     shuffleModeEnabled: Boolean,
     repeatMode: Int,
+    isPlayPauseEnabled: Boolean,
+    isPreviousEnabled: Boolean,
+    isNextEnabled: Boolean,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -45,6 +54,19 @@ fun PlayerControllerScreen(
     onChipLongClick: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mediaTypeLabel = when (uiState.currentSong?.type) {
+        Constants.MEDIA_TYPE_PODCAST -> stringResource(R.string.aa_podcast)
+        Constants.MEDIA_TYPE_RADIO -> stringResource(R.string.aa_radio)
+        else -> stringResource(R.string.home_section_music)
+    }
+    val playbackStatusLabel = when {
+        isPlaying -> stringResource(R.string.player_status_playing)
+        playbackState == Player.STATE_BUFFERING -> stringResource(R.string.player_status_loading)
+        playbackState == Player.STATE_READY -> stringResource(R.string.player_status_paused)
+        else -> stringResource(R.string.widget_not_playing)
+    }
+    val hasCurrentSong = uiState.currentSong != null
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -72,6 +94,49 @@ fun PlayerControllerScreen(
             modifier = Modifier.clickable { onArtistClick() }
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AssistChip(
+                onClick = {},
+                enabled = false,
+                label = { Text(mediaTypeLabel) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = when (uiState.currentSong?.type) {
+                            Constants.MEDIA_TYPE_PODCAST -> Icons.Default.Mic
+                            Constants.MEDIA_TYPE_RADIO -> Icons.Default.Radio
+                            else -> Icons.Default.MusicNote
+                        },
+                        contentDescription = null
+                    )
+                }
+            )
+            AssistChip(
+                onClick = {},
+                enabled = false,
+                label = { Text(playbackStatusLabel) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.GraphicEq else Icons.Default.PauseCircleFilled,
+                        contentDescription = null
+                    )
+                }
+            )
+        }
+
+        if (uiState.currentSong?.id != null || uiState.currentAlbum?.id != null || uiState.currentArtist?.id != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            AssetLinkChips(
+                songId = uiState.currentSong?.id,
+                albumId = uiState.currentAlbum?.id,
+                artistId = uiState.currentArtist?.id,
+                onChipClick = onChipClick,
+                onChipLongClick = onChipLongClick,
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // Progress
@@ -86,6 +151,9 @@ fun PlayerControllerScreen(
         // Playback Controls
         PlaybackControls(
             isPlaying = isPlaying,
+            isPlayPauseEnabled = isPlayPauseEnabled,
+            isPreviousEnabled = isPreviousEnabled,
+            isNextEnabled = isNextEnabled,
             onPlayPauseClick = onPlayPauseClick,
             onPreviousClick = onPreviousClick,
             onNextClick = onNextClick,
@@ -102,11 +170,15 @@ fun PlayerControllerScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = onFavoriteClick) {
+            IconButton(onClick = onFavoriteClick, enabled = hasCurrentSong) {
                 Icon(
                     imageVector = if (uiState.currentSong?.starred != null) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = null,
-                    tint = if (uiState.currentSong?.starred != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    tint = when {
+                        uiState.currentSong?.starred != null -> MaterialTheme.colorScheme.primary
+                        hasCurrentSong -> MaterialTheme.colorScheme.onSurface
+                        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    }
                 )
             }
             IconButton(onClick = onPlaybackSpeedClick) {
@@ -141,6 +213,7 @@ fun PlayerControllerScreen(
         Spacer(modifier = Modifier.height(24.dp))
         SimpleRatingBar(
             rating = uiState.currentSong?.userRating ?: 0,
+            enabled = hasCurrentSong,
             onRatingChange = onRatingChange
         )
     }

@@ -3,7 +3,7 @@ package com.cappielloantonio.tempo.ui.player
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -13,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,28 +38,68 @@ fun PlayerQueueScreen(
     onSaveToPlaylistClick: () -> Unit,
     onDownloadAllClick: () -> Unit,
     onLoadQueueClick: () -> Unit,
+    onSaveQueueClick: () -> Unit,
     isSyncEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
     var isFabMenuOpen by remember { mutableStateOf(false) }
 
-    val songs = uiState.queue
+    val songs = remember(uiState.queue) {
+        uiState.queue.mapIndexedNotNull { index, song ->
+            if (song.title.isNullOrBlank() &&
+                song.artist.isNullOrBlank() &&
+                song.coverArtId.isNullOrBlank()
+            ) {
+                null
+            } else {
+                IndexedValue(index, song)
+            }
+        }
+    }
+    val currentQueueIndex = uiState.queue.indexOfFirst { it.id == currentSongId }
+    val currentVisibleIndex = songs.indexOfFirst { it.value.id == currentSongId }
+    val hasSongs = songs.isNotEmpty()
+    val hasUpcomingSongs =
+        currentQueueIndex >= 0 && currentQueueIndex < uiState.queue.lastIndex
+
+    LaunchedEffect(currentVisibleIndex, songs.size) {
+        if (currentVisibleIndex >= 0) {
+            listState.animateScrollToItem(currentVisibleIndex)
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp)
-        ) {
-            itemsIndexed(songs) { index, song ->
-                val isCurrent = song.id == currentSongId
-                QueueItem(
-                    song = song,
-                    isCurrent = isCurrent,
-                    isPlaying = isCurrent && isPlaying,
-                    onClick = { onSongClick(index) },
-                    onRemove = { onRemoveClick(index) }
+        if (hasSongs) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+                items(
+                    items = songs,
+                    key = { "${it.index}:${it.value.id}" }
+                ) { entry ->
+                    val song = entry.value
+                    val isCurrent = song.id == currentSongId
+                    QueueItem(
+                        song = song,
+                        isCurrent = isCurrent,
+                        isPlaying = isCurrent && isPlaying,
+                        onClick = { onSongClick(entry.index) },
+                        onRemove = { onRemoveClick(entry.index) }
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.player_queue_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -72,45 +114,83 @@ fun PlayerQueueScreen(
         ) {
             if (isFabMenuOpen) {
                 if (isSyncEnabled) {
-                    ExtendedFloatingActionButton(
-                        onClick = { onLoadQueueClick(); isFabMenuOpen = false },
-                        icon = { Icon(Icons.Default.CloudDownload, null) },
-                        text = { Text(stringResource(R.string.player_queue_load_queue)) }
+                    QueueActionFab(
+                        label = stringResource(R.string.player_queue_load_queue),
+                        icon = Icons.Default.CloudDownload,
+                        onClick = { onLoadQueueClick(); isFabMenuOpen = false }
                     )
                 }
-                ExtendedFloatingActionButton(
-                    onClick = { onSaveToPlaylistClick(); isFabMenuOpen = false },
-                    icon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },
-                    text = { Text(stringResource(R.string.player_queue_save_to_playlist)) }
+                QueueActionFab(
+                    label = stringResource(R.string.player_queue_save_queue),
+                    icon = Icons.Default.Save,
+                    enabled = hasSongs,
+                    onClick = { onSaveQueueClick(); isFabMenuOpen = false }
                 )
-                ExtendedFloatingActionButton(
-                    onClick = { onDownloadAllClick(); isFabMenuOpen = false },
-                    icon = { Icon(Icons.Default.Download, null) },
-                    text = { Text(stringResource(R.string.song_bottom_sheet_download)) }
+                QueueActionFab(
+                    label = stringResource(R.string.player_queue_save_to_playlist),
+                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    enabled = hasSongs,
+                    onClick = { onSaveToPlaylistClick(); isFabMenuOpen = false }
                 )
-                ExtendedFloatingActionButton(
-                    onClick = { onClearClick(); isFabMenuOpen = false },
-                    icon = { Icon(Icons.Default.ClearAll, null) },
-                    text = { Text(stringResource(R.string.player_queue_clean_all_button)) }
+                QueueActionFab(
+                    label = stringResource(R.string.song_bottom_sheet_download),
+                    icon = Icons.Default.Download,
+                    enabled = hasSongs,
+                    onClick = { onDownloadAllClick(); isFabMenuOpen = false }
                 )
-                ExtendedFloatingActionButton(
-                    onClick = { onShuffleClick(); isFabMenuOpen = false },
-                    icon = { Icon(Icons.Default.Shuffle, null) },
-                    text = { Text(stringResource(R.string.content_description_shuffle_button)) }
+                QueueActionFab(
+                    label = stringResource(R.string.player_queue_clean_all_button),
+                    icon = Icons.Default.ClearAll,
+                    enabled = hasUpcomingSongs,
+                    onClick = { onClearClick(); isFabMenuOpen = false }
+                )
+                QueueActionFab(
+                    label = stringResource(R.string.content_description_shuffle_button),
+                    icon = Icons.Default.Shuffle,
+                    enabled = hasUpcomingSongs,
+                    onClick = { onShuffleClick(); isFabMenuOpen = false }
                 )
             }
 
             FloatingActionButton(
                 onClick = { isFabMenuOpen = !isFabMenuOpen },
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
                 Icon(
                     imageVector = if (isFabMenuOpen) Icons.Default.Close else Icons.Default.Menu,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.player_queue_toggle_fab_menu_content_description)
                 )
             }
         }
     }
+}
+
+@Composable
+private fun QueueActionFab(
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val containerColor = if (enabled) {
+        FloatingActionButtonDefaults.containerColor
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    ExtendedFloatingActionButton(
+        text = { Text(label) },
+        icon = { Icon(icon, null) },
+        onClick = {
+            if (enabled) {
+                onClick()
+            }
+        },
+        modifier = Modifier.alpha(if (enabled) 1f else 0.6f),
+        containerColor = containerColor,
+        contentColor = contentColorFor(containerColor)
+    )
 }
 
 @Composable
@@ -147,9 +227,9 @@ private fun QueueItem(
             )
         },
         trailingContent = {
-            if (isCurrent && isPlaying) {
+            if (isCurrent) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                    imageVector = if (isPlaying) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.PlayArrow,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )

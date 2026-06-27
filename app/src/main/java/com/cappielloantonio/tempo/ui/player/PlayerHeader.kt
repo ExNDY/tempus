@@ -3,7 +3,12 @@ package com.cappielloantonio.tempo.ui.player
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,6 +19,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.cappielloantonio.tempo.util.Constants
+import java.util.Locale
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.TempusImage
 import com.cappielloantonio.tempo.ui.components.TempusImageType
@@ -21,13 +28,27 @@ import com.cappielloantonio.tempo.ui.components.TempusImageType
 @Composable
 fun PlayerHeader(
     currentSong: Child?,
+    description: String?,
     isPlaying: Boolean,
     progress: Float,
+    isNextEnabled: Boolean,
+    isSeekControlsEnabled: Boolean,
     onHeaderClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
+    onSeekBackClick: () -> Unit,
+    onSeekForwardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mediaType = currentSong?.type
+    val isPodcast = mediaType == Constants.MEDIA_TYPE_PODCAST
+    val isRadio = mediaType == Constants.MEDIA_TYPE_RADIO
+    val subtitle = when {
+        isRadio && !description.isNullOrBlank() -> description
+        else -> currentSong?.artist.orEmpty()
+    }
+    val bookmarkPosition = currentSong?.bookmarkPosition?.takeIf { it > 0L }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -65,13 +86,48 @@ fun PlayerHeader(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = currentSong?.artist ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (bookmarkPosition != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = formatHeaderDuration(bookmarkPosition),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                if (isPodcast) {
+                    IconButton(
+                        onClick = onSeekBackClick,
+                        enabled = isSeekControlsEnabled
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FastRewind,
+                            contentDescription = null,
+                            tint = if (isSeekControlsEnabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
+                        )
+                    }
                 }
 
                 IconButton(onClick = onPlayPauseClick) {
@@ -81,9 +137,12 @@ fun PlayerHeader(
                     )
                 }
 
-                IconButton(onClick = onNextClick) {
+                IconButton(
+                    onClick = if (isPodcast) onSeekForwardClick else onNextClick,
+                    enabled = if (isPodcast) isSeekControlsEnabled else isNextEnabled
+                ) {
                     Icon(
-                        imageVector = Icons.Default.SkipNext,
+                        imageVector = if (isPodcast) Icons.Default.FastForward else Icons.Default.SkipNext,
                         contentDescription = null
                     )
                 }
@@ -98,5 +157,16 @@ fun PlayerHeader(
                 trackColor = Color.Transparent
             )
         }
+    }
+}
+
+private fun formatHeaderDuration(durationMs: Long): String {
+    val seconds = (durationMs / 1000) % 60
+    val minutes = (durationMs / (1000 * 60)) % 60
+    val hours = durationMs / (1000 * 60 * 60)
+    return if (hours > 0) {
+        String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
 }

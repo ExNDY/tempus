@@ -15,11 +15,15 @@ import kotlinx.coroutines.launch
 fun PlayerScreen(
     uiState: PlayerUiState,
     isPlaying: Boolean,
+    playbackState: Int,
     progress: Long,
     duration: Long,
     shuffleModeEnabled: Boolean,
     repeatMode: Int,
     currentSongId: String?,
+    isPlayPauseEnabled: Boolean,
+    isPreviousEnabled: Boolean,
+    isNextEnabled: Boolean,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -45,7 +49,7 @@ fun PlayerScreen(
     onAddToPlaylistClick: () -> Unit,
     onInstantMixClick: () -> Unit,
     onSaveQueueClick: () -> Unit,
-    onLyricsLineClick: (Int) -> Unit,
+    onLyricsLineClick: (Long) -> Unit,
     onLyricsSyncToggle: () -> Unit,
     onLyricsDownloadClick: () -> Unit,
     onChipClick: (String, String) -> Unit,
@@ -112,10 +116,14 @@ fun PlayerScreen(
                         PlayerControllerScreen(
                             uiState = uiState,
                             isPlaying = isPlaying,
+                            playbackState = playbackState,
                             progress = progress,
                             duration = duration,
                             shuffleModeEnabled = shuffleModeEnabled,
                             repeatMode = repeatMode,
+                            isPlayPauseEnabled = isPlayPauseEnabled,
+                            isPreviousEnabled = isPreviousEnabled,
+                            isNextEnabled = isNextEnabled,
                             onPlayPauseClick = onPlayPauseClick,
                             onPreviousClick = onPreviousClick,
                             onNextClick = onNextClick,
@@ -156,6 +164,7 @@ fun PlayerScreen(
                         onSaveToPlaylistClick = onQueueSaveToPlaylistClick,
                         onDownloadAllClick = onQueueDownloadAllClick,
                         onLoadQueueClick = onQueueLoadQueueClick,
+                        onSaveQueueClick = onSaveQueueClick,
                         isSyncEnabled = isSyncEnabled
                     )
                 }

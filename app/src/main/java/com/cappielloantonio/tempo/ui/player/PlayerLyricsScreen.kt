@@ -26,7 +26,7 @@ import com.cappielloantonio.tempo.viewmodel.PlayerUiState
 fun PlayerLyricsScreen(
     uiState: PlayerUiState,
     currentPosition: Long,
-    onLineClick: (Int) -> Unit,
+    onLineClick: (Long) -> Unit,
     onSyncToggle: () -> Unit,
     onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -34,16 +34,17 @@ fun PlayerLyricsScreen(
     val listState = rememberLazyListState()
 
     val lines = uiState.lyricsList?.structuredLyrics?.firstOrNull()?.line ?: emptyList()
-    val isSynced = uiState.lyricsList?.structuredLyrics?.firstOrNull()?.synced ?: false
+    val hasTimedLyrics = uiState.lyricsList?.structuredLyrics?.firstOrNull()?.synced == true
+    val isSynced = hasTimedLyrics && uiState.isLyricsSynced
 
     // Find current line index
     val currentLineIndex = if (isSynced) {
-        lines.indexOfLast { (it.start ?: 0) <= currentPosition }.coerceAtLeast(0)
+        lines.indexOfLast { (it.start ?: 0L) <= currentPosition }.coerceAtLeast(0)
     } else -1
 
     // Auto-scroll to current line
-    LaunchedEffect(currentLineIndex, uiState.isLyricsSynced) {
-        if (uiState.isLyricsSynced && currentLineIndex >= 0) {
+    LaunchedEffect(currentLineIndex, isSynced) {
+        if (isSynced && currentLineIndex >= 0) {
             listState.animateScrollToItem(currentLineIndex, scrollOffset = -200)
         }
     }
@@ -61,7 +62,7 @@ fun PlayerLyricsScreen(
                     LyricsLine(
                         line = line,
                         isCurrent = isCurrent,
-                        onClick = { if (isSynced) onLineClick(line.start ?: 0) }
+                        onClick = { if (isSynced) onLineClick(line.start ?: 0L) }
                     )
                 }
             }
@@ -109,7 +110,7 @@ fun PlayerLyricsScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (isSynced) {
+            if (hasTimedLyrics) {
                 IconButton(onClick = onSyncToggle) {
                     Icon(
                         imageVector = if (uiState.isLyricsSynced) Icons.Default.Sync else Icons.Default.SyncDisabled,
@@ -121,7 +122,13 @@ fun PlayerLyricsScreen(
             IconButton(onClick = onDownloadClick, enabled = !uiState.isLyricsCached) {
                 Icon(
                     imageVector = Icons.Default.Download,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (uiState.isLyricsCached) {
+                            R.string.player_lyrics_downloaded_content_description
+                        } else {
+                            R.string.player_lyrics_download_content_description
+                        }
+                    ),
                     tint = if (uiState.isLyricsCached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
             }
