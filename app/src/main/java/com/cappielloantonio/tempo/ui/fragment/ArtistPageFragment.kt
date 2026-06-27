@@ -27,6 +27,7 @@ import com.cappielloantonio.tempo.ui.activity.MainActivity
 import com.cappielloantonio.tempo.ui.artist.ArtistPageScreen
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.util.Constants
+import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.viewmodel.PlaybackViewModel
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.ArrayList
@@ -62,7 +63,7 @@ class ArtistPageFragment : Fragment() {
                     val uiState by artistPageViewModel.uiState.collectAsState()
                     val currentSongId by playbackViewModel.currentSongId.collectAsState()
                     val isPlaying by playbackViewModel.isPlaying.collectAsState()
-                    var isBiographyVisible by remember { mutableStateOf(false) }
+                    var isBiographyVisible by remember { mutableStateOf(Preferences.getArtistDisplayBiography()) }
 
                     ArtistPageScreen(
                         uiState = uiState,
@@ -74,6 +75,7 @@ class ArtistPageFragment : Fragment() {
                         },
                         onToggleBiographyVisibility = {
                             isBiographyVisible = !isBiographyVisible
+                            Preferences.setArtistDisplayBiography(isBiographyVisible)
                         },
                         onBiographyMoreClick = uiState.artistInfo?.lastFmUrl?.let { url ->
                             {
@@ -81,9 +83,11 @@ class ArtistPageFragment : Fragment() {
                             }
                         },
                         onShuffleClick = {
-                            val shuffled = uiState.topSongs.shuffled()
-                            MediaManager.startQueue(mediaBrowserListenableFuture, ArrayList(shuffled), 0)
-                            activity.setBottomSheetInPeek(true)
+                            val shuffled = artistPageViewModel.getShuffledArtistSongs()
+                            if (shuffled.isNotEmpty()) {
+                                MediaManager.startQueue(mediaBrowserListenableFuture, ArrayList(shuffled), 0)
+                                activity.setBottomSheetInPeek(true)
+                            }
                         },
                         onRadioClick = {
                             lifecycleScope.launch {
@@ -95,8 +99,9 @@ class ArtistPageFragment : Fragment() {
                             }
                         },
                         onSeeAllTopSongsClick = {
+                            val currentArtist = uiState.artist ?: return@ArtistPageScreen
                             val bundle = Bundle().apply {
-                                putSerializable(Constants.ARTIST_OBJECT, uiState.artist)
+                                putSerializable(Constants.ARTIST_OBJECT, currentArtist)
                                 putString(Constants.MEDIA_BY_ARTIST, Constants.MEDIA_BY_ARTIST)
                             }
                             findNavController().navigate(R.id.songListPageFragment, bundle)
