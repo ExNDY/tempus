@@ -15,11 +15,19 @@ import kotlinx.coroutines.launch
 class PodcastRepository {
     private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
 
+    suspend fun getPodcastChannelsResponse(includeEpisodes: Boolean, channelId: String?): SubsonicResponse? =
+        subsonicRepository.getPodcasts(includeEpisodes, channelId)
+
+    suspend fun fetchPodcastChannels(includeEpisodes: Boolean, channelId: String?): List<PodcastChannel> =
+        getPodcastChannelsResponse(includeEpisodes, channelId)?.podcasts?.channels ?: emptyList()
+
+    suspend fun fetchNewestPodcastEpisodes(count: Int): List<PodcastEpisode> =
+        subsonicRepository.getNewestPodcasts(count)?.newestPodcasts?.episodes ?: emptyList()
+
     fun getPodcastChannels(includeEpisodes: Boolean, channelId: String?): MutableLiveData<List<PodcastChannel>> {
         val livePodcastChannel = MutableLiveData<List<PodcastChannel>>(ArrayList())
         CoroutineScope(Dispatchers.IO).launch {
-            val response = subsonicRepository.getPodcasts(includeEpisodes, channelId)
-            livePodcastChannel.postValue(response?.podcasts?.channels ?: emptyList())
+            livePodcastChannel.postValue(fetchPodcastChannels(includeEpisodes, channelId))
         }
         return livePodcastChannel
     }
@@ -27,8 +35,7 @@ class PodcastRepository {
     fun getNewestPodcastEpisodes(count: Int): MutableLiveData<List<PodcastEpisode>> {
         val liveNewestPodcastEpisodes = MutableLiveData<List<PodcastEpisode>>(ArrayList())
         CoroutineScope(Dispatchers.IO).launch {
-            val response = subsonicRepository.getNewestPodcasts(count)
-            liveNewestPodcastEpisodes.postValue(response?.newestPodcasts?.episodes ?: emptyList())
+            liveNewestPodcastEpisodes.postValue(fetchNewestPodcastEpisodes(count))
         }
         return liveNewestPodcastEpisodes
     }

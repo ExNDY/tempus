@@ -1,6 +1,8 @@
 package com.cappielloantonio.tempo.ui.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -8,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,10 +26,12 @@ import androidx.compose.ui.unit.dp
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.subsonic.models.PodcastChannel
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
+import com.cappielloantonio.tempo.subsonic.models.PodcastStatus
 import com.cappielloantonio.tempo.ui.components.TempusImage
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.viewmodel.PodcastUiState
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeTabPodcastScreen(
     uiState: PodcastUiState,
@@ -36,6 +42,7 @@ fun HomeTabPodcastScreen(
     onChannelClick: (PodcastChannel) -> Unit,
     onEpisodeClick: (PodcastEpisode) -> Unit,
     onEpisodeLongClick: (PodcastEpisode) -> Unit,
+    onEpisodeDownloadClick: (PodcastEpisode) -> Unit,
 ) {
     if (uiState.channels.isEmpty() && !uiState.isLoading) {
         PodcastEmptyState(
@@ -75,9 +82,21 @@ fun HomeTabPodcastScreen(
         }
 
         items(uiState.newestEpisodes) { episode ->
+            val isCompleted = episode.status == PodcastStatus.COMPLETED
             ListItem(
                 modifier = Modifier
-                    .clickable(onClick = { onEpisodeClick(episode) }),
+                    .combinedClickable(
+                        onClick = {
+                            if (isCompleted) {
+                                onEpisodeClick(episode)
+                            }
+                        },
+                        onLongClick = {
+                            if (isCompleted) {
+                                onEpisodeLongClick(episode)
+                            }
+                        }
+                    ),
                 headlineContent = {
                     Text(
                         text = episode.title ?: "",
@@ -100,6 +119,22 @@ fun HomeTabPodcastScreen(
                             .size(56.dp)
                             .clip(MaterialTheme.shapes.small)
                     )
+                },
+                trailingContent = {
+                    IconButton(
+                        onClick = {
+                            if (isCompleted) {
+                                onEpisodeLongClick(episode)
+                            } else {
+                                onEpisodeDownloadClick(episode)
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isCompleted) Icons.Default.MoreVert else Icons.Default.Download,
+                            contentDescription = null,
+                        )
+                    }
                 }
             )
         }

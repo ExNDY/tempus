@@ -12,6 +12,13 @@ class PodcastEpisodeBottomSheetViewModel(
 ) : androidx.lifecycle.ViewModel() {
     var podcastEpisode: PodcastEpisode? = null
 
+    fun requestPodcastEpisodeDownload() {
+        val id = podcastEpisode?.id ?: return
+        viewModelScope.launch {
+            podcastRepository.downloadPodcastEpisode(id)
+        }
+    }
+
     fun deletePodcastEpisode() {
         val id = podcastEpisode?.id ?: return
         viewModelScope.launch {
