@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.subsonic.models
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
@@ -14,45 +13,35 @@ import java.util.Date
 open class Playlist(
     @PrimaryKey
     @ColumnInfo(name = "id")
-    open var id: String,
+    open var id: String = "",
+
     @ColumnInfo(name = "name")
     var name: String? = null,
+
     @ColumnInfo(name = "duration")
     var duration: Long = 0,
+
     @SerializedName("coverArt")
     @ColumnInfo(name = "coverArt")
     var coverArtId: String? = null,
-) : Serializable {
-    var comment: String? = null
-    var owner: String? = null
+
+    var comment: String? = null,
+
+    var owner: String? = null,
+
     @SerializedName("public")
-    var isUniversal: Boolean? = null
+    var isUniversal: Boolean? = null,
+
     @ColumnInfo(name = "songCount", defaultValue = "0")
-    var songCount: Int = 0
-    var created: Date? = null
-    var changed: Date? = null
+    var songCount: Int = 0,
+
+    var created: Date? = null,
+
+    var changed: Date? = null,
+
     @ColumnInfo(name = "allowedUsers")
-    var allowedUsers: List<String>? = null
-    @Ignore
-    constructor(
-        id: String,
-        name: String?,
-        comment: String?,
-        owner: String?,
-        isUniversal: Boolean?,
-        songCount: Int,
-        duration: Long,
-        created: Date?,
-        changed: Date?,
-        coverArtId: String?,
-        allowedUsers: List<String>?,
-    ) : this(id, name, duration, coverArtId) {
-        this.comment = comment
-        this.owner = owner
-        this.isUniversal = isUniversal
-        this.songCount = songCount
-        this.created = created
-        this.changed = changed
-        this.allowedUsers = allowedUsers
-    }
-}
+    var allowedUsers: List<String>? = null,
+
+    @ColumnInfo(name = "isPinned", defaultValue = "0")
+    var isPinned: Boolean = false,
+) : Serializable
