@@ -208,7 +208,7 @@ class RadioEditorDialog(private val radioCallback: RadioCallback?) : DialogFragm
             val countries = App.get(RadioBrowserRepository::class.java).getCountries()
             if (!isAdded || popupBind == null) return@launch
             countryNames.clear()
-            countries.forEach { if (it.stationCount > 0) countryNames.add(it.name) }
+            countries.forEach { if (it.stationCount > 0) it.name?.let { name -> countryNames.add(name) } }
             countryNames.sortWith(String.CASE_INSENSITIVE_ORDER)
             if (pb.popupCountryList.visibility == View.VISIBLE) {
                 showCountryList(pb.popupCountryDropdown.text?.toString() ?: "")
