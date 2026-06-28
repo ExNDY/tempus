@@ -320,35 +320,85 @@ object SearchScreen : Screen {
 
 ## 4. Настройка RootContainer
 
-Все созданные экраны ОБЯЗАТЕЛЬНО должны быть добавлены в список `allScreens`.
+Все самостоятельные экраны ОБЯЗАТЕЛЬНО должны быть добавлены в список экранов своего host-графа.
+Вложенные части экрана в эти списки не добавляются: они остаются обычными `@Composable`
+функциями внутри родительского экрана.
 
 ```kotlin
-val allScreens: List<Screen> = listOf(
-    MainScreen,
-    DetailsScreen,
-    SearchScreen
+val authScreens: List<Screen> = listOf(
+    WelcomeScreen,
+    LoginScreen,
 )
 
+val mainScreens: List<Screen> = listOf(
+    HomeScreen,
+    LibraryScreen,
+    DownloadScreen,
+    DetailsScreen,
+    SearchScreen,
+)
+
+enum class Hosts(val route: String) {
+    Auth("auth"),
+    Main("main"),
+}
+
+@Suppress("LongMethod")
 @Composable
 fun RootContainer() {
     val navController: NavHostController = rememberNavController()
 
+    var bottomMenuConfig: BottomMenuConfig by remember {
+        mutableStateOf(BottomMenuConfig.Hidden)
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            (bottomMenuConfig as? BottomMenuConfig.Visible)?.let { config ->
+                BottomBar(
+                    navController = navController,
+                    selectedItem = config.bottomItem,
+                )
+            }
+        },
     ) { padding ->
         NavHost(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .consumeWindowInsets(padding)
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+                ),
             navController = navController,
-            startDestination = getScreenName<MainScreen>()
+            startDestination = Hosts.Auth.route,
+            enterTransition = { fadeIn(animationSpec = tween(TRANSITION_ANIMATION_DURATION)) },
+            exitTransition = { fadeOut(animationSpec = tween(TRANSITION_ANIMATION_DURATION)) },
         ) {
-            allScreens.forEach { screen ->
-                composable(
-                    route = screen.screenName,
-                    arguments = screen.navArgs
-                ) { backStackEntry ->
-                    screen.Content(
+            navigation(
+                route = Hosts.Auth.route,
+                startDestination = WelcomeScreen.screenName,
+            ) {
+                authScreens.forEach { screen ->
+                    composableScreen(
+                        screen = screen,
                         navController = navController,
-                        args = backStackEntry.arguments
+                        updateBottomMenuConfig = { bottomMenuConfig = it },
+                    )
+                }
+            }
+
+            navigation(
+                route = Hosts.Main.route,
+                startDestination = HomeScreen.screenName,
+            ) {
+                mainScreens.forEach { screen ->
+                    composableScreen(
+                        screen = screen,
+                        navController = navController,
+                        updateBottomMenuConfig = { bottomMenuConfig = it },
                     )
                 }
             }
@@ -361,11 +411,158 @@ fun RootContainer() {
 
 ## 5. Чек-лист при переводе экрана на Compose
 
-1. [ ] Создать `object ScreenName : Screen` в пакете фичи.
-2. [ ] Определить константы для ключей аргументов.
-3. [ ] Настроить `navArgs` (указать типы `NavType`, `nullable`).
-4. [ ] Выбрать правильную функцию формирования `screenName` (`defaultScreenNameWithParams` и т.д.).
-5. [ ] Написать статическую функцию `route(...)` для вызова из других мест.
-6. [ ] Реализовать UI в отдельном файле `...Content.kt`.
-7. [ ] Добавить объект экрана в глобальный список `allScreens`.
-8. [ ] Вызвать `navController.navigate(TargetScreen.route(args))` для перехода.
+1. [ ] Понять тип элемента: самостоятельный экран, bottom sheet/dialog или вложенный компонент.
+2. [ ] Для самостоятельного экрана создать `object ScreenName : Screen.DefaultScreen` в пакете фичи.
+3. [ ] Для bottom sheet/dialog создать `object ScreenName : Screen.BottomSheetScreen`.
+4. [ ] Для вложенного компонента НЕ создавать `Screen`, а оставить обычный `@Composable` внутри родительского экрана.
+5. [ ] Определить `bottomMenuConfig()`: `Visible(...)` только для экранов нижнего меню, иначе `Hidden`.
+6. [ ] Определить константы для ключей аргументов.
+7. [ ] Настроить `navArgs` (указать типы `NavType`, `nullable`).
+8. [ ] Выбрать правильную функцию формирования `screenName` (`defaultScreenNameWithParams` и т.д.).
+9. [ ] Написать статическую функцию `screenName(...)` или `route(...)` для вызова из других мест.
+10. [ ] В `Content`: получить аргументы из `Bundle`, создать `ViewModel`, подписаться на actions, вызвать `FeatureContent`.
+11. [ ] Реализовать UI в отдельной composable-функции `FeatureContent(...)` без прямой зависимости от `NavController`.
+12. [ ] Добавить объект экрана в список нужного host-графа (`authScreens`, `mainScreens` и т.д.).
+13. [ ] Для переходов использовать `navController.navigate(TargetScreen.screenName(args))` или `navigateSingleTop(...)`.
+
+---
+
+## 6. План миграции проекта на чистый Compose
+
+### Цель
+
+Убрать XML navigation и Fragment-обертки из основного пользовательского flow.
+Самостоятельные экраны становятся объектами `Screen.DefaultScreen` / `Screen.BottomSheetScreen`,
+а вложенные части остаются composable-компонентами внутри родительского экрана.
+
+### Правило классификации
+
+**Самостоятельный экран**:
+
+*   Может быть открыт из другого экрана, bottom bar, drawer, deep link или back stack.
+*   Имеет собственный route и, при необходимости, nav arguments.
+*   Реализуется как `object FeatureScreen : Screen.DefaultScreen`.
+
+**Bottom sheet/dialog destination**:
+
+*   Открывается поверх текущего экрана через navigation.
+*   Имеет собственный route и аргументы.
+*   Реализуется как `object FeatureBottomSheetScreen : Screen.BottomSheetScreen`.
+
+**Вложенный компонент**:
+
+*   Не должен жить отдельно в back stack.
+*   Не открывается напрямую как route.
+*   Используется только внутри основного экрана.
+*   Реализуется как обычная `@Composable` функция.
+
+Примеры вложенных компонентов:
+
+*   `HomeTabMusicScreen`, `HomeTabPodcastScreen`, `HomeTabRadioScreen` внутри `HomeScreen`.
+*   `PlayerCoverScreen`, `PlayerLyricsScreen`, `PlayerQueueScreen`, `PlayerControllerScreen` внутри `PlayerScreen`.
+*   `SettingsScreenContent`, `SettingsSectionContent`, `SettingsDialogContent` внутри `SettingsScreen`.
+*   Общие компоненты из `ui/components`.
+
+### Порядок миграции
+
+1.  **RootContainer**
+    *   Создать Compose root с `rememberNavController`, `Scaffold`, `NavHost` и host-графами.
+    *   Вынести списки экранов в `authScreens`, `mainScreens` и отдельные списки при необходимости.
+    *   Инициализировать `ScreenNameExtension.allScreens` объединенным списком всех route-экранов.
+    *   Оставить нижнюю навигацию глобальной на уровне root через `BottomMenuConfig`: это нормальная точка управления для широкого приложения.
+
+2.  **Top-level flow**
+    *   Перевести `Landing`, `Login`, `Home`, `Library`, `Download`.
+    *   Для `Home`, `Library`, `Download` вернуть `BottomMenuConfig.Visible(...)`.
+    *   Для auth-экранов вернуть `BottomMenuConfig.Hidden`.
+    *   Заменить `goToLogin` / `goFromLogin` на переходы между `Hosts.Auth` и `Hosts.Main` через `replace(...)`.
+
+3.  **Основные самостоятельные страницы**
+    *   Перевести catalogue/page/list экраны: album, artist, genre, playlist, podcast, search, settings, equalizer, index, directory.
+    *   Все аргументы описывать через `navArgs` и route helper.
+    *   В `Content` доставать аргументы из `Bundle`; если обязательный аргумент отсутствует, падать через `error(...)` или уходить назад по принятому для проекта правилу.
+
+4.  **Bottom sheets и dialogs**
+    *   Перевести bottom sheet dialogs на `Screen.BottomSheetScreen`.
+    *   Использовать `onClose` из `Content(navController, args, onClose)`.
+    *   Старые `FragmentResultListener` заменить на `saveResultForPreviousScreen` / `observeForResult`.
+
+5.  **Удаление старого слоя**
+    *   После переноса flow удалить соответствующие Fragment-обертки.
+    *   Удалить destinations из `nav_graph.xml`.
+    *   После полного переноса заменить `FragmentContainerView` в `activity_main.xml` на Compose root или убрать layout целиком через `setContent`.
+    *   Удалить `NavigationHelper` / `NavigationController`, когда не останется вызовов.
+
+### Шаблон самостоятельного экрана
+
+```kotlin
+object HomeScreen : Screen.DefaultScreen {
+
+    override val screenName: String = defaultScreenName()
+
+    override fun bottomMenuConfig(): BottomMenuConfig {
+        return BottomMenuConfig.Visible(BottomBarItems.home)
+    }
+
+    @Composable
+    override fun Content(navController: NavController, args: Bundle?) {
+        val viewModel: HomeViewModel = getViewModel {
+            getHomeViewModel().apply { onStart() }
+        }
+
+        viewModel.actions.observeAsActions { action ->
+            when (action) {
+                is HomeViewModel.Action.RouteToDetails -> {
+                    navController.navigate(
+                        DetailsScreen.screenName(action.id)
+                    )
+                }
+            }
+        }
+
+        HomeContent(
+            screenState = viewModel.screenState.collectValue(),
+            onDetailsClick = viewModel::routeToDetails,
+        )
+    }
+}
+```
+
+### Шаблон экрана с аргументами
+
+```kotlin
+object DetailsScreen : Screen.DefaultScreen {
+    private const val ID = "id"
+
+    override val navArgs: List<NamedNavArgument> = listOf(
+        navArgument(ID) { type = NavType.StringType }
+    )
+
+    override val screenName: String = defaultScreenNameWithParams(ID)
+
+    fun screenName(id: String): String = screenNameWithParams(id)
+
+    override fun bottomMenuConfig(): BottomMenuConfig = BottomMenuConfig.Hidden
+
+    @Composable
+    override fun Content(navController: NavController, args: Bundle?) {
+        val id: String = args?.getString(ID)
+            ?: error("Invalid navigation argument: id is NULL")
+
+        val viewModel: DetailsViewModel = getViewModel {
+            getDetailsViewModel(id).apply { onStart() }
+        }
+
+        DetailsContent(
+            screenState = viewModel.screenState.collectValue(),
+            onBackClick = navController::navigateUp,
+        )
+    }
+}
+```
+
+### Что не делать
+
+*   Не создавать отдельный `Screen` для табов, pager pages, секций, toolbar/content/dialog-content composables.
+*   Не прокидывать `NavController` в `FeatureContent`: навигация остается в route-level `Content`.
+*   Не держать одновременно Fragment navigation и Compose navigation для одного и того же экрана после завершения миграции этого экрана.
