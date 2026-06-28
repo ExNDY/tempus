@@ -1,13 +1,23 @@
 package com.cappielloantonio.tempo.ui.player
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.cappielloantonio.tempo.subsonic.models.Child
+import com.cappielloantonio.tempo.ui.theme.TempusTheme
 import com.cappielloantonio.tempo.viewmodel.PlayerUiState
 import kotlinx.coroutines.launch
 
@@ -74,7 +84,10 @@ fun PlayerScreen(
     }
 
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding(),
         color = MaterialTheme.colorScheme.surface
     ) {
         VerticalPager(
@@ -170,5 +183,63 @@ fun PlayerScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PlayerScreenPreview() {
+    TempusTheme {
+        PlayerScreen(
+            uiState = PlayerUiState(
+                currentSong = Child(id = "1", title = "Title", artist = "Artist")
+            ),
+            isPlaying = true,
+            playbackState = 1,
+            progress = 30000L,
+            duration = 180000L,
+            shuffleModeEnabled = false,
+            repeatMode = 0,
+            currentSongId = "1",
+            isPlayPauseEnabled = true,
+            isPreviousEnabled = true,
+            isNextEnabled = true,
+            onPlayPauseClick = {},
+            onPreviousClick = {},
+            onNextClick = {},
+            onShuffleClick = {},
+            onRepeatClick = {},
+            onSeek = {},
+            onFavoriteClick = {},
+            onRatingChange = {},
+            onPlaybackSpeedClick = {},
+            onSleepTimerClick = {},
+            onEqualizerClick = {},
+            onTrackInfoClick = {},
+            onTitleClick = {},
+            onArtistClick = {},
+            onQueueSongClick = {},
+            onQueueRemoveClick = {},
+            onQueueShuffleClick = {},
+            onQueueClearClick = {},
+            onQueueSaveToPlaylistClick = {},
+            onQueueDownloadAllClick = {},
+            onQueueLoadQueueClick = {},
+            onDownloadClick = {},
+            onAddToPlaylistClick = {},
+            onInstantMixClick = {},
+            onSaveQueueClick = {},
+            onLyricsLineClick = {},
+            onLyricsSyncToggle = {},
+            onLyricsDownloadClick = {},
+            onChipClick = { _, _ -> },
+            onChipLongClick = { _, _ -> },
+            isSyncEnabled = true,
+            requestedVerticalPage = 0,
+            verticalPageRequestId = 0,
+            requestedHorizontalPage = 0,
+            horizontalPageRequestId = 0,
+            isVerticalPagerDraggable = true
+        )
     }
 }

@@ -118,7 +118,7 @@ class CustomGlideRequest private constructor() {
             uri.append(App.getSubsonicClientInstance(false).url)
             uri.append("getCoverArt")
 
-            if (params.containsKey("u") && params["u"] != null) uri.append("?u=").append(Util.encode(params["u"]))
+            params["u"]?.let { uri.append("?u=").append(Util.encode(it)) }
             if (params.containsKey("p") && params["p"] != null) uri.append("&p=").append(params["p"])
             if (params.containsKey("s") && params["s"] != null) uri.append("&s=").append(params["s"])
             if (params.containsKey("t") && params["t"] != null) uri.append("&t=").append(params["t"])

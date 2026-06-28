@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.core.view.WindowCompat
@@ -124,8 +125,9 @@ fun TempusTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val themePref = Preferences.getTheme()
-    val darkThemeStyle = Preferences.getDarkThemeStyle()
+    val isInEditMode = LocalInspectionMode.current
+    val themePref = if (isInEditMode) "system" else Preferences.getTheme()
+    val darkThemeStyle = if (isInEditMode) "default" else Preferences.getDarkThemeStyle()
     
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {

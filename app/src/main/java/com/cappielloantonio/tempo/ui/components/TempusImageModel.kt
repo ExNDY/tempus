@@ -59,7 +59,7 @@ data class TempusImageModel(
             uri.append(App.getSubsonicClientInstance(false).url)
             uri.append("getCoverArt")
 
-            if (params["u"] != null) uri.append("?u=").append(Util.encode(params["u"]))
+            params["u"]?.let { uri.append("?u=").append(Util.encode(it)) }
             if (params["p"] != null) uri.append("&p=").append(params["p"])
             if (params["s"] != null) uri.append("&s=").append(params["s"])
             if (params["t"] != null) uri.append("&t=").append(params["t"])
