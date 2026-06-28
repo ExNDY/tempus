@@ -22,7 +22,7 @@ class AlbumRepository {
     private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
 
     fun getAlbums(type: String, size: Int, fromYear: Int?, toYear: Int?): MutableLiveData<List<AlbumID3>> {
-        val listLiveAlbums = MutableLiveData<List<AlbumID3>>(ArrayList())
+        val listLiveAlbums = MutableLiveData<List<AlbumID3>>()
 
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getAlbumList2(type, size, 0, fromYear, toYear)
@@ -38,7 +38,7 @@ class AlbumRepository {
     }
 
     fun getStarredAlbums(random: Boolean, size: Int): MutableLiveData<List<AlbumID3>> {
-        val starredAlbums = MutableLiveData<List<AlbumID3>>(ArrayList())
+        val starredAlbums = MutableLiveData<List<AlbumID3>>()
 
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getStarred2()
@@ -75,7 +75,7 @@ class AlbumRepository {
     }
 
     fun getArtistAlbums(id: String): MutableLiveData<List<AlbumID3>> {
-        val artistsAlbum = MutableLiveData<List<AlbumID3>>(ArrayList())
+        val artistsAlbum = MutableLiveData<List<AlbumID3>>()
 
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getArtist(id)

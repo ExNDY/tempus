@@ -60,7 +60,7 @@ class ArtistRepository {
     }
 
     fun getStarredArtists(random: Boolean, size: Int): MutableLiveData<List<ArtistID3>> {
-        val starredArtists = MutableLiveData<List<ArtistID3>>(ArrayList())
+        val starredArtists = MutableLiveData<List<ArtistID3>>()
 
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getStarred2()
@@ -128,7 +128,7 @@ class ArtistRepository {
     }
 
     fun getArtistFullInfo(id: String): MutableLiveData<ArtistInfo2?> {
-        val artistFullInfo = MutableLiveData<ArtistInfo2?>(null)
+        val artistFullInfo = MutableLiveData<ArtistInfo2?>()
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getArtistInfo2(id)
             artistFullInfo.postValue(response?.artistInfo2)
@@ -167,7 +167,7 @@ class ArtistRepository {
     }
 
     fun getTopSongs(artistName: String, count: Int): MutableLiveData<List<Child>> {
-        val topSongs = MutableLiveData<List<Child>>(ArrayList())
+        val topSongs = MutableLiveData<List<Child>>()
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getTopSongs(artistName, count)
             topSongs.postValue(response?.topSongs?.songs ?: emptyList())

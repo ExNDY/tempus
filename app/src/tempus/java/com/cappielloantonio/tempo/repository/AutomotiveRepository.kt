@@ -490,7 +490,7 @@ class AutomotiveRepository {
                     MediaItem.Builder()
                         .setMediaId(episode.id ?: "")
                         .setMediaMetadata(mediaMetadata)
-                        .setUri(MusicUtil.getStreamUri(episode.streamId))
+                        .setUri(MusicUtil.getStreamUri(episode.streamId ?: ""))
                         .build()
                 }
 
