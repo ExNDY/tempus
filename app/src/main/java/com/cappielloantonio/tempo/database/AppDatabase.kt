@@ -15,7 +15,7 @@ import com.cappielloantonio.tempo.subsonic.models.Playlist
 
 @UnstableApi
 @Database(
-    version = 20,
+    version = 21,
     entities = [
         Queue::class,
         Server::class,
@@ -40,7 +40,8 @@ import com.cappielloantonio.tempo.subsonic.models.Playlist
         AutoMigration(from = 16, to = 17),
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19),
-        AutoMigration(from = 19, to = 20)
+        AutoMigration(from = 19, to = 20),
+        AutoMigration(from = 20, to = 21)
     ]
 )
 @TypeConverters(DateConverters::class, StringListConverter::class)
@@ -71,7 +72,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                     .also { instance = it }
             }
