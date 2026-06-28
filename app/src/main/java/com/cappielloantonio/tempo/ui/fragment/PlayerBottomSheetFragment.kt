@@ -503,8 +503,8 @@ class PlayerBottomSheetFragment : Fragment() {
         _binding = null
     }
 
-    fun getPlayerHeader(): View {
-        return binding.playerHeaderLayout
+    fun getPlayerHeader(): View? {
+        return _binding?.playerHeaderLayout
     }
 
     fun goBackToFirstPage() {

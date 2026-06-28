@@ -1,14 +1,11 @@
 package com.cappielloantonio.tempo.ui.activity
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.view.View
 import android.view.ViewGroup
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -18,6 +15,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
+import cat.ereza.customactivityoncrash.CustomActivityOnCrash
+import cat.ereza.customactivityoncrash.config.CaocConfig
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.databinding.ActivityCrashBinding
 import com.cappielloantonio.tempo.ui.fragment.CrashExportFragment
@@ -26,8 +25,6 @@ import com.cappielloantonio.tempo.ui.fragment.CrashLogsFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.navigation.NavigationView
-import cat.ereza.customactivityoncrash.CustomActivityOnCrash
-import cat.ereza.customactivityoncrash.config.CaocConfig
 
 @UnstableApi
 class CrashActivity : AppCompatActivity() {

@@ -182,7 +182,7 @@ open class BaseMediaService : MediaLibraryService() {
                 // (e.g. stream with unknown duration that ended before the poller could
                 // trigger the fade), abort any in-progress fade and pause immediately.
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO &&
-                    SleepTimerManager.getInstance().isEndOfTrack) {
+                    SleepTimerManager.getInstance().isEndOfTrack()) {
                     SleepTimerManager.getInstance().stopEndOfTrackPoller()
                     SleepTimerManager.getInstance().cancelTimer()
                     player.volume = 1f
@@ -468,8 +468,8 @@ open class BaseMediaService : MediaLibraryService() {
         })
         // If end-of-track was already armed when the service restarted (state
         // restored from SharedPreferences), re-arm the poller against the live player.
-        if (SleepTimerManager.getInstance().isActive &&
-                SleepTimerManager.getInstance().isEndOfTrack) {
+        if (SleepTimerManager.getInstance().isActive() &&
+                SleepTimerManager.getInstance().isEndOfTrack()) {
             SleepTimerManager.getInstance().armEndOfTrackFadePoller(mediaLibrarySession.player)
         }
     }

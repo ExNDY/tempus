@@ -329,7 +329,7 @@ class MainActivity : BaseActivity() {
         navigationController.setDrawerLock(locked)
     }
 
-    fun isNavigationDrawerLocked(): Boolean = navigationController.isNavigationDrawerLocked
+    fun isNavigationDrawerLocked(): Boolean = navigationController.isNavigationDrawerLocked()
 
     fun toggleNavigationDrawerLockOnOrientationChange() {
         navigationController.toggleDrawerLockOnOrientation(this)
