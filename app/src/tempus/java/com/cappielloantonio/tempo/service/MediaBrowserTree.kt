@@ -125,21 +125,19 @@ object MediaBrowserTree {
         val albumView: Boolean = Preferences.isAndroidAutoAlbumViewEnabled()
         val homeView: Boolean = Preferences.isAndroidAutoHomeViewEnabled()
         val playlistView: Boolean = Preferences.isAndroidAutoPlaylistViewEnabled()
-        val podcastView: Boolean = Preferences.isAndroidAutoPodcastViewEnabled()
-        val radioView: Boolean = Preferences.isAndroidAutoRadioViewEnabled()
 
         // clear before rebuild
         treeNodes.clear()
 
-        // This list must be exactly the same as the one in aa_tab_titles
+        // Indices match aa_tab_values; null entries preserve old saved values.
         val allFunctions = listOf(
             ConstantsAA.HOME_ID,
             ConstantsAA.LAST_PLAYED_ID,
             ConstantsAA.ALBUMS_ID,
             ConstantsAA.ARTISTS_ID,
             ConstantsAA.PLAYLIST_ID,
-            ConstantsAA.PODCAST_ID,
-            ConstantsAA.RADIO_ID,
+            null,
+            null,
             ConstantsAA.FOLDER_ID,
             ConstantsAA.MOST_PLAYED_ID,
             ConstantsAA.RECENTLY_ADDED_ID,
@@ -259,32 +257,6 @@ object MediaBrowserTree {
                     isBrowsable = true,
                     imageUri = iconUri(R.drawable.ic_aa_playlist),
                     mediaType = MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS
-                )
-            )
-
-        treeNodes[ConstantsAA.PODCAST_ID] =
-            MediaItemNode(
-                buildMediaItem(
-                    gridView = podcastView,
-                    title = appContext.getString(R.string.aa_podcast),
-                    mediaId = ConstantsAA.PODCAST_ID,
-                    isPlayable = false,
-                    isBrowsable = true,
-                    imageUri = iconUri(R.drawable.ic_aa_podcasts),
-                    mediaType = MediaMetadata.MEDIA_TYPE_FOLDER_PODCASTS
-                )
-            )
-
-        treeNodes[ConstantsAA.RADIO_ID] =
-            MediaItemNode(
-                buildMediaItem(
-                    gridView = radioView,
-                    title = appContext.getString(R.string.aa_radio),
-                    mediaId = ConstantsAA.RADIO_ID,
-                    isPlayable = false,
-                    isBrowsable = true,
-                    imageUri = iconUri(R.drawable.ic_aa_radio),
-                    mediaType = MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS
                 )
             )
 
@@ -514,6 +486,7 @@ object MediaBrowserTree {
         // Second level for HOME_ID even there is no HOME_ID displayed
 		// add all functions not previously added
         allFunctions
+            .filterNotNull()
             .filter { it !in selectedIds }
             .forEach { function ->
                 when (function) {
@@ -587,8 +560,6 @@ object MediaBrowserTree {
                 ConstantsAA.ARTIST_ID,
                 true)
             ConstantsAA.PLAYLIST_ID -> automotiveRepository.getPlaylists(ConstantsAA.PLAYLIST_ID)
-            ConstantsAA.PODCAST_ID -> automotiveRepository.getNewestPodcastEpisodes(ConstantsAA.NUMBER_OF_DISPLAYED_PODCASTS)
-            ConstantsAA.RADIO_ID -> automotiveRepository.getInternetRadioStations()
             ConstantsAA.FOLDER_ID -> automotiveRepository.getMusicFolders(ConstantsAA.FOLDER_ID)
             ConstantsAA.MOST_PLAYED_ID -> automotiveRepository.getAlbums(
                 ConstantsAA.ALBUM_ID,
@@ -596,7 +567,7 @@ object MediaBrowserTree {
                 ConstantsAA.NUMBER_OF_DISPLAYED_ALBUMS,
                 false)
             ConstantsAA.RECENT_TRACKS_ID -> automotiveRepository.getRecentlyPlayedSongs(
-                getServerId(),
+                getServerId() ?: "",
                 ConstantsAA.NUMBER_OF_DISPLAYED_RECENT_TRACKS)
             ConstantsAA.RECENTLY_ADDED_ID -> automotiveRepository.getAlbums(
                 ConstantsAA.ALBUM_ID,

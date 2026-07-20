@@ -12,13 +12,12 @@ object Constants {
     const val GENRE_OBJECT = "GENRE_OBJECT"
     const val PLAYLIST_OBJECT = "PLAYLIST_OBJECT"
     const val PLAYLIST_ID = "PLAYLIST_ID"
-    const val PODCAST_OBJECT = "PODCAST_OBJECT"
-    const val PODCAST_CHANNEL_OBJECT = "PODCAST_CHANNEL_OBJECT"
-    const val INTERNET_RADIO_STATION_OBJECT = "INTERNET_RADIO_STATION_OBJECT"
     const val MUSIC_FOLDER_OBJECT = "MUSIC_FOLDER_OBJECT"
     const val MUSIC_DIRECTORY_OBJECT = "MUSIC_DIRECTORY_OBJECT"
     const val MUSIC_INDEX_OBJECT = "MUSIC_DIRECTORY_OBJECT"
     const val MUSIC_DIRECTORY_ID = "MUSIC_DIRECTORY_ID"
+    const val MUSIC_DIRECTORY_NAME = "MUSIC_DIRECTORY_NAME"
+    const val MUSIC_DIRECTORY_BREADCRUMB = "MUSIC_DIRECTORY_BREADCRUMB"
     const val ALBUMS_OBJECT = "ALBUMS_OBJECT"
     const val ALBUM_LIST_TITLE = "ALBUM_LIST_TITLE"
 
@@ -58,14 +57,9 @@ object Constants {
     const val PLAYLIST_ORDER_BY_SONGS = "ORDER_BY_SONGS"
     const val PLAYLIST_ORDER_BY_PINNED = "ORDER_BY_PINNED"
 
-    const val PODCAST_FILTER_BY_DOWNLOAD = "PODCAST_FILTER_BY_DOWNLOAD"
-    const val PODCAST_FILTER_BY_ALL = "PODCAST_FILTER_BY_ALL"
-
     const val MEDIA_TYPE_MUSIC = "music"
-    const val MEDIA_TYPE_PODCAST = "podcast"
     const val MEDIA_TYPE_AUDIOBOOK = "audiobook"
     const val MEDIA_TYPE_VIDEO = "video"
-    const val MEDIA_TYPE_RADIO = "radio"
 
     const val MEDIA_RECENTLY_PLAYED = "MEDIA_RECENTLY_PLAYED"
     const val MEDIA_MOST_PLAYED = "MEDIA_MOST_PLAYED"
@@ -105,14 +99,15 @@ object Constants {
     const val DOWNLOAD_GROUP_SUBTITLE = "download_group_subtitle"
 
     const val SHARE_OBJECT = "share_object"
-
+    const val REQUEST_REFRESH_HOME_SHARES = "request_refresh_home_shares"
+    const val REQUEST_REFRESH_HOME_PLAYLISTS = "request_refresh_home_playlists"
+    const val REQUEST_REFRESH_SETTINGS = "request_refresh_settings"
     const val PLAYABLE_MEDIA_LIMIT = 100
     const val PRE_PLAYABLE_MEDIA = 15
 
     const val HOME_SECTOR_DISCOVERY = "HOME_SECTOR_DISCOVERY"
     const val HOME_SECTOR_MADE_FOR_YOU = "HOME_SECTOR_MADE_FOR_YOU"
     const val HOME_SECTOR_BEST_OF = "HOME_SECTOR_BEST_OF"
-    const val HOME_SECTOR_RADIO_STATION = "HOME_SECTOR_RADIO_STATION"
     const val HOME_SECTOR_TOP_SONGS = "HOME_SECTOR_TOP_SONGS"
     const val HOME_SECTOR_STARRED_TRACKS = "HOME_SECTOR_STARRED_TRACKS"
     const val HOME_SECTOR_STARRED_ALBUMS = "HOME_SECTOR_STARRED_ALBUMS"

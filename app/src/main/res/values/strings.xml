@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="aa_albums">Albums</string>
     <string name="aa_album_most_played">Albums most played</string>
 	<string name="aa_album_recently_added">Albums added</string>
@@ -24,6 +24,9 @@
     <string name="aa_quick_mix">Quick mix</string>
     <string name="aa_my_mix">My mix</string>
     <string name="aa_discovery_mix">Discovery mix</string>
+
+    <string name="no_internet">No internet connection</string>
+    <string name="server_unreachable">Server is unreachable</string>
 
     <string name="activity_battery_optimizations_conclusion">If in trouble visit https://dontkillmyapp.com. It provides detailed instructions on how to disable any power-saving features that may affect app\'s performance.</string>
     <string name="activity_battery_optimizations_summary">Please disable battery optimizations for media playback while the screen is off.</string>
@@ -80,13 +83,14 @@
     <string name="artist_page_title_appears_on_section">Appears On</string>
     <string name="artist_page_title_biography_more_button">More</string>
     <string name="artist_page_title_biography_section">Biography</string>
+    <string name="artist_page_title_similar_artists_section">Similar artists</string>
     <string name="artist_page_title_most_streamed_song_section">Top Songs</string>
     <string name="artist_page_title_most_streamed_song_see_all_button">See all</string>
     <string name="artist_page_title_most_streamed_song_unavailable">No top songs available\n\nTap to hide</string>
     <string name="battery_optimization_negative_button">Ignore</string>
     <string name="battery_optimization_neutral_button">Don\'t ask again</string>
     <string name="battery_optimization_positive_button">Disable</string>
-    <string name="bottom_sheet_generating_instant_mix">Generating instant mix...</string>
+    <string name="bottom_sheet_generating_instant_mix">Generating instant mix…</string>
     <string name="bottom_sheet_problem_generating_instant_mix">Could not retrieve tracks from subsonic server.</string>
     <string name="connection_alert_dialog_negative_button">Cancel</string>
     <string name="connection_alert_dialog_neutral_button">Enable data saver</string>
@@ -136,6 +140,14 @@
     <string name="exo_download_notification_channel_name">Downloads</string>
     <string name="exo_controls_heart_off_description">Toggle Heart off</string>
     <string name="exo_controls_heart_on_description">Toggle Heart on</string>
+    <string name="exo_controls_shuffle_on_description" tools:override="true" translatable="false">Shuffle on</string>
+    <string name="exo_controls_shuffle_off_description" tools:override="true" translatable="false">Shuffle off</string>
+    <string name="exo_controls_repeat_off_description" tools:override="true" translatable="false">Repeat off</string>
+    <string name="exo_controls_repeat_one_description" tools:override="true" translatable="false">Repeat one</string>
+    <string name="exo_controls_repeat_all_description" tools:override="true" translatable="false">Repeat all</string>
+    <string name="exo_controls_previous_description" tools:override="true" translatable="false">Previous</string>
+    <string name="exo_controls_play_description" tools:override="true" translatable="false">Play</string>
+    <string name="exo_controls_next_description" tools:override="true" translatable="false">Next</string>
     <string name="cast_expanded_controller_loading">Loading…</string>
     <string name="filter_info_selection">Select two or more filters</string>
     <string name="filter_title">Filter</string>
@@ -155,6 +167,8 @@
     <string name="home_rearrangement_dialog_positive_button">Save</string>
     <string name="home_rearrangement_dialog_title">Rearrange home</string>
     <string name="home_rearrangement_dialog_subtitle">Please note that in order for the changes made to take effect, it is necessary to restart the application.</string>
+    <string name="home_rearrangement_dialog_library_carousel_title">Use material carousel for Library albums</string>
+    <string name="home_rearrangement_dialog_library_carousel_summary">Adds a wider, peeking carousel style to the Library album sample.</string>
     <string name="home_section_music">Music</string>
     <string name="home_section_podcast">Podcast</string>
     <string name="home_section_radio">Radio</string>
@@ -215,6 +229,7 @@
     <string name="library_title_music_folder">Music folders</string>
     <string name="library_title_playlist">Playlists</string>
     <string name="library_title_playlist_see_all_button">See all</string>
+    <string name="common_see_all">See all</string>
     <string name="library_toast_long_press_to_refresh">Long press to refresh</string>
     <string name="login_empty">No server added</string>
     <string name="login_title">Subsonic servers</string>
@@ -251,6 +266,7 @@
     <string name="menu_sort_most_played">Most played</string>
     <string name="menu_sort_most_recently_starred">Most recently starred</string>
     <string name="menu_sort_least_recently_starred">Least recently starred</string>
+    <string name="menu_refresh">Refresh</string>
     <string name="menu_pin_button">Add to faves</string>
     <string name="menu_unpin_button">Remove from faves</string>
     <string name="playlist_sort_pinned">Faves</string>
@@ -259,15 +275,19 @@
     <string name="playback_speed_dialog_title">Playback Speed</string>
     <string name="playback_speed_dialog_negative_button">Cancel</string>
     <string name="player_queue_clean_all_button">Clean play queue</string>
+    <string name="player_queue_save_queue">Save Queue</string>
     <string name="player_queue_save_queue_success">Saved play queue</string>
     <string name="player_queue_save_to_playlist">Save Queue to Playlist</string>
     <string name="player_queue_load_queue">Load Queue</string>
+    <string name="player_artist_chooser_title">Choose artist</string>
+    <string name="player_queue_toggle_fab_menu_content_description">Toggle FAB action menu</string>
     <string name="player_lyrics_download_content_description">Download lyrics for offline playback</string>
     <string name="player_lyrics_downloaded_content_description">Lyrics downloaded for offline playback</string>
     <string name="player_lyrics_download_success">Lyrics saved for offline playback.</string>
     <string name="player_lyrics_download_failure">Lyrics are not available to download.</string>
     <string name="player_server_priority">Server Priority</string>
     <string name="player_unknown_format">Unknown format</string>
+    <string name="player_unknown">Unknown</string>
     <string name="player_transcoding">Transcoding</string>
     <string name="player_transcoding_requested">requested</string>
     <string name="playlist_catalogue_title">Playlist Catalogue</string>
@@ -509,6 +529,12 @@
     <string name="settings_title_general">General</string>
     <string name="settings_title_misc">Miscellaneous</string>
     <string name="settings_title_players">Players</string>
+    <string name="settings_playback_diagnostics_share_title">Share playback diagnostics</string>
+    <string name="settings_playback_diagnostics_share_summary">Share local aggregate playback performance counters</string>
+    <string name="settings_playback_diagnostics_clear_title">Clear playback diagnostics</string>
+    <string name="settings_playback_diagnostics_clear_summary">Delete all locally collected playback counters</string>
+    <string name="settings_playback_diagnostics_empty">No playback diagnostics have been collected yet</string>
+    <string name="settings_playback_diagnostics_cleared">Playback diagnostics cleared</string>
     <string name="settings_title_playlist">Playlist</string>
     <string name="settings_title_rating">Rating</string>
     <string name="settings_title_loudness">Loudness correction</string>
@@ -583,6 +609,9 @@
     <string name="song_list_page_most_played">Most played tracks</string>
     <string name="song_list_page_recently_added">Recently added tracks</string>
     <string name="song_list_page_recently_played">Recently played tracks</string>
+    <string name="song_list_page_sort_by_title">Sort by title</string>
+    <string name="song_list_page_sort_least_recently_starred">Least recently starred</string>
+    <string name="song_list_page_sort_most_recently_starred">Most recently starred</string>
     <string name="song_list_page_starred">Starred tracks</string>
     <string name="song_list_page_top">%1$s\'s top tracks</string>
     <string name="song_list_page_year">Year %1$d</string>
@@ -675,7 +704,7 @@
 
     <string name="search_sort_title">Sort recent searches chronologically</string>
     <string name="search_sort_summary">If enabled, sort searches chronologically. Sort by name if disabled.</string>
-    <string name="search_all_songs_loading">Getting all songs ...</string>
+    <string name="search_all_songs_loading">Getting all songs …</string>
     <string name="search_all_songs">all %1$s songs</string>
     <string name="search_all_songs_play">Play %1$s</string>
 
@@ -723,6 +752,7 @@
     <string name="ca_export_button_copy">Copy log</string>
     <string name="ca_export_button_share">Share log</string>
     <string name="ca_export_toast_log_copied_to_clipboard">Log copied to clipboard</string>
+    <string name="ca_export_clipboard_label">Crash log</string>
 
     <string name="ca_export_label">Export</string>
     <string name="ca_export_title">Logs retrival</string>
@@ -735,4 +765,49 @@
     <string name="playlist_error_not_found_title">Playlist not found</string>
     <string name="playlist_error_not_found_message">This playlist could not be found on the server. It will be removed from your local cache.</string>
     <string name="playlist_error_not_found_toast">Playlist removed from cache</string>
+
+    <!-- Downloader -->
+    <string name="downloader_downloading_batch">Downloading %1$s (%2$s/%3$s)</string>
+    <string name="downloader_download_completed">Download completed</string>
+    <string name="downloader_downloaded_title">Downloaded: %1$s</string>
+    <string name="downloader_album_downloaded">Album downloaded: %1$s</string>
+    <string name="downloader_all_downloads_completed">All downloads completed (%1$d files)</string>
+    <string name="downloader_error_loading">Download error</string>
+    <string name="downloader_errors_loading">Download errors (%1$d files)</string>
+    <string name="downloader_downloaded_and_errors">Downloaded: %1$d, errors: %2$d</string>
+    <string name="downloader_retry">Retry</string>
+    <string name="download_notification_no_folder_title">No download folder set</string>
+    <string name="download_notification_no_folder_text">Tap to set one in settings</string>
+    <string name="download_notification_failed">Download failed</string>
+    <string name="download_notification_already_downloaded">Already downloaded</string>
+    <string name="download_notification_cannot_write_to_folder">Cannot write to folder.</string>
+    <string name="download_notification_invalid_media_uri">Invalid media URI.</string>
+    <string name="download_notification_server_returned">Server returned %1$d</string>
+    <string name="download_notification_unsupported_media_uri">Unsupported media URI.</string>
+    <string name="download_notification_failed_to_create_file">Failed to create file.</string>
+    <string name="download_notification_cannot_open_output_stream">Cannot open output stream.</string>
+    <string name="download_notification_empty_download">Empty download.</string>
+    <string name="download_notification_incomplete_download">Incomplete download.</string>
+    <string name="login_add_server_content_description">Add server</string>
+    <string name="login_no_servers_message">No servers added yet. Tap + to add one.</string>
+    <string name="server_signup_dialog_title_edit">Edit server</string>
+    <string name="server_signup_dialog_clear_certificate">Clear certificate</string>
+    <string name="settings_download_folder_set_with_path">Download folder set:\n%1$s</string>
+    <string name="share_chooser_title">Share via</string>
+    <string name="podcast_episode_open_channel">Open the channel</string>
+    <string name="player_queue_empty">Queue is empty</string>
+    <string name="player_queue_download_service_unavailable">Download service unavailable.</string>
+    <string name="player_queue_all_songs_downloaded">All songs already downloaded</string>
+    <string name="player_queue_loaded">Queue loaded</string>
+    <string name="player_queue_not_found">No saved queue found</string>
+    <string name="player_status_playing">Playing</string>
+    <string name="player_status_paused">Paused</string>
+    <string name="player_status_loading">Loading</string>
+    <string name="bottom_sheet_load_error">Could not load this item</string>
+    <string name="download_directory_picker_summary">Choose a folder where downloaded songs will be stored.</string>
+    <string name="download_directory_picker_positive_button">Choose folder</string>
+    <plurals name="artist_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
 </resources>

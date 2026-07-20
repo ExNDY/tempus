@@ -100,20 +100,16 @@ public class WidgetProvider extends AppWidgetProvider {
                 new Intent(ctx, WidgetProvider4x1.class).setAction(ACT_CYCLE_REPEAT),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
-
         rv.setOnClickPendingIntent(R.id.btn_play_pause, playPause);
         rv.setOnClickPendingIntent(R.id.btn_next, next);
         rv.setOnClickPendingIntent(R.id.btn_prev, prev);
         rv.setOnClickPendingIntent(R.id.btn_shuffle, shuffle);
         rv.setOnClickPendingIntent(R.id.btn_repeat, repeat);
-
         PendingIntent launch = buildMainActivityPendingIntent(ctx, requestCodeBase + 10, null);
         rv.setOnClickPendingIntent(R.id.root, launch);
-
         PendingIntent songPending = buildMainActivityPendingIntent(ctx, requestCodeBase + 20, songLink);
         PendingIntent artistPending = buildMainActivityPendingIntent(ctx, requestCodeBase + 21, artistLink);
         PendingIntent albumPending = buildMainActivityPendingIntent(ctx, requestCodeBase + 22, albumLink);
-
         PendingIntent fallback = launch;
         rv.setOnClickPendingIntent(R.id.album_art, songPending != null ? songPending : fallback);
         rv.setOnClickPendingIntent(R.id.title, songPending != null ? songPending : fallback);

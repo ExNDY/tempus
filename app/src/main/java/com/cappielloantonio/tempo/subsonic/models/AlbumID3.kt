@@ -1,13 +1,11 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.Date
 
 @Keep
-@Parcelize
 open class AlbumID3(
     var id: String? = null,
     var name: String? = null,
@@ -36,4 +34,4 @@ open class AlbumID3(
     var releaseDate: ItemDate? = null,
     var isCompilation: Boolean? = null,
     var discTitles: List<DiscTitle>? = null,
-) : Parcelable
+) : Serializable

@@ -1,13 +1,11 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.Date
 
 @Keep
-@Parcelize
 class Directory(
     @SerializedName("child")
     var children: List<Child>? = null,
@@ -19,4 +17,4 @@ class Directory(
     var userRating: Int? = null,
     var averageRating: Double? = null,
     var playCount: Long? = null,
-) : Parcelable
+) : Serializable

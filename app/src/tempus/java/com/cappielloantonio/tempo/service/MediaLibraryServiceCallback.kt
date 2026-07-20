@@ -81,11 +81,6 @@ class MediaLibrarySessionCallback(
 
         Log.d(TAG, "mediaId = ${firstItem.mediaId}, startIndex = $startIndex, startPositionMs = $startPositionMs")
 
-        if (isRadio(firstItem)) {
-            QueueRepository().deleteAll()
-            return super.onSetMediaItems(mediaSession, controller, mediaItems, 0, 0)
-        }
-
         val futureQueue = resolveQueueForItem(firstItem, mediaItems)
 
         return Futures.transform(
@@ -130,42 +125,7 @@ class MediaLibrarySessionCallback(
         val extras = firstItem.requestMetadata.extras ?: firstItem.mediaMetadata.extras
         Log.d(TAG, "extras: ${extras?.keySet()?.joinToString { key -> "$key=${extras.getString(key)}" } ?: "null"}")
 
-        if (isRadio(firstItem)) {
-            Log.d(TAG, "Radio")
-            return fetchRadioItem(firstItem)
-        }
-
         return resolveQueueForItem(firstItem, mediaItems)
-    }
-
-    private fun isRadio(item: MediaItem): Boolean {
-        return item.mediaId.startsWith("ir-") ||
-                item.mediaMetadata.extras?.getString("type", "") == Constants.MEDIA_TYPE_RADIO ||
-                item.requestMetadata.extras?.getString("type", "") == Constants.MEDIA_TYPE_RADIO
-    }
-
-    private fun fetchRadioItem(firstItem: MediaItem): ListenableFuture<List<MediaItem>> {
-        val radioFuture = Futures.transformAsync(
-            automotiveRepository.internetRadioStations,
-            { result ->
-                val selected = result?.value?.find { it.mediaId == firstItem.mediaId }
-                if (selected != null) {
-                    val updated = selected.buildUpon()
-                        .setMimeType(selected.localConfiguration?.mimeType)
-                        .build()
-                    Futures.immediateFuture(listOf(updated))
-                } else {
-                    Futures.immediateFuture(listOf(firstItem))
-                }
-            },
-            androidx.core.content.ContextCompat.getMainExecutor(context)
-        )
-        return Futures.catchingAsync(
-            radioFuture,
-            Exception::class.java,
-            { Futures.immediateFuture(listOf(firstItem)) },
-            androidx.core.content.ContextCompat.getMainExecutor(context)
-        )
     }
 
     private fun resolveQueueForItem(
@@ -197,7 +157,7 @@ class MediaLibrarySessionCallback(
 
                 Futures.transform(
                     automotiveRepository.getInstantMix(artistId, count),
-                    { it.value ?: emptyList() },
+                    { result: LibraryResult<ImmutableList<MediaItem>> -> result.value ?: emptyList() },
                     MoreExecutors.directExecutor()
                 )
             }
@@ -215,7 +175,7 @@ class MediaLibrarySessionCallback(
 
                 Futures.transform(
                     automotiveRepository.getMadeForYou(mixType, count),
-                    { it.value ?: emptyList() },
+                    { result: LibraryResult<ImmutableList<MediaItem>> -> result.value ?: emptyList() },
                     MoreExecutors.directExecutor()
                 )
             }

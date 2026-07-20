@@ -135,7 +135,7 @@
     </string-array>
 
     <string-array name="audio_transcode_format_wifi_list_titles">
-        <item>Прямое воспроизведение</item>
+        <item>Оригинал</item>
         <item>Opus</item>
         <item>AAC</item>
         <item>Mp3</item>
@@ -150,7 +150,7 @@
     </string-array>
 
     <string-array name="audio_transcode_format_mobile_list_titles">
-        <item>Прямое воспроизведение</item>
+        <item>Оригинал</item>
         <item>Opus</item>
         <item>AAC</item>
         <item>Mp3</item>
@@ -230,18 +230,24 @@
     <string-array name="playlist_sort_option_titles">
         <item>По названию</item>
         <item>Случайно</item>
+        <item>По дате создания</item>
+        <item>По количеству песен</item>
+        <item>Избранное</item>
     </string-array>
     <string-array name="playlist_sort_option_values">
         <item>ORDER_BY_NAME</item>
         <item>ORDER_BY_RANDOM</item>
+        <item>ORDER_BY_DATE</item>
+        <item>ORDER_BY_SONGS</item>
+        <item>ORDER_BY_PINNED</item>
     </string-array>
 
     <string-array name="skip_min_star_rating_titles">
-        <item>0 звезд минимум</item>
-        <item>1 звезда минимум</item>
-        <item>2 звезды минимум</item>
-        <item>3 звезды минимум</item>
-        <item>4 звезды минимум</item>
+        <item>Минимум 0 звезд</item>
+        <item>Минимум 1 звезда</item>
+        <item>Минимум 2 звезды</item>
+        <item>Минимум 3 звезды</item>
+        <item>Минимум 4 звезды</item>
     </string-array>
     <string-array name="skip_min_star_rating_values">
         <item>0</item>
@@ -272,14 +278,12 @@
         <item>Альбомы</item>
         <item>Артисты</item>
         <item>Плейлисты</item>
-        <item>Подкасты</item>
-        <item>Радио</item>
         <item>Папки</item>
         <item>Популярные альбомы</item>
         <item>Недавно добавленные альбомы</item>
-        <item>For you</item>
-        <item>Starred</item>
-        <item>Tracks</item>
+        <item>Для тебя</item>
+        <item>Избранное</item>
+        <item>Треки</item>
         <item>Жанры</item>
     </string-array>
     <string-array name="aa_tab_values">
@@ -289,8 +293,6 @@
         <item>2</item>
         <item>3</item>
         <item>4</item>
-        <item>5</item>
-        <item>6</item>
         <item>7</item>
         <item>8</item>
         <item>9</item>

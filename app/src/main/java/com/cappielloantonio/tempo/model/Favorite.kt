@@ -1,15 +1,13 @@
 package com.cappielloantonio.tempo.model
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.annotation.Nullable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 @Entity(tableName = "favorite")
 data class Favorite(
     @PrimaryKey
@@ -27,6 +25,6 @@ data class Favorite(
 
     @ColumnInfo(name = "toStar")
     val toStar: Boolean,
-) : Parcelable {
+) : Serializable {
     override fun toString(): String = (songId ?: "null") + (albumId ?: "null") + (artistId ?: "null")
 }

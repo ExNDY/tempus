@@ -17,5 +17,8 @@
 .vscode/settings.json
 # release / debug files
 tempus-release-key.jks
+/keystore.properties
 app/tempus/
 app/degoogled/
+.idea
+build-logic/build

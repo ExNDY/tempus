@@ -1,12 +1,9 @@
 package com.cappielloantonio.tempo.util
 
-import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Timeline
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
-import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.TransferListener
 import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.FormatHolder
@@ -21,13 +18,11 @@ import androidx.media3.exoplayer.source.SampleStream
 import androidx.media3.exoplayer.trackselection.ExoTrackSelection
 import androidx.media3.exoplayer.upstream.Allocator
 
-@OptIn(UnstableApi::class)
+@androidx.media3.common.util.UnstableApi
 class TranscodingMediaSource(
-        private val mediaItem: MediaItem,
-        private val dataSourceFactory: DataSource.Factory,
-        private val progressiveMediaSourceFactory: ProgressiveMediaSource.Factory
+    private val mediaItem: MediaItem,
+    private val progressiveMediaSourceFactory: ProgressiveMediaSource.Factory
 ) : CompositeMediaSource<Void>() {
-
     private var durationUs: Long = C.TIME_UNSET
     private var currentSource: MediaSource? = null
 
@@ -35,7 +30,6 @@ class TranscodingMediaSource(
         val extras = mediaItem.mediaMetadata.extras
         val uri = mediaItem.localConfiguration?.uri
         val isLocal = uri?.scheme == "content" || uri?.scheme == "file"
-
         // Only apply the override if it's NOT a local file
         if (!isLocal && extras != null && extras.containsKey("duration")) {
             val seconds = extras.getInt("duration")
@@ -43,12 +37,10 @@ class TranscodingMediaSource(
                 durationUs = Util.msToUs(seconds * 1000L)
             }
         }
-
         currentSource = progressiveMediaSourceFactory.createMediaSource(mediaItem)
     }
 
     override fun getMediaItem() = mediaItem
-
     override fun prepareSourceInternal(mediaTransferListener: TransferListener?) {
         super.prepareSourceInternal(mediaTransferListener)
         val initialSource = progressiveMediaSourceFactory.createMediaSource(mediaItem)
@@ -57,23 +49,23 @@ class TranscodingMediaSource(
     }
 
     override fun onChildSourceInfoRefreshed(
-            childSourceId: Void?,
-            mediaSource: MediaSource,
-            newTimeline: Timeline
+        childSourceId: Void?,
+        mediaSource: MediaSource,
+        newTimeline: Timeline
     ) {
         val timeline =
-                if (durationUs != C.TIME_UNSET) {
-                    DurationOverridingTimeline(newTimeline, durationUs)
-                } else {
-                    newTimeline
-                }
+            if (durationUs != C.TIME_UNSET) {
+                DurationOverridingTimeline(newTimeline, durationUs)
+            } else {
+                newTimeline
+            }
         refreshSourceInfo(timeline)
     }
 
     override fun createPeriod(
-            id: MediaSource.MediaPeriodId,
-            allocator: Allocator,
-            startPositionUs: Long
+        id: MediaSource.MediaPeriodId,
+        allocator: Allocator,
+        startPositionUs: Long
     ): MediaPeriod {
         val source = currentSource ?: throw IllegalStateException("Source not ready")
         val childPeriod = source.createPeriod(id, allocator, startPositionUs)
@@ -83,7 +75,7 @@ class TranscodingMediaSource(
     override fun releasePeriod(mediaPeriod: MediaPeriod) {
         val transcodingPeriod = mediaPeriod as TranscodingMediaPeriod
         transcodingPeriod.release()
-        
+
         if (transcodingPeriod.currentOffsetUs > 0) {
             releaseChildSource(null)
             val initialSource = progressiveMediaSourceFactory.createMediaSource(mediaItem)
@@ -93,21 +85,19 @@ class TranscodingMediaSource(
     }
 
     override fun getMediaPeriodIdForChildMediaPeriodId(
-            childSourceId: Void?,
-            mediaPeriodId: MediaSource.MediaPeriodId
+        childSourceId: Void?,
+        mediaPeriodId: MediaSource.MediaPeriodId
     ) = mediaPeriodId
 
     private inner class TranscodingMediaPeriod(
-            private var currentPeriod: MediaPeriod,
-            private var source: MediaSource,
-            private val id: MediaSource.MediaPeriodId,
-            private val allocator: Allocator
+        private var currentPeriod: MediaPeriod,
+        private var source: MediaSource,
+        private val id: MediaSource.MediaPeriodId,
+        private val allocator: Allocator
     ) : MediaPeriod, MediaPeriod.Callback {
-
         private var localCallback: MediaPeriod.Callback? = null
-        internal var currentOffsetUs: Long = 0
+        var currentOffsetUs: Long = 0
         private var isReloading = false
-
         private var lastSelections: Array<out ExoTrackSelection?>? = null
         private var lastMayRetainStreamFlags: BooleanArray? = null
         private var activeWrappers: Array<OffsetSampleStream?> = emptyArray()
@@ -126,34 +116,30 @@ class TranscodingMediaSource(
         }
 
         override fun getTrackGroups() = currentPeriod.trackGroups
-
         override fun getStreamKeys(trackSelections: MutableList<ExoTrackSelection>) =
-                currentPeriod.getStreamKeys(trackSelections)
+            currentPeriod.getStreamKeys(trackSelections)
 
         override fun selectTracks(
-                selections: Array<out ExoTrackSelection?>,
-                mayRetainStreamFlags: BooleanArray,
-                streams: Array<SampleStream?>,
-                streamResetFlags: BooleanArray,
-                positionUs: Long
+            selections: Array<out ExoTrackSelection?>,
+            mayRetainStreamFlags: BooleanArray,
+            streams: Array<SampleStream?>,
+            streamResetFlags: BooleanArray,
+            positionUs: Long
         ): Long {
             lastSelections = selections
             lastMayRetainStreamFlags = mayRetainStreamFlags
-
             val childStreams = arrayOfNulls<SampleStream>(streams.size)
             streams.forEachIndexed { i, stream ->
                 childStreams[i] = (stream as? OffsetSampleStream)?.childStream
             }
-
             val startPos =
-                    currentPeriod.selectTracks(
-                            selections,
-                            mayRetainStreamFlags,
-                            childStreams,
-                            streamResetFlags,
-                            positionUs - currentOffsetUs
-                    )
-
+                currentPeriod.selectTracks(
+                    selections,
+                    mayRetainStreamFlags,
+                    childStreams,
+                    streamResetFlags,
+                    positionUs - currentOffsetUs
+                )
             val newWrappers = arrayOfNulls<OffsetSampleStream>(streams.size)
             for (i in streams.indices) {
                 val child = childStreams[i]
@@ -171,7 +157,6 @@ class TranscodingMediaSource(
                 }
             }
             activeWrappers = newWrappers
-
             return startPos + currentOffsetUs
         }
 
@@ -192,19 +177,17 @@ class TranscodingMediaSource(
             if (positionUs == 0L && currentOffsetUs == 0L) {
                 return currentPeriod.seekToUs(positionUs)
             }
-
             // Don't reload the source if we can already seek to the desired position. This can
             // occur if the music server decided to direct play instead of transcoding.
             if (currentPeriod.getAdjustedSeekPositionUs(positionUs, SeekParameters.DEFAULT) != 0L) {
                 return currentPeriod.seekToUs(positionUs)
             }
-
             reloadSource(positionUs)
             return positionUs
         }
 
         override fun getAdjustedSeekPositionUs(positionUs: Long, seekParameters: SeekParameters) =
-                positionUs
+            positionUs
 
         override fun getBufferedPositionUs(): Long {
             if (isReloading) return currentOffsetUs
@@ -232,7 +215,6 @@ class TranscodingMediaSource(
         }
 
         override fun isLoading() = isReloading || currentPeriod.isLoading
-
         override fun onPrepared(mediaPeriod: MediaPeriod) {
             if (isReloading && mediaPeriod == currentPeriod) {
                 isReloading = false
@@ -250,22 +232,16 @@ class TranscodingMediaSource(
         private fun reloadSource(positionUs: Long) {
             isReloading = true
             currentOffsetUs = positionUs
-
             activeWrappers.forEach { it?.childStream = null }
-
             source.releasePeriod(currentPeriod)
             releaseChildSource(null)
-
             val seconds = Util.usToMs(positionUs) / 1000
             val newUri = MusicUtil.getStreamUri(mediaItem.mediaId, seconds.toInt())
             val newMediaItem = mediaItem.buildUpon().setUri(newUri).build()
-
             val newSource = progressiveMediaSourceFactory.createMediaSource(newMediaItem)
-
             source = newSource
             currentSource = newSource
             prepareChildSource(null, newSource)
-
             val newPeriod = newSource.createPeriod(id, allocator, 0)
             currentPeriod = newPeriod
             newPeriod.prepare(this, 0)
@@ -274,12 +250,9 @@ class TranscodingMediaSource(
         private fun restoreTracks() {
             val selections = lastSelections ?: return
             val flags = lastMayRetainStreamFlags ?: return
-
             val childStreams = arrayOfNulls<SampleStream>(activeWrappers.size)
             val streamResetFlags = BooleanArray(activeWrappers.size)
-
             currentPeriod.selectTracks(selections, flags, childStreams, streamResetFlags, 0)
-
             for (i in activeWrappers.indices) {
                 activeWrappers[i]?.childStream = childStreams[i]
             }
@@ -292,9 +265,9 @@ class TranscodingMediaSource(
             }
 
             override fun readData(
-                    formatHolder: FormatHolder,
-                    buffer: DecoderInputBuffer,
-                    readFlags: Int
+                formatHolder: FormatHolder,
+                buffer: DecoderInputBuffer,
+                readFlags: Int
             ): Int {
                 val stream = childStream ?: return C.RESULT_NOTHING_READ
                 val result = stream.readData(formatHolder, buffer, readFlags)
@@ -305,17 +278,16 @@ class TranscodingMediaSource(
             }
 
             override fun skipData(positionUs: Long) =
-                    childStream?.skipData(positionUs - currentOffsetUs) ?: 0
+                childStream?.skipData(positionUs - currentOffsetUs) ?: 0
         }
     }
 
     private class DurationOverridingTimeline(timeline: Timeline, private val durationUs: Long) :
-            ForwardingTimeline(timeline) {
-
+        ForwardingTimeline(timeline) {
         override fun getWindow(
-                windowIndex: Int,
-                window: Window,
-                defaultPositionProjectionUs: Long
+            windowIndex: Int,
+            window: Window,
+            defaultPositionProjectionUs: Long
         ): Window {
             super.getWindow(windowIndex, window, defaultPositionProjectionUs)
             window.durationUs = durationUs

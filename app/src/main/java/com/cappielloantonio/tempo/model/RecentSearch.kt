@@ -1,14 +1,12 @@
 package com.cappielloantonio.tempo.model
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 @Entity(tableName = "recent_search")
 data class RecentSearch(
     @PrimaryKey
@@ -17,4 +15,4 @@ data class RecentSearch(
 
     @ColumnInfo(name = "timestamp", defaultValue = "0")
     var timestamp: Long
-) : Parcelable
+) : Serializable

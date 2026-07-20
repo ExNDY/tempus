@@ -1,5 +1,4 @@
 package com.cappielloantonio.tempo.model
-
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
@@ -9,136 +8,95 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.RequestMetadata
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.util.UnstableApi
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.cappielloantonio.tempo.glide.CustomGlideRequest
+import com.cappielloantonio.tempo.image.CoilImageRequest
 import com.cappielloantonio.tempo.provider.AlbumArtContentProvider
 import androidx.room.Embedded
 import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation
-import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import com.cappielloantonio.tempo.subsonic.models.ReplayGainInfo
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.MusicUtil
 import com.cappielloantonio.tempo.util.Preferences.getImageSize
 import com.cappielloantonio.tempo.util.ReplayGainBundleUtil
 import java.util.Date
-
-@UnstableApi
 @Keep
 @Entity(tableName = "session_media_item")
 class SessionMediaItem() {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "index")
     var index: Int = 0
-
     @ColumnInfo(name = "id")
     var id: String? = null
-
     @ColumnInfo(name = "parent_id")
     var parentId: String? = null
-
     @ColumnInfo(name = "is_dir")
     var isDir: Boolean = false
-
     @ColumnInfo
     var title: String? = null
-
     @ColumnInfo
     var album: String? = null
-
     @ColumnInfo
     var artist: String? = null
-
     @ColumnInfo
     var track: Int? = null
-
     @ColumnInfo
     var year: Int? = null
-
     @ColumnInfo
     var genre: String? = null
-
     @ColumnInfo(name = "cover_art_id")
     var coverArtId: String? = null
-
     @ColumnInfo
     var size: Long? = null
-
     @ColumnInfo(name = "content_type")
     var contentType: String? = null
-
     @ColumnInfo
     var suffix: String? = null
-
     @ColumnInfo("transcoding_content_type")
     var transcodedContentType: String? = null
-
     @ColumnInfo(name = "transcoded_suffix")
     var transcodedSuffix: String? = null
-
     @ColumnInfo
     var duration: Int? = null
-
     @ColumnInfo("bitrate")
     var bitrate: Int? = null
-
     @ColumnInfo
     var path: String? = null
-
     @ColumnInfo(name = "is_video")
     var isVideo: Boolean = false
-
     @ColumnInfo(name = "user_rating")
     var userRating: Int? = null
-
     @ColumnInfo(name = "average_rating")
     var averageRating: Double? = null
-
     @ColumnInfo(name = "play_count")
     var playCount: Long? = null
-
     @ColumnInfo(name = "disc_number")
     var discNumber: Int? = null
-
     @ColumnInfo
     var created: Date? = null
-
     @ColumnInfo
     var starred: Date? = null
-
     @ColumnInfo(name = "album_id")
     var albumId: String? = null
-
     @ColumnInfo(name = "artist_id")
     var artistId: String? = null
-
     @ColumnInfo
     var type: String? = null
-
     @ColumnInfo(name = "bookmark_position")
     var bookmarkPosition: Long? = null
-
     @ColumnInfo(name = "original_width")
     var originalWidth: Int? = null
-
     @ColumnInfo(name = "original_height")
     var originalHeight: Int? = null
-
     @ColumnInfo(name = "stream_id")
     var streamId: String? = null
-
     @ColumnInfo(name = "stream_url")
     var streamUrl: String? = null
-
     @ColumnInfo(name = "timestamp")
     var timestamp: Long? = null
-
     @Embedded(prefix = "rg_")
     var replayGain: ReplayGainInfo? = null
-
     constructor(child: Child) : this() {
         id = child.id
         parentId = child.parentId
@@ -173,50 +131,9 @@ class SessionMediaItem() {
         originalHeight = child.originalHeight
         replayGain = child.replayGain
     }
-
-    constructor(podcastEpisode: PodcastEpisode) : this() {
-        id = podcastEpisode.id
-        parentId = podcastEpisode.parentId
-        isDir = podcastEpisode.isDir
-        title = podcastEpisode.title
-        album = podcastEpisode.album
-        artist = podcastEpisode.artist
-        year = podcastEpisode.year
-        genre = podcastEpisode.genre
-        coverArtId = podcastEpisode.coverArtId
-        size = podcastEpisode.size
-        contentType = podcastEpisode.contentType
-        suffix = podcastEpisode.suffix
-        duration = podcastEpisode.duration
-        bitrate = podcastEpisode.bitrate
-        path = podcastEpisode.path
-        isVideo = podcastEpisode.isVideo
-        created = podcastEpisode.created
-        artistId = podcastEpisode.artistId
-        streamId = podcastEpisode.streamId
-        type = Constants.MEDIA_TYPE_PODCAST
-    }
-
-    constructor(internetRadioStation: InternetRadioStation) : this() {
-        id = internetRadioStation.id
-        title = internetRadioStation.name
-        streamUrl = internetRadioStation.streamUrl
-        type = Constants.MEDIA_TYPE_RADIO
-
-        val homePageUrl = internetRadioStation.homePageUrl
-        if (homePageUrl != null && homePageUrl.isNotEmpty() && MusicUtil.isImageUrl(homePageUrl)) {
-            val encodedUrl = android.util.Base64.encodeToString(
-                homePageUrl.toByteArray(java.nio.charset.StandardCharsets.UTF_8),
-                android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP
-            )
-            coverArtId = "ir_$encodedUrl"
-        }
-    }
-
     fun getMediaItem(): MediaItem {
         val uri: Uri = getStreamUri()
         val artworkUri = if (coverArtId != null) AlbumArtContentProvider.contentUri(coverArtId!!) else null
-
         val bundle = Bundle()
         bundle.putString("id", id)
         bundle.putString("parentId", parentId)
@@ -251,7 +168,6 @@ class SessionMediaItem() {
         bundle.putInt("originalHeight", originalHeight ?: 0)
         bundle.putString("uri", uri.toString())
         ReplayGainBundleUtil.writeToBundle(bundle, replayGain)
-
         return MediaItem.Builder()
             .setMediaId(id!!)
             .setMediaMetadata(
@@ -285,24 +201,7 @@ class SessionMediaItem() {
             .setUri(uri)
             .build()
     }
-
     private fun getStreamUri(): Uri {
-        return when (type) {
-            Constants.MEDIA_TYPE_MUSIC -> {
-                MusicUtil.getStreamUri(id)
-            }
-
-            Constants.MEDIA_TYPE_PODCAST -> {
-                MusicUtil.getStreamUri(streamId)
-            }
-
-            Constants.MEDIA_TYPE_RADIO -> {
-                Uri.parse(streamUrl)
-            }
-
-            else -> {
-                MusicUtil.getStreamUri(id)
-            }
-        }
+        return MusicUtil.getStreamUri(id ?: "")
     }
 }

@@ -2,10 +2,9 @@ package com.cappielloantonio.tempo.subsonic.models
 
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 class NowPlayingEntry(
     @SerializedName("_id")
     override val id: String,
@@ -13,4 +12,4 @@ class NowPlayingEntry(
     var minutesAgo: Int = 0,
     var playerId: Int = 0,
     var playerName: String? = null,
-) : Child(id)
+) : Child(id), Serializable

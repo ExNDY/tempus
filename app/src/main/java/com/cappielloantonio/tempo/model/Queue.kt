@@ -5,10 +5,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cappielloantonio.tempo.subsonic.models.Child
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 @Entity(tableName = "queue")
 class Queue(
     override val id: String,
@@ -21,7 +20,7 @@ class Queue(
     var playingChanged: Long = 0,
     @ColumnInfo(name = "stream_id")
     var streamId: String? = null,
-) : Child(id) {
+) : Child(id), Serializable {
     constructor(child: Child) : this(child.id) {
         parentId = child.parentId
         isDir = child.isDir

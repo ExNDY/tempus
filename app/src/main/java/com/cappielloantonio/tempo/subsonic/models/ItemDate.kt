@@ -1,19 +1,17 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 @Keep
-@Parcelize
 open class ItemDate(
     var year: Int? = null,
     var month: Int? = null,
     var day: Int? = null,
-) : Parcelable {
+) : Serializable {
     fun getFormattedDate(): String? {
         if (year == null && month == null && day == null) return null
 

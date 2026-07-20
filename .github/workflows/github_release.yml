@@ -27,7 +27,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -35,8 +35,11 @@ jobs:
       - name: Build All Release APKs
         id: build
         run: |
-          bash ./gradlew assembleTempusRelease
-          bash ./gradlew assembleDegoogledRelease
+          VERSION_NAME="${GITHUB_REF_NAME#v}"
+          VERSION_CODE="$(git show -s --format=%ct HEAD)"
+          bash ./gradlew assembleTempusRelease assembleDegoogledRelease \
+            -PVERSION_NAME="$VERSION_NAME" \
+            -PVERSION_CODE="$VERSION_CODE"
 
       - name: Sign Tempus Release APKs
         id: sign_tempus_release
@@ -88,4 +91,3 @@ jobs:
           files: |
             app/build/outputs/apk/tempus/release/*-release.apk
             app/build/outputs/apk/degoogled/release/*-release.apk
-

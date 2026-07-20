@@ -13,6 +13,26 @@
         android:layout_marginBottom="4dp"
         android:text="@string/home_rearrangement_dialog_subtitle" />
 
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/home_library_carousel_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/home_rearrangement_dialog_library_carousel_title"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        app:useMaterialThemeColors="true" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/home_rearrangement_dialog_library_carousel_summary" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/home_sector_item_recycler_view"
         android:layout_width="match_parent"

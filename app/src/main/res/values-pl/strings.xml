@@ -703,4 +703,61 @@
 
         Te dane nie są nigdzie wysyłane bez twojej zgody.
     </string>
+<string name="download_directory_set">Set where music is downloaded</string>
+<string name="download_refresh_button_content_description">Refresh downloaded items</string>
+<string name="playlist_editor_dialog_action_delete_success">Playlist deleted</string>
+<string name="playlist_editor_dialog_action_delete_failure">Failed to delete playlist</string>
+<string name="playlist_editor_dialog_action_save_success">Playlist saved</string>
+<string name="playlist_editor_dialog_action_save_failure">Failed to save playlist</string>
+<string name="radio_editor_source_label">Save to</string>
+<string name="radio_editor_source_server">Server</string>
+<string name="radio_editor_source_local">Local</string>
+<string name="radio_editor_dialog_hint_cover_art_url">Cover Art URL (optional)</string>
+<string name="radio_local_badge">LOCAL</string>
+<string name="radio_search_dialog_title">Search Radio Directory</string>
+<string name="radio_search_hint">Station name</string>
+<string name="radio_search_button">Search</string>
+<string name="radio_search_add">Add</string>
+<string name="radio_search_no_results">No stations found</string>
+<string name="radio_search_empty_query">Enter a station name</string>
+<string name="radio_search_error">Search failed: %s</string>
+<string name="radio_search_duplicate">Station already exists</string>
+<string name="radio_search_station_added">Station added locally</string>
+<string name="radio_search_directory_button">Directory</string>
+<string name="radio_editor_search_directory">Search directory</string>
+<string name="radio_search_country_hint">Country</string>
+<string name="radio_search_use">Use</string>
+<string name="settings_download_wifi_only_summary">Downloads will pause on mobile data and resume automatically on Wi-Fi.</string>
+<string name="settings_download_wifi_only_title">Download only on Wi-Fi</string>
+<string name="track_info_station">Station</string>
+<string name="playlist_error_not_found_title">Playlist not found</string>
+<string name="playlist_error_not_found_message">This playlist could not be found on the server. It will be removed from your local cache.</string>
+<string name="playlist_error_not_found_toast">Playlist removed from cache</string>
+<string name="downloader_downloading_batch">Downloading %1$s (%2$s/%3$s)</string>
+<string name="downloader_download_completed">Download completed</string>
+<string name="downloader_downloaded_title">Downloaded: %1$s</string>
+<string name="downloader_album_downloaded">Album downloaded: %1$s</string>
+<string name="downloader_all_downloads_completed">All downloads completed (%1$d files)</string>
+<string name="downloader_error_loading">Download error</string>
+<string name="downloader_errors_loading">Download errors (%1$d files)</string>
+<string name="downloader_downloaded_and_errors">Downloaded: %1$d, errors: %2$d</string>
+<string name="downloader_retry">Retry</string>
+<string name="login_add_server_content_description">Add server</string>
+<string name="login_no_servers_message">No servers added yet. Tap + to add one.</string>
+<string name="server_signup_dialog_title_edit">Edit server</string>
+<string name="server_signup_dialog_clear_certificate">Clear certificate</string>
+<string name="settings_download_folder_set_with_path">Download folder set:\n%1$s</string>
+<string name="share_chooser_title">Share via</string>
+<string name="podcast_episode_open_channel">Open the channel</string>
+<string name="player_queue_empty">Queue is empty</string>
+<string name="player_queue_download_service_unavailable">Download service unavailable.</string>
+<string name="player_queue_all_songs_downloaded">All songs already downloaded</string>
+<string name="player_queue_loaded">Queue loaded</string>
+<string name="player_queue_not_found">No saved queue found</string>
+<string name="download_directory_picker_summary">Choose a folder where downloaded songs will be stored.</string>
+<string name="download_directory_picker_positive_button">Choose folder</string>
+    <plurals name="artist_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
 </resources>

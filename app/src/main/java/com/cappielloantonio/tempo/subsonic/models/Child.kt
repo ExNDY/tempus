@@ -1,16 +1,15 @@
 package com.cappielloantonio.tempo.subsonic.models
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 import java.util.*
 
 @Keep
-@Parcelize
 open class Child @JvmOverloads constructor(
     @PrimaryKey
     @ColumnInfo(name = "id")
@@ -95,4 +94,39 @@ open class Child @JvmOverloads constructor(
     @Embedded(prefix = "rg_")
     @SerializedName("replayGain")
     var replayGain: ReplayGainInfo? = null
-) : Parcelable
+) : Serializable {
+    @Ignore
+    @SerializedName("artists")
+    var artists: List<ArtistID3>? = null
+
+    @Ignore
+    @SerializedName("displayArtist")
+    var displayArtist: String? = null
+}
+
+fun Child.resolvedArtists(fallbackArtist: ArtistID3? = null): List<ArtistID3> {
+    val openSubsonicArtists = artists
+        .orEmpty()
+        .filter { !it.id.isNullOrBlank() }
+
+    if (openSubsonicArtists.isNotEmpty()) {
+        return openSubsonicArtists.distinctBy { it.id }
+    }
+
+    if (!artistId.isNullOrBlank()) {
+        return listOf(
+            ArtistID3(
+                id = artistId,
+                name = artist,
+                coverArtId = fallbackArtist?.takeIf { it.id == artistId }?.coverArtId,
+                albumCount = fallbackArtist?.takeIf { it.id == artistId }?.albumCount ?: 0,
+                starred = fallbackArtist?.takeIf { it.id == artistId }?.starred,
+            )
+        )
+    }
+
+    return fallbackArtist
+        ?.takeIf { !it.id.isNullOrBlank() }
+        ?.let(::listOf)
+        .orEmpty()
+}

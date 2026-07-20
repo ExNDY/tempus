@@ -1,14 +1,12 @@
 package com.cappielloantonio.tempo.model
 
-import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
 @Keep
-@Parcelize
 @Entity(tableName = "server")
 data class Server(
     @PrimaryKey
@@ -38,4 +36,4 @@ data class Server(
 
     @ColumnInfo(name = "client_cert")
     val clientCert: String?,
-) : Parcelable
+) : Serializable
