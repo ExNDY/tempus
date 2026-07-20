@@ -1,6 +1,5 @@
 package com.cappielloantonio.tempo.di
 
-import com.cappielloantonio.tempo.radiobrowser.RadioBrowserRepository
 import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
 import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepositoryImpl
 import com.cappielloantonio.tempo.subsonic.Subsonic
@@ -8,6 +7,7 @@ import com.cappielloantonio.tempo.subsonic.SubsonicPreferences
 import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.network.NetworkConnectivityService
 import com.cappielloantonio.tempo.network.NetworkMonitor
+import com.google.gson.Strictness
 import io.ktor.client.*
 import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -21,7 +21,7 @@ val networkModule = module {
         HttpClient(Android) {
             install(ContentNegotiation) {
                 gson {
-                    setLenient()
+                    setStrictness(Strictness.LENIENT)
                 }
             }
             install(Logging) {
@@ -40,7 +40,6 @@ val networkModule = module {
     }
 
     single<SubsonicRepository> { SubsonicRepositoryImpl(get()) }
-    single { RadioBrowserRepository(get()) }
 
     factory {
         val prefs = get<Preferences>()

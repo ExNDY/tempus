@@ -7,17 +7,15 @@ import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.util.Util
 
 enum class TempusImageType(
-    @DrawableRes val placeholderRes: Int,
+    @param:DrawableRes val placeholderRes: Int,
 ) {
-    Unknown(R.drawable.ui_splash_screen),
-    Album(R.drawable.ic_placeholder_album),
-    Artist(R.drawable.ic_placeholder_artist),
-    Folder(R.drawable.ic_placeholder_folder),
-    Directory(R.drawable.ic_placeholder_directory),
-    Playlist(R.drawable.ic_placeholder_playlist),
-    Podcast(R.drawable.ic_placeholder_podcast),
-    Radio(R.drawable.ic_placeholder_radio),
-    Song(R.drawable.ic_placeholder_song),
+    Unknown(placeholderRes = R.drawable.ui_splash_screen),
+    Album(placeholderRes = R.drawable.ic_placeholder_album),
+    Artist(placeholderRes = R.drawable.ic_placeholder_artist),
+    Folder(placeholderRes = R.drawable.ic_placeholder_folder),
+    Directory(placeholderRes = R.drawable.ic_placeholder_directory),
+    Playlist(placeholderRes = R.drawable.ic_placeholder_playlist),
+    Song(placeholderRes = R.drawable.ic_placeholder_song),
 }
 
 data class TempusImageModel(
@@ -53,10 +51,11 @@ data class TempusImageModel(
             coverArtId: String,
             size: Int = Preferences.getImageSize(),
         ): String {
-            val params = App.getSubsonicClientInstance(false).params
+            val subSonicInstance = App.getSubsonicClientInstance(false)
+            val params = subSonicInstance.params
             val uri = StringBuilder()
 
-            uri.append(App.getSubsonicClientInstance(false).url)
+            uri.append(subSonicInstance.url)
             uri.append("getCoverArt")
 
             params["u"]?.let { uri.append("?u=").append(Util.encode(it)) }

@@ -1,5 +1,4 @@
 package com.cappielloantonio.tempo.ui.theme
-
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -20,25 +19,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.core.view.WindowCompat
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.util.Preferences
-import androidx.media3.common.util.UnstableApi
-
+import com.cappielloantonio.tempo.util.requireActivity
 object TempusTheme {
     val icons: TempusIcons
         @Composable
         @ReadOnlyComposable
         get() = LocalTempusIcons.current
-
     val painters: TempusPainters
         @Composable
         @ReadOnlyComposable
         get() = LocalTempusPainters.current
-
     val spacing: TempusSpacing
         @Composable
         @ReadOnlyComposable
         get() = LocalTempusSpacing.current
 }
-
 private val LightColorScheme = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
@@ -64,7 +59,6 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = LightOnSurfaceVariant,
     outline = LightOutline
 )
-
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
@@ -90,7 +84,6 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = DarkOnSurfaceVariant,
     outline = DarkOutline
 )
-
 private val AmoledColorScheme = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
@@ -116,8 +109,6 @@ private val AmoledColorScheme = darkColorScheme(
     onSurfaceVariant = DarkOnSurfaceVariant,
     outline = DarkOutline
 )
-
-@OptIn(UnstableApi::class)
 @Composable
 fun TempusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -144,12 +135,11 @@ fun TempusTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.surface.toArgb()
+            val window = view.context.requireActivity<Activity>().window
+            setStatusBarColorCompat(window, colorScheme.surface.toArgb())
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
-
     val painters = TempusPainters(
         favorite = painterResource(id = R.drawable.ic_favorite),
         favoriteOutlined = painterResource(id = R.drawable.ic_favorites_outlined),
@@ -158,7 +148,6 @@ fun TempusTheme(
         placeholderAlbum = painterResource(id = R.drawable.ic_placeholder_album),
         placeholderArtist = painterResource(id = R.drawable.ic_placeholder_artist)
     )
-
     MaterialTheme(
         colorScheme = colorScheme,
         content = {
@@ -170,4 +159,9 @@ fun TempusTheme(
             )
         }
     )
+}
+
+@Suppress("DEPRECATION")
+private fun setStatusBarColorCompat(window: android.view.Window, color: Int) {
+    window.statusBarColor = color
 }

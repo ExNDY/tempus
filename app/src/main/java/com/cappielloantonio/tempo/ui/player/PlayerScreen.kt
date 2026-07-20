@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.ui.player
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -13,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,8 +26,8 @@ fun PlayerScreen(
     uiState: PlayerUiState,
     isPlaying: Boolean,
     playbackState: Int,
-    progress: Long,
-    duration: Long,
+    progressController: PlayerProgressController,
+    progressRefreshToken: Int,
     shuffleModeEnabled: Boolean,
     repeatMode: Int,
     currentSongId: String?,
@@ -39,7 +39,6 @@ fun PlayerScreen(
     onNextClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onRepeatClick: () -> Unit,
-    onSeek: (Long) -> Unit,
     onFavoriteClick: () -> Unit,
     onRatingChange: (Int) -> Unit,
     onPlaybackSpeedClick: () -> Unit,
@@ -70,6 +69,8 @@ fun PlayerScreen(
     requestedHorizontalPage: Int,
     horizontalPageRequestId: Int,
     isVerticalPagerDraggable: Boolean,
+    backgroundModifier: Modifier = Modifier,
+    coverArtModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     val verticalPagerState = rememberPagerState(pageCount = { 2 })
@@ -83,103 +84,120 @@ fun PlayerScreen(
         horizontalPagerState.scrollToPage(requestedHorizontalPage)
     }
 
-    Surface(
+    Box(
         modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-        color = MaterialTheme.colorScheme.surface
+            .fillMaxSize(),
     ) {
-        VerticalPager(
-            state = verticalPagerState,
-            modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = isVerticalPagerDraggable,
-        ) { verticalPage ->
-            when (verticalPage) {
-                0 -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            HorizontalPager(
-                                state = horizontalPagerState,
-                                modifier = Modifier.fillMaxSize()
-                            ) { horizontalPage ->
-                                when (horizontalPage) {
-                                    0 -> PlayerCoverScreen(
-                                        currentSong = uiState.currentSong,
-                                        onDownloadClick = onDownloadClick,
-                                        onAddToPlaylistClick = onAddToPlaylistClick,
-                                        onInstantMixClick = onInstantMixClick,
-                                        onSaveQueueClick = onSaveQueueClick,
-                                        onLyricsClick = {
-                                            coroutineScope.launch { horizontalPagerState.animateScrollToPage(1) }
-                                        },
-                                        isSyncEnabled = isSyncEnabled
-                                    )
-                                    1 -> PlayerLyricsScreen(
-                                        uiState = uiState,
-                                        currentPosition = progress,
-                                        onLineClick = onLyricsLineClick,
-                                        onSyncToggle = onLyricsSyncToggle,
-                                        onDownloadClick = onLyricsDownloadClick
-                                    )
+        Surface(
+            modifier = Modifier
+                .matchParentSize()
+                .then(backgroundModifier),
+            color = MaterialTheme.colorScheme.surface,
+            content = {}
+        )
+
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            color = androidx.compose.ui.graphics.Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            VerticalPager(
+                state = verticalPagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = isVerticalPagerDraggable,
+            ) { verticalPage ->
+                when (verticalPage) {
+                    0 -> {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                HorizontalPager(
+                                    state = horizontalPagerState,
+                                    modifier = Modifier.fillMaxSize()
+                                ) { horizontalPage ->
+                                    when (horizontalPage) {
+                                        0 -> PlayerCoverScreen(
+                                            currentSong = uiState.currentSong,
+                                            onDownloadClick = onDownloadClick,
+                                            onAddToPlaylistClick = onAddToPlaylistClick,
+                                            onInstantMixClick = onInstantMixClick,
+                                            onSaveQueueClick = onSaveQueueClick,
+                                            onLyricsClick = {
+                                                coroutineScope.launch { horizontalPagerState.animateScrollToPage(1) }
+                                            },
+                                            isSyncEnabled = isSyncEnabled,
+                                            coverArtModifier = coverArtModifier
+                                        )
+                                        1 -> PlayerLyricsScreen(
+                                            uiState = uiState,
+                                            isPlaying = isPlaying,
+                                            playbackState = playbackState,
+                                            progressController = progressController,
+                                            progressRefreshToken = progressRefreshToken,
+                                            onLineClick = onLyricsLineClick,
+                                            onSyncToggle = onLyricsSyncToggle,
+                                            onDownloadClick = onLyricsDownloadClick
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        PlayerControllerScreen(
+                            PlayerControllerScreen(
+                                uiState = uiState,
+                                isPlaying = isPlaying,
+                                playbackState = playbackState,
+                                progressController = progressController,
+                                progressRefreshToken = progressRefreshToken,
+                                shuffleModeEnabled = shuffleModeEnabled,
+                                repeatMode = repeatMode,
+                                isPlayPauseEnabled = isPlayPauseEnabled,
+                                isPreviousEnabled = isPreviousEnabled,
+                                isNextEnabled = isNextEnabled,
+                                onPlayPauseClick = onPlayPauseClick,
+                                onPreviousClick = onPreviousClick,
+                                onNextClick = onNextClick,
+                                onShuffleClick = onShuffleClick,
+                                onRepeatClick = onRepeatClick,
+                                onFavoriteClick = onFavoriteClick,
+                                onRatingChange = (onRatingChange),
+                                onPlaybackSpeedClick = onPlaybackSpeedClick,
+                                onSleepTimerClick = onSleepTimerClick,
+                                onEqualizerClick = onEqualizerClick,
+                                onQueueClick = {
+                                    coroutineScope.launch { verticalPagerState.animateScrollToPage(1) }
+                                },
+                                onLyricsClick = {
+                                    coroutineScope.launch {
+                                        val target = if (horizontalPagerState.currentPage == 0) 1 else 0
+                                        horizontalPagerState.animateScrollToPage(target)
+                                    }
+                                },
+                                onTrackInfoClick = onTrackInfoClick,
+                                onTitleClick = onTitleClick,
+                                onArtistClick = onArtistClick,
+                                onChipClick = onChipClick,
+                                onChipLongClick = onChipLongClick,
+                            )
+                        }
+                    }
+                    1 -> {
+                        PlayerQueueScreen(
                             uiState = uiState,
+                            currentSongId = currentSongId,
                             isPlaying = isPlaying,
-                            playbackState = playbackState,
-                            progress = progress,
-                            duration = duration,
-                            shuffleModeEnabled = shuffleModeEnabled,
-                            repeatMode = repeatMode,
-                            isPlayPauseEnabled = isPlayPauseEnabled,
-                            isPreviousEnabled = isPreviousEnabled,
-                            isNextEnabled = isNextEnabled,
-                            onPlayPauseClick = onPlayPauseClick,
-                            onPreviousClick = onPreviousClick,
-                            onNextClick = onNextClick,
-                            onShuffleClick = onShuffleClick,
-                            onRepeatClick = onRepeatClick,
-                            onSeek = onSeek,
-                            onFavoriteClick = onFavoriteClick,
-                            onRatingChange = (onRatingChange),
-                            onPlaybackSpeedClick = onPlaybackSpeedClick,
-                            onSleepTimerClick = onSleepTimerClick,
-                            onEqualizerClick = onEqualizerClick,
-                            onQueueClick = {
-                                coroutineScope.launch { verticalPagerState.animateScrollToPage(1) }
-                            },
-                            onLyricsClick = {
-                                coroutineScope.launch {
-                                    val target = if (horizontalPagerState.currentPage == 0) 1 else 0
-                                    horizontalPagerState.animateScrollToPage(target)
-                                }
-                            },
-                            onTrackInfoClick = onTrackInfoClick,
-                            onTitleClick = onTitleClick,
-                            onArtistClick = onArtistClick,
-                            onChipClick = onChipClick,
-                            onChipLongClick = onChipLongClick
+                            onSongClick = onQueueSongClick,
+                            onRemoveClick = onQueueRemoveClick,
+                            onShuffleClick = onQueueShuffleClick,
+                            onClearClick = onQueueClearClick,
+                            onSaveToPlaylistClick = onQueueSaveToPlaylistClick,
+                            onDownloadAllClick = onQueueDownloadAllClick,
+                            onLoadQueueClick = onQueueLoadQueueClick,
+                            onSaveQueueClick = onSaveQueueClick,
+                            isSyncEnabled = isSyncEnabled
                         )
                     }
-                }
-                1 -> {
-                    PlayerQueueScreen(
-                        uiState = uiState,
-                        currentSongId = currentSongId,
-                        isPlaying = isPlaying,
-                        onSongClick = onQueueSongClick,
-                        onRemoveClick = onQueueRemoveClick,
-                        onShuffleClick = onQueueShuffleClick,
-                        onClearClick = onQueueClearClick,
-                        onSaveToPlaylistClick = onQueueSaveToPlaylistClick,
-                        onDownloadAllClick = onQueueDownloadAllClick,
-                        onLoadQueueClick = onQueueLoadQueueClick,
-                        onSaveQueueClick = onSaveQueueClick,
-                        isSyncEnabled = isSyncEnabled
-                    )
                 }
             }
         }
@@ -189,6 +207,12 @@ fun PlayerScreen(
 @Preview(showBackground = true)
 @Composable
 fun PlayerScreenPreview() {
+    val progressController = remember {
+        object : PlayerProgressController {
+            override fun snapshot() = PlayerProgressSnapshot(30_000L, 180_000L)
+            override fun seekTo(positionMs: Long) = Unit
+        }
+    }
     TempusTheme {
         PlayerScreen(
             uiState = PlayerUiState(
@@ -196,8 +220,8 @@ fun PlayerScreenPreview() {
             ),
             isPlaying = true,
             playbackState = 1,
-            progress = 30000L,
-            duration = 180000L,
+            progressController = progressController,
+            progressRefreshToken = 0,
             shuffleModeEnabled = false,
             repeatMode = 0,
             currentSongId = "1",
@@ -209,7 +233,6 @@ fun PlayerScreenPreview() {
             onNextClick = {},
             onShuffleClick = {},
             onRepeatClick = {},
-            onSeek = {},
             onFavoriteClick = {},
             onRatingChange = {},
             onPlaybackSpeedClick = {},

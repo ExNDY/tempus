@@ -9,16 +9,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +32,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.cappielloantonio.tempo.R
+import androidx.compose.ui.res.stringResource
 
 data class ActionItemUiModel(
     val icon: ImageVector? = null,
@@ -37,6 +43,46 @@ data class ActionItemUiModel(
     val isVisible: Boolean = true,
     val isDestructive: Boolean = false
 )
+
+@Composable
+fun BottomSheetLoadingContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 180.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+fun BottomSheetErrorContent(
+    onRetry: () -> Unit,
+    onClose: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.bottom_sheet_load_error),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Row(modifier = Modifier.padding(top = 16.dp)) {
+            TextButton(onClick = onClose) {
+                Text(stringResource(R.string.sleep_timer_dialog_close))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = onRetry) {
+                Text(stringResource(R.string.downloader_retry))
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

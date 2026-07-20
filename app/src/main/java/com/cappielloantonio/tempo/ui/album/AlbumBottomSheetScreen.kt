@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getAlbumBottomSheetViewModel
 import com.cappielloantonio.tempo.di.getViewModel
@@ -44,6 +45,8 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.BottomSheetErrorContent
+import com.cappielloantonio.tempo.ui.components.BottomSheetLoadingContent
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.util.DownloadUtil
 import com.cappielloantonio.tempo.util.ExternalAudioReader
@@ -58,7 +61,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AlbumBottomSheetRoute(
-    album: AlbumID3,
+    albumId: String,
     onDismiss: () -> Unit,
     onOpenPlaylistChooser: (List<Child>) -> Unit,
     onNavigateToArtist: (ArtistID3) -> Unit,
@@ -71,11 +74,28 @@ fun AlbumBottomSheetRoute(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: AlbumBottomSheetViewModel = getViewModel {
-        getAlbumBottomSheetViewModel().apply { onStart(album) }
+        getAlbumBottomSheetViewModel()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(albumId) {
+        viewModel.onStart(albumId)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> {
+            BottomSheetLoadingContent()
+            return
+        }
+        uiState.hasError -> {
+            BottomSheetErrorContent(
+                onRetry = { viewModel.retry(albumId) },
+                onClose = onDismiss,
+            )
+            return
+        }
+    }
+
     val refreshEvent by ExternalAudioReader.getRefreshEvents().observeAsState()
-    val currentAlbum = uiState.album
     val tracksState by viewModel.getAlbumTracks().collectAsState(initial = emptyList())
     val isAnyDownloaded = remember(tracksState, refreshEvent, Preferences.getDownloadDirectoryUri()) {
         hasAnyDownloaded(context, tracksState)

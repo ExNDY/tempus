@@ -39,23 +39,32 @@ import java.util.Locale
 
 @Composable
 fun PlayerProgressBar(
-    progress: Long,
-    duration: Long,
-    onValueChange: (Long) -> Unit,
+    controller: PlayerProgressController,
+    isPlaying: Boolean,
+    playbackState: Int,
+    mediaId: String?,
+    refreshToken: Int,
     modifier: Modifier = Modifier
 ) {
     var sliderValue by remember { mutableFloatStateOf(0f) }
     var isUserSeeking by remember { mutableStateOf(false) }
+    var seekRefreshToken by remember { mutableStateOf(0) }
+    val progress = rememberPlayerProgressSnapshot(
+        controller = controller,
+        isPlaying = isPlaying,
+        playbackState = playbackState,
+        mediaId = mediaId,
+        refreshToken = refreshToken + seekRefreshToken,
+    )
 
-    LaunchedEffect(progress, duration, isUserSeeking) {
+    LaunchedEffect(progress, isUserSeeking) {
         if (!isUserSeeking) {
-            val boundedProgress = progress.coerceIn(0L, duration.coerceAtLeast(0L))
-            sliderValue = boundedProgress.toFloat()
+            sliderValue = progress.positionMs.toFloat()
         }
     }
 
-    val maxDuration = duration.toFloat().coerceAtLeast(1f)
-    val displayedProgress = if (isUserSeeking) sliderValue.toLong() else progress
+    val maxDuration = progress.durationMs.toFloat().coerceAtLeast(1f)
+    val displayedProgress = if (isUserSeeking) sliderValue.toLong() else progress.positionMs
 
     Column(modifier = modifier.fillMaxWidth()) {
         Slider(
@@ -65,10 +74,12 @@ fun PlayerProgressBar(
                 sliderValue = it
             },
             onValueChangeFinished = {
-                onValueChange(sliderValue.toLong())
+                controller.seekTo(sliderValue.toLong())
                 isUserSeeking = false
+                seekRefreshToken++
             },
             valueRange = 0f..maxDuration,
+            enabled = progress.durationMs > 0L,
             modifier = Modifier.fillMaxWidth()
         )
         Row(
@@ -82,7 +93,7 @@ fun PlayerProgressBar(
                 style = MaterialTheme.typography.labelSmall
             )
             Text(
-                text = formatDuration(duration),
+                text = formatDuration(progress.durationMs),
                 style = MaterialTheme.typography.labelSmall
             )
         }

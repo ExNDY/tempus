@@ -53,6 +53,7 @@ fun PlayerCoverScreen(
     onSaveQueueClick: () -> Unit,
     onLyricsClick: () -> Unit,
     isSyncEnabled: Boolean,
+    coverArtModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     var showOverlay by remember { mutableStateOf(false) }
@@ -99,6 +100,7 @@ fun PlayerCoverScreen(
             modifier = Modifier
                 .fillMaxWidth(0.5f)
                 .aspectRatio(1f)
+                .then(coverArtModifier)
                 .shadow(16.dp, MaterialTheme.shapes.large)
                 .clip(MaterialTheme.shapes.large),
             contentScale = ContentScale.Crop

@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getPlaylistBottomSheetViewModel
@@ -38,6 +40,8 @@ import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.Playlist
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.BottomSheetErrorContent
+import com.cappielloantonio.tempo.ui.components.BottomSheetLoadingContent
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.util.DownloadUtil
 import com.cappielloantonio.tempo.util.ExternalAudioReader
@@ -50,7 +54,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PlaylistBottomSheetRoute(
-    playlist: Playlist,
+    playlistId: String,
     onDismiss: () -> Unit,
     onPlay: (List<Child>) -> Unit,
     onAddToQueue: (List<Child>) -> Unit,
@@ -62,9 +66,27 @@ fun PlaylistBottomSheetRoute(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: PlaylistBottomSheetViewModel = getViewModel {
-        getPlaylistBottomSheetViewModel().apply { onStart(playlist) }
+        getPlaylistBottomSheetViewModel()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(playlistId) {
+        viewModel.onStart(playlistId)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> {
+            BottomSheetLoadingContent()
+            return
+        }
+        uiState.hasError -> {
+            BottomSheetErrorContent(
+                onRetry = { viewModel.retry(playlistId) },
+                onClose = onDismiss,
+            )
+            return
+        }
+    }
+
     val refreshEvent by ExternalAudioReader.getRefreshEvents().observeAsState()
     val editable = viewModel.isEditableByCurrentUser()
     val hasLocalDownloads = remember(uiState.songs, refreshEvent, Preferences.getDownloadDirectoryUri()) {
@@ -96,7 +118,7 @@ fun PlaylistBottomSheetRoute(
         },
         onPinToggleClick = { viewModel.togglePin() },
         onDownloadAllClick = {
-            downloadSongs(context, uiState.songs, playlist)
+            uiState.playlist?.let { downloadSongs(context, uiState.songs, it) }
             onDismiss()
         },
         onRemoveAllClick = {
@@ -104,11 +126,11 @@ fun PlaylistBottomSheetRoute(
             onDismiss()
         },
         onEditClick = {
-            onOpenEditor(playlist)
+            uiState.playlist?.let(onOpenEditor)
             onDismiss()
         },
         onDeleteClick = {
-            onDeletePlaylist(playlist)
+            uiState.playlist?.let(onDeletePlaylist)
             onDismiss()
         },
         onShareClick = {

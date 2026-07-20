@@ -1,22 +1,32 @@
 package com.cappielloantonio.tempo.ui.settings
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.cappielloantonio.tempo.ui.theme.TempusTheme
 
 @Composable
 fun SettingsSectionCard(
     section: SettingsSectionUiModel,
+    onSectionToggle: (String) -> Unit,
     onActionClick: (SettingsActionItemUiModel) -> Unit,
     onToggleChange: (SettingsToggleItemUiModel, Boolean) -> Unit,
     onSelectClick: (SettingsSelectItemUiModel) -> Unit,
@@ -24,27 +34,70 @@ fun SettingsSectionCard(
     onInputClick: (SettingsInputItemUiModel) -> Unit,
 ) {
     val spacing = TempusTheme.spacing
+    val sectionShape = RoundedCornerShape(32.dp)
+    val indicatorRotation = animateFloatAsState(
+        targetValue = if (section.expanded) 90f else 0f,
+        label = "settingsSectionIndicatorRotation"
+    )
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.xs)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = sectionShape,
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
     ) {
-        Text(
-            text = section.title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = spacing.sm)
-        )
+        Column(
+            modifier = Modifier.padding(vertical = spacing.xxs)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(sectionShape)
+                    .clickable { onSectionToggle(section.key) }
+                    .padding(horizontal = spacing.md, vertical = spacing.sm)
+            ) {
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(end = spacing.lg)
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .align(androidx.compose.ui.Alignment.CenterEnd)
+                        .graphicsLayer {
+                            rotationZ = indicatorRotation.value
+                        }
+                )
+            }
 
-        section.groups.forEach { group ->
-            SettingsGroup(
-                group = group,
-                onActionClick = onActionClick,
-                onToggleChange = onToggleChange,
-                onSelectClick = onSelectClick,
-                onSliderChange = onSliderChange,
-                onInputClick = onInputClick,
-            )
+            if (section.expanded) {
+                Column(
+                    modifier = Modifier.padding(
+                        start = spacing.xs,
+                        end = spacing.xs,
+                        bottom = spacing.xs
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(spacing.xs)
+                ) {
+                    section.groups.forEach { group ->
+                        SettingsGroup(
+                            group = group,
+                            onActionClick = onActionClick,
+                            onToggleChange = onToggleChange,
+                            onSelectClick = onSelectClick,
+                            onSliderChange = onSliderChange,
+                            onInputClick = onInputClick,
+                        )
+                    }
+                }
+            }
         }
     }
 }

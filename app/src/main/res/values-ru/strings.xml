@@ -255,6 +255,7 @@
     <string name="player_queue_save_queue_success">Очередь сохранена</string>
     <string name="player_queue_save_to_playlist">Сохранить очередь в плейлист</string>
     <string name="player_queue_load_queue">Загрузить очередь</string>
+    <string name="player_artist_chooser_title">Выберите артиста</string>
     <string name="player_queue_toggle_fab_menu_content_description">Переключить меню действий FAB</string>
     <string name="player_lyrics_download_content_description">Скачать текст песни для офлайн-прослушивания</string>
     <string name="player_lyrics_downloaded_content_description">Текст песни сохранён для офлайн-прослушивания</string>

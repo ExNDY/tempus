@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
     onNavigateBack: () -> Unit,
+    onSectionToggle: (String) -> Unit,
     onActionClick: (SettingsActionItemUiModel) -> Unit,
     onToggleChange: (SettingsToggleItemUiModel, Boolean) -> Unit,
     onSelectClick: (SettingsSelectItemUiModel) -> Unit,
@@ -19,6 +20,7 @@ fun SettingsScreen(
     SettingsScreenContent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
+        onSectionToggle = onSectionToggle,
         onActionClick = onActionClick,
         onToggleChange = onToggleChange,
         onSelectClick = onSelectClick,

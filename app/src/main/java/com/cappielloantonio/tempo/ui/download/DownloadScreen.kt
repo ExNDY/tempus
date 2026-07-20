@@ -1,8 +1,9 @@
 package com.cappielloantonio.tempo.ui.download
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,24 +15,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,19 +62,32 @@ private data class DownloadListItem(
     val viewType: String,
     val title: String,
     val subtitle: String,
-    val preTitle: String? = null,
     val coverArtId: String? = null,
     val song: Child? = null,
     val groupValue: String? = null,
     val groupedSongs: List<Child> = emptyList(),
 )
 
+private sealed interface DownloadRowItem {
+    val id: String
+}
+
+private data class DownloadSectionHeader(
+    override val id: String,
+    val title: String,
+) : DownloadRowItem
+
+private data class DownloadEntryRow(
+    override val id: String,
+    val item: DownloadListItem,
+) : DownloadRowItem
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadScreen(
     uiState: DownloadUiState,
-    onNavigateBack: () -> Unit,
     onSearchClick: () -> Unit,
+    onViewBack: () -> Unit,
     onGroupTypeSelected: (String) -> Unit,
     onRefreshClick: () -> Unit,
     onSetDirectoryClick: () -> Unit,
@@ -83,7 +95,7 @@ fun DownloadScreen(
     onTrackClick: (List<Child>, Int) -> Unit,
     onTrackLongClick: (Child, Int) -> Unit,
     onGroupClick: (String, String) -> Unit,
-    onGroupLongClick: (List<Child>, String, String) -> Unit,
+    onGroupLongClick: (String, String) -> Unit,
 ) {
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -91,71 +103,33 @@ fun DownloadScreen(
         id = Constants.DOWNLOAD_TYPE_TRACK,
         view = null,
     )
+    val canPopViewStack = uiState.viewStack.size > 1
     val filteredSongs = remember(uiState.songs, currentStack) {
-        filterSongs(currentStack.id, currentStack.view, uiState.songs)
+        filterDownloadedSongs(currentStack.id, currentStack.view, uiState.songs)
     }
     val currentViewType = remember(currentStack) {
         resolveCurrentViewType(currentStack)
     }
-    val items = remember(filteredSongs, currentViewType) {
-        buildItems(
+    val rows = remember(filteredSongs, currentViewType) {
+        buildRows(
             songs = filteredSongs,
             viewType = currentViewType,
             itemCountFormatter = { count -> "$count" },
         )
+    }
+    val displayedTracks = remember(rows) {
+        rows.mapNotNull { row ->
+            (row as? DownloadEntryRow)?.item?.song
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = R.string.download_title_section)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                        )
-                    }
-                },
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(imageVector = Icons.Default.Search, contentDescription = null)
-                    }
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                    ) {
-                        DownloadMenuItem(R.string.menu_group_by_track) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_TRACK)
-                        }
-                        DownloadMenuItem(R.string.menu_group_by_album) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_ALBUM)
-                        }
-                        DownloadMenuItem(R.string.menu_group_by_artist) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_ARTIST)
-                        }
-                        DownloadMenuItem(R.string.menu_group_by_genre) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_GENRE)
-                        }
-                        DownloadMenuItem(R.string.menu_group_by_year) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_YEAR)
-                        }
-                        DownloadMenuItem(R.string.menu_group_by_playlist) {
-                            menuExpanded = false
-                            onGroupTypeSelected(Constants.DOWNLOAD_TYPE_PLAYLIST)
-                        }
-                        DownloadMenuItem(R.string.download_directory_set) {
-                            menuExpanded = false
-                            onSetDirectoryClick()
-                        }
                     }
                 },
             )
@@ -186,70 +160,166 @@ fun DownloadScreen(
                         .fillMaxSize()
                         .padding(padding),
                 ) {
-                    Row(
+                    DownloadToolbar(
+                        canPopViewStack = canPopViewStack,
+                        menuExpanded = menuExpanded,
+                        onMenuExpandedChange = { menuExpanded = it },
+                        onViewBack = onViewBack,
+                        onGroupTypeSelected = onGroupTypeSelected,
+                        onRefreshClick = onRefreshClick,
+                        onSetDirectoryClick = onSetDirectoryClick,
+                    )
+
+                    Text(
+                        text = stringResource(id = R.string.download_shuffle_all_subtitle),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        ElevatedAssistChip(
-                            onClick = { onShuffleClick(filteredSongs) },
-                            label = { Text(text = stringResource(id = R.string.download_shuffle_all_subtitle)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Shuffle,
-                                    contentDescription = null,
-                                )
-                            },
-                        )
-                        ElevatedAssistChip(
-                            onClick = onRefreshClick,
-                            label = { Text(text = stringResource(id = R.string.download_refresh_button_content_description)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = null,
-                                )
-                            },
-                        )
-                    }
+                            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
+                            .clickable { onShuffleClick(filteredSongs) },
+                    )
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 96.dp),
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 96.dp),
                     ) {
-                        itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-                            DownloadRow(
-                                item = item.copy(
-                                    subtitle = if (item.viewType == Constants.DOWNLOAD_TYPE_TRACK) {
-                                        item.subtitle
-                                    } else {
-                                        stringResource(
-                                            id = R.string.download_item_single_subtitle_formatter,
-                                            item.subtitle.toIntOrNull() ?: 0,
-                                        )
-                                    },
-                                ),
-                                onClick = {
-                                    if (item.viewType == Constants.DOWNLOAD_TYPE_TRACK) {
-                                        item.song?.let { onTrackClick(filteredSongs, index) }
-                                    } else if (!item.groupValue.isNullOrEmpty()) {
-                                        onGroupClick(item.viewType, item.groupValue)
-                                    }
-                                },
-                                onLongClick = {
-                                    if (item.viewType == Constants.DOWNLOAD_TYPE_TRACK) {
-                                        item.song?.let { onTrackLongClick(it, index) }
-                                    } else if (item.groupedSongs.isNotEmpty()) {
-                                        onGroupLongClick(item.groupedSongs, item.title, item.subtitle)
-                                    }
-                                },
-                            )
+                        items(rows, key = { it.id }) { row ->
+                            when (row) {
+                                is DownloadEntryRow -> {
+                                    val displayItem = row.item.withFormattedSubtitle()
+                                    DownloadRow(
+                                        item = displayItem,
+                                        onClick = {
+                                            if (displayItem.viewType == Constants.DOWNLOAD_TYPE_TRACK) {
+                                                val trackIndex = displayedTracks.indexOfFirst { it.id == displayItem.song?.id }
+                                                    .takeIf { it >= 0 } ?: 0
+                                                displayItem.song?.let { onTrackClick(displayedTracks, trackIndex) }
+                                            } else if (!displayItem.groupValue.isNullOrEmpty()) {
+                                                onGroupClick(displayItem.viewType, displayItem.groupValue)
+                                            }
+                                        },
+                                        onLongClick = {
+                                            if (displayItem.viewType == Constants.DOWNLOAD_TYPE_TRACK) {
+                                                val trackIndex = displayedTracks.indexOfFirst { it.id == displayItem.song?.id }
+                                                    .takeIf { it >= 0 } ?: 0
+                                                displayItem.song?.let { onTrackLongClick(it, trackIndex) }
+                                            } else if (displayItem.groupedSongs.isNotEmpty()) {
+                                                onGroupLongClick(
+                                                    displayItem.viewType,
+                                                    displayItem.groupValue.orEmpty(),
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
+
+                                is DownloadSectionHeader -> DownloadSectionHeaderRow(title = row.title)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DownloadToolbar(
+    canPopViewStack: Boolean,
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onViewBack: () -> Unit,
+    onGroupTypeSelected: (String) -> Unit,
+    onRefreshClick: () -> Unit,
+    onSetDirectoryClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(id = R.string.download_title_section),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onRefreshClick) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = stringResource(id = R.string.download_refresh_button_content_description),
+            )
+        }
+        if (canPopViewStack) {
+            IconButton(onClick = onViewBack) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow_back),
+                    contentDescription = null,
+                )
+            }
+        }
+        Box {
+            IconButton(onClick = { onMenuExpandedChange(true) }) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = null,
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { onMenuExpandedChange(false) },
+            ) {
+                DownloadMenuItem(R.string.menu_group_by_track) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_TRACK)
+                }
+                DownloadMenuItem(R.string.menu_group_by_album) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_ALBUM)
+                }
+                DownloadMenuItem(R.string.menu_group_by_artist) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_ARTIST)
+                }
+                DownloadMenuItem(R.string.menu_group_by_genre) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_GENRE)
+                }
+                DownloadMenuItem(R.string.menu_group_by_year) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_YEAR)
+                }
+                DownloadMenuItem(R.string.menu_group_by_playlist) {
+                    onMenuExpandedChange(false)
+                    onGroupTypeSelected(Constants.DOWNLOAD_TYPE_PLAYLIST)
+                }
+                DownloadMenuItem(R.string.download_directory_set) {
+                    onMenuExpandedChange(false)
+                    onSetDirectoryClick()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadSectionHeaderRow(title: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, end = 16.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
     }
 }
 
@@ -277,6 +347,12 @@ private fun DownloadEmptyState(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.ui_empty_list),
+                contentDescription = null,
+                modifier = Modifier.size(180.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = stringResource(id = R.string.download_info_empty_title),
                 style = MaterialTheme.typography.headlineSmall,
@@ -309,15 +385,6 @@ private fun DownloadRow(
             onClick = onClick,
             onLongClick = onLongClick,
         ),
-        overlineContent = item.preTitle?.takeIf { it.isNotBlank() }?.let { preTitle ->
-            {
-                Text(
-                    text = preTitle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
         headlineContent = {
             Text(
                 text = item.title,
@@ -345,12 +412,26 @@ private fun DownloadRow(
         trailingContent = {
             IconButton(onClick = onLongClick) {
                 Icon(
-                    imageVector = Icons.Default.MoreVert,
+                    painter = painterResource(id = R.drawable.ic_more_vert),
                     contentDescription = null,
                 )
             }
         },
     )
+}
+
+@Composable
+private fun DownloadListItem.withFormattedSubtitle(): DownloadListItem {
+    return if (viewType == Constants.DOWNLOAD_TYPE_TRACK) {
+        this
+    } else {
+        copy(
+            subtitle = stringResource(
+                id = R.string.download_item_single_subtitle_formatter,
+                subtitle.toIntOrNull() ?: 0,
+            ),
+        )
+    }
 }
 
 private fun resolveCurrentViewType(level: DownloadStack): String {
@@ -364,27 +445,57 @@ private fun resolveCurrentViewType(level: DownloadStack): String {
     }
 }
 
-private fun filterSongs(
-    filterKey: String,
-    filterValue: String?,
+private fun buildRows(
     songs: List<Child>,
-): List<Child> {
-    if (filterValue == null) {
-        return songs
-    }
+    viewType: String,
+    itemCountFormatter: (Int) -> String,
+): List<DownloadRowItem> {
+    val items = buildItems(songs, viewType, itemCountFormatter)
 
-    return when (filterKey) {
-        Constants.DOWNLOAD_TYPE_TRACK -> songs.filter { it.id == filterValue }
-        Constants.DOWNLOAD_TYPE_ALBUM -> songs.filter { it.albumId == filterValue }
-        Constants.DOWNLOAD_TYPE_ARTIST -> songs.filter { it.artistId == filterValue }
-        Constants.DOWNLOAD_TYPE_GENRE -> songs.filter { it.genre == filterValue }
-        Constants.DOWNLOAD_TYPE_YEAR -> songs.filter { it.year?.toString() == filterValue }
-        Constants.DOWNLOAD_TYPE_PLAYLIST -> songs.filter {
-            it is Download && it.playlistId == filterValue
+    return when (viewType) {
+        Constants.DOWNLOAD_TYPE_TRACK -> buildSectionedRows(
+            items = items,
+            sectionKey = { item -> item.song?.album.orEmpty() },
+        )
+
+        Constants.DOWNLOAD_TYPE_ALBUM -> buildSectionedRows(
+            items = items,
+            sectionKey = { item -> item.groupedSongs.firstOrNull()?.artist.orEmpty() },
+        )
+
+        else -> items.map { item ->
+            DownloadEntryRow(
+                id = item.id,
+                item = item,
+            )
+        }
+    }
+}
+
+private fun buildSectionedRows(
+    items: List<DownloadListItem>,
+    sectionKey: (DownloadListItem) -> String,
+): List<DownloadRowItem> {
+    val rows = mutableListOf<DownloadRowItem>()
+    var previousSection: String? = null
+
+    items.forEach { item ->
+        val currentSection = sectionKey(item).takeIf { it.isNotBlank() }
+        if (currentSection != null && currentSection != previousSection) {
+            rows += DownloadSectionHeader(
+                id = "section:${item.id}",
+                title = currentSection,
+            )
+            previousSection = currentSection
         }
 
-        else -> songs
+        rows += DownloadEntryRow(
+            id = item.id,
+            item = item,
+        )
     }
+
+    return rows
 }
 
 private fun buildItems(
@@ -401,7 +512,6 @@ private fun buildItems(
                     viewType = Constants.DOWNLOAD_TYPE_TRACK,
                     title = song.title.orEmpty(),
                     subtitle = buildTrackSubtitle(song),
-                    preTitle = song.album,
                     coverArtId = song.coverArtId,
                     song = song,
                 )
@@ -417,7 +527,6 @@ private fun buildItems(
                         viewType = Constants.DOWNLOAD_TYPE_ALBUM,
                         title = song.album.orEmpty(),
                         subtitle = itemCountFormatter(albumSongs.size),
-                        preTitle = song.artist,
                         coverArtId = song.coverArtId,
                         groupValue = albumId,
                         groupedSongs = albumSongs,

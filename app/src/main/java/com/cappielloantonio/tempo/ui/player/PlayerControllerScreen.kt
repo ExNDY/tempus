@@ -37,8 +37,8 @@ fun PlayerControllerScreen(
     uiState: PlayerUiState,
     isPlaying: Boolean,
     playbackState: Int,
-    progress: Long,
-    duration: Long,
+    progressController: PlayerProgressController,
+    progressRefreshToken: Int,
     shuffleModeEnabled: Boolean,
     repeatMode: Int,
     isPlayPauseEnabled: Boolean,
@@ -49,7 +49,6 @@ fun PlayerControllerScreen(
     onNextClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onRepeatClick: () -> Unit,
-    onSeek: (Long) -> Unit,
     onFavoriteClick: () -> Unit,
     onRatingChange: (Int) -> Unit,
     onPlaybackSpeedClick: () -> Unit,
@@ -87,7 +86,7 @@ fun PlayerControllerScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = uiState.currentSong?.artist ?: "",
+            text = uiState.currentSong?.displayArtist ?: uiState.currentSong?.artist ?: "",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Medium,
@@ -115,9 +114,11 @@ fun PlayerControllerScreen(
 
         // Progress
         PlayerProgressBar(
-            progress = progress,
-            duration = duration,
-            onValueChange = onSeek
+            controller = progressController,
+            isPlaying = isPlaying,
+            playbackState = playbackState,
+            mediaId = uiState.currentSong?.id,
+            refreshToken = progressRefreshToken,
         )
 
         Spacer(modifier = Modifier.height(16.dp))

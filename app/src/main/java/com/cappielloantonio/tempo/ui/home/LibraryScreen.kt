@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,7 +25,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -109,12 +110,10 @@ fun LibraryScreen(
                         )
                     }
                     items(uiState.musicFolders, key = { it.id.orEmpty() }) { folder ->
-                        SectionCard {
-                            ListItem(
-                                headlineContent = { Text(folder.name.orEmpty()) },
-                                modifier = Modifier.combinedClickable(onClick = { onMusicFolderClick(folder) }),
-                            )
-                        }
+                        MusicFolderRow(
+                            folder = folder,
+                            onClick = { onMusicFolderClick(folder) },
+                        )
                     }
                 }
 
@@ -214,6 +213,45 @@ fun LibraryScreen(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MusicFolderRow(
+    folder: MusicFolder,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TempusImage(
+            coverArtId = folder.name,
+            imageType = TempusImageType.Folder,
+            modifier = Modifier
+                .size(52.dp)
+                .clip(MaterialTheme.shapes.small),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = folder.name.orEmpty(),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            painter = painterResource(R.drawable.ic_navigate_next),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .size(22.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

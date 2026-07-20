@@ -11,6 +11,7 @@ import com.cappielloantonio.tempo.ui.theme.TempusTheme
 fun SettingsScreenContent(
     uiState: SettingsUiState,
     onNavigateBack: () -> Unit,
+    onSectionToggle: (String) -> Unit,
     onActionClick: (SettingsActionItemUiModel) -> Unit,
     onToggleChange: (SettingsToggleItemUiModel, Boolean) -> Unit,
     onSelectClick: (SettingsSelectItemUiModel) -> Unit,
@@ -33,6 +34,7 @@ fun SettingsScreenContent(
         ) { section ->
             SettingsSectionCard(
                 section = section,
+                onSectionToggle = onSectionToggle,
                 onActionClick = onActionClick,
                 onToggleChange = onToggleChange,
                 onSelectClick = onSelectClick,

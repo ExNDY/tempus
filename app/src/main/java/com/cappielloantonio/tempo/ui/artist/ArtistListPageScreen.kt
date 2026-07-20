@@ -372,9 +372,9 @@ private fun ArtistListItem(
 
 private fun artistComparator(sortOrder: String): Comparator<ArtistID3> {
     return when (sortOrder) {
-        Constants.ARTIST_ORDER_BY_ALBUM_COUNT -> compareByDescending<ArtistID3> { it.albumCount }
-        Constants.ARTIST_ORDER_BY_MOST_RECENTLY_STARRED -> compareByDescending<ArtistID3> { it.starred ?: Date(0) }
-        Constants.ARTIST_ORDER_BY_LEAST_RECENTLY_STARRED -> compareBy<ArtistID3> { it.starred ?: Date(0) }
-        else -> compareBy<ArtistID3> { it.name?.lowercase().orEmpty() }
+        Constants.ARTIST_ORDER_BY_ALBUM_COUNT -> compareByDescending { it.albumCount }
+        Constants.ARTIST_ORDER_BY_MOST_RECENTLY_STARRED -> compareByDescending { it.starred ?: Date(0) }
+        Constants.ARTIST_ORDER_BY_LEAST_RECENTLY_STARRED -> compareBy { it.starred ?: Date(0) }
+        else -> compareBy { it.name?.lowercase().orEmpty() }
     }
 }

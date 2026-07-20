@@ -10,16 +10,22 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
+import com.cappielloantonio.tempo.ui.player.LocalPlayerAnimatedVisibilityScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.cappielloantonio.tempo.navigation.Screen.BottomSheetScreen
 import com.cappielloantonio.tempo.navigation.Screen.DefaultScreen
+import com.cappielloantonio.tempo.navigation.Screen.DialogScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.composableScreen(
@@ -37,15 +43,18 @@ fun NavGraphBuilder.composableScreen(
                     skipPartiallyExpanded = true
                 )
                 val scope: CoroutineScope = rememberCoroutineScope()
+                var isClosing by remember { mutableStateOf(false) }
 
-                fun animateClose() {
-                    scope.launch {
-                        modalBottomSheetState.hide()
-                        navController.popBackStack()
-                    }
+                suspend fun closeSheet() {
+                    if (isClosing) return
+                    isClosing = true
+                    modalBottomSheetState.hide()
+                    navController.popBackStack()
                 }
 
-                BackHandler(enabled = modalBottomSheetState.isVisible, onBack = ::animateClose)
+                BackHandler(enabled = modalBottomSheetState.isVisible && !isClosing) {
+                    scope.launch { closeSheet() }
+                }
 
                 ModalBottomSheet(
                     modifier = Modifier.padding(top = 46.dp),
@@ -54,12 +63,12 @@ fun NavGraphBuilder.composableScreen(
                     contentWindowInsets = { WindowInsets(0) },
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                     containerColor = MaterialTheme.colorScheme.onPrimary,
-                    onDismissRequest = ::animateClose
+                    onDismissRequest = { scope.launch { closeSheet() } }
                 ) {
                     screen.Content(
                         navController = navController,
                         args = backStackEntry.arguments,
-                        onClose = ::animateClose
+                        onClose = ::closeSheet
                     )
                 }
             }
@@ -72,9 +81,26 @@ fun NavGraphBuilder.composableScreen(
             ) { backStackEntry ->
                 updateBottomMenuConfig(screen.bottomMenuConfig())
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalPlayerAnimatedVisibilityScope provides this,
+                ) {
+                    screen.Content(
+                        navController = navController,
+                        args = backStackEntry.arguments
+                    )
+                }
+            }
+        }
+
+        is DialogScreen -> {
+            dialog(
+                route = screen.screenName,
+                arguments = screen.navArgs,
+            ) { backStackEntry ->
                 screen.Content(
                     navController = navController,
-                    args = backStackEntry.arguments
+                    args = backStackEntry.arguments,
+                    onClose = { navController.popBackStack() },
                 )
             }
         }

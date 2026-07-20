@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -60,6 +61,7 @@ fun AlbumPageScreen(
     isPlaying: Boolean,
     onFavoriteClick: () -> Unit,
     onPlayClick: () -> Unit,
+    onInstantMixClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onRateClick: () -> Unit,
@@ -116,6 +118,7 @@ fun AlbumPageScreen(
                     onArtistClick = onArtistClick,
                     onYearClick = onYearClick,
                     onPlayClick = onPlayClick,
+                    onInstantMixClick = onInstantMixClick,
                     onShuffleClick = onShuffleClick,
                     onDownloadClick = onDownloadClick,
                     onAddToPlaylistClick = onAddToPlaylistClick
@@ -175,6 +178,7 @@ fun AlbumHeader(
     onArtistClick: () -> Unit,
     onYearClick: (Int) -> Unit,
     onPlayClick: () -> Unit,
+    onInstantMixClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
@@ -218,6 +222,9 @@ fun AlbumHeader(
         ) {
             IconButton(onClick = onPlayClick) {
                 Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
+            }
+            IconButton(onClick = onInstantMixClick) {
+                Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null)
             }
             IconButton(onClick = onShuffleClick) {
                 Icon(imageVector = Icons.Default.Shuffle, contentDescription = null)

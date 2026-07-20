@@ -9,14 +9,15 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons.AutoMirrored.Filled
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getSongBottomSheetViewModel
 import com.cappielloantonio.tempo.di.getViewModel
@@ -44,6 +46,8 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.BottomSheetErrorContent
+import com.cappielloantonio.tempo.ui.components.BottomSheetLoadingContent
 import com.cappielloantonio.tempo.ui.components.AssetLinkChips
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.util.AssetLinkUtil
@@ -61,7 +65,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SongBottomSheetRoute(
-    song: Child,
+    songId: String,
     playlistId: String?,
     itemPosition: Int,
     onDismiss: () -> Unit,
@@ -79,9 +83,27 @@ fun SongBottomSheetRoute(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: SongBottomSheetViewModel = getViewModel {
-        getSongBottomSheetViewModel().apply { onStart(song) }
+        getSongBottomSheetViewModel()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(songId) {
+        viewModel.onStart(songId)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> {
+            BottomSheetLoadingContent()
+            return
+        }
+        uiState.hasError -> {
+            BottomSheetErrorContent(
+                onRetry = { viewModel.retry(songId) },
+                onClose = onDismiss,
+            )
+            return
+        }
+    }
+
     val refreshEvent by ExternalAudioReader.getRefreshEvents().observeAsState()
     val currentSong = uiState.song
     val isDownloaded = remember(currentSong?.id, refreshEvent, Preferences.getDownloadDirectoryUri()) {
@@ -298,7 +320,7 @@ fun SongBottomSheetContent(
             onClick = onPlayNextClick
         ),
         ActionItemUiModel(
-            icon = Icons.Default.QueueMusic,
+            icon = Filled.QueueMusic,
             label = stringResource(R.string.song_bottom_sheet_add_to_queue),
             onClick = onAddToQueueClick
         ),
@@ -328,7 +350,7 @@ fun SongBottomSheetContent(
             isDestructive = true
         ),
         ActionItemUiModel(
-            icon = Icons.Default.PlaylistAdd,
+            icon = Filled.PlaylistAdd,
             label = stringResource(R.string.song_bottom_sheet_add_to_playlist),
             onClick = onAddToPlaylistClick
         ),

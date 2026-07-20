@@ -32,8 +32,18 @@ object DefaultScreenNameExtension {
         params: List<String>,
         optionalParams: List<String>,
     ): String {
-        val optionals = optionalParams.joinToString { "?$it={$it}" }
-        return defaultScreenName() + params.joinToString { "/{$it}" } + optionals
+        val mandatoryPart = if (params.isNotEmpty()) {
+            params.joinToString(prefix = "/", separator = "/") { "{$it}" }
+        } else {
+            ""
+        }
+        val optionalPart = if (optionalParams.isNotEmpty()) {
+            optionalParams.joinToString(prefix = "?", separator = "&") { "$it={$it}" }
+        } else {
+            ""
+        }
+
+        return defaultScreenName() + mandatoryPart + optionalPart
     }
 
     /**
@@ -44,7 +54,12 @@ object DefaultScreenNameExtension {
      * "screenName/?optionalArgument={optionalValue}"
      */
     fun Screen.defaultScreenNameWithOptionalParams(vararg optionalParams: String): String {
-        val optionals = optionalParams.joinToString { "?$it={$it}" }
-        return defaultScreenName() + optionals
+        if (optionalParams.isEmpty()) return defaultScreenName()
+
+        val optionalPart = optionalParams.joinToString(prefix = "?", separator = "&") {
+            "$it={$it}"
+        }
+
+        return defaultScreenName() + optionalPart
     }
 }

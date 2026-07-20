@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -39,7 +40,7 @@ fun ArtistPageScreen(
     onToggleBiographyVisibility: () -> Unit,
     onBiographyMoreClick: (() -> Unit)?,
     onShuffleClick: () -> Unit,
-    onRadioClick: () -> Unit,
+    onInstantMixClick: () -> Unit,
     onSeeAllTopSongsClick: () -> Unit,
     onAlbumClick: (AlbumID3) -> Unit,
     onSongClick: (Int) -> Unit,
@@ -55,14 +56,17 @@ fun ArtistPageScreen(
             LargeTopAppBar(
                 title = {
                     Text(
-                        text = uiState.artist?.name ?: "",
+                        text = uiState.artist?.name.orEmpty(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
                     }
                 },
                 actions = {
@@ -91,7 +95,7 @@ fun ArtistPageScreen(
                     onToggleBiography = onToggleBiographyVisibility,
                     onBiographyMore = onBiographyMoreClick,
                     onShuffleClick = onShuffleClick,
-                    onRadioClick = onRadioClick
+                    onInstantMixClick = onInstantMixClick,
                 )
             }
 
@@ -139,7 +143,9 @@ fun ArtistPageScreen(
                     SectionHeader(title = stringResource(id = R.string.artist_page_title_similar_artists_section))
                 }
                 items(similarArtists) { artist ->
-                    SimilarArtistItem(artist = artist, onClick = { onSimilarArtistClick(artist.toArtist()) })
+                    SimilarArtistItem(
+                        artist = artist,
+                        onClick = { onSimilarArtistClick(artist.toArtist()) })
                 }
             }
         }
@@ -153,7 +159,7 @@ fun ArtistHeader(
     onToggleBiography: () -> Unit,
     onBiographyMore: (() -> Unit)?,
     onShuffleClick: () -> Unit,
-    onRadioClick: () -> Unit,
+    onInstantMixClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -169,13 +175,13 @@ fun ArtistHeader(
                 .clip(MaterialTheme.shapes.extraLarge),
             contentScale = ContentScale.Crop
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (uiState.artistInfo?.biography != null) {
             Column(modifier = Modifier.clickable(onClick = onToggleBiography)) {
                 Text(
-                    text = uiState.artistInfo.biography ?: "",
+                    text = uiState.artistInfo.biography.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = if (isBiographyVisible) Int.MAX_VALUE else 3,
                     overflow = TextOverflow.Ellipsis
@@ -201,10 +207,10 @@ fun ArtistHeader(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(id = R.string.artist_page_shuffle_button))
             }
-            OutlinedButton(onClick = onRadioClick) {
-                Icon(imageVector = Icons.Default.Radio, contentDescription = null)
+            Button(onClick = onInstantMixClick) {
+                Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.artist_page_radio_button))
+                Text(text = stringResource(id = R.string.artist_bottom_sheet_instant_mix))
             }
         }
     }
@@ -244,7 +250,7 @@ fun SongItem(
         modifier = Modifier.clickable(onClick = onClick),
         headlineContent = {
             Text(
-                text = song.title ?: "",
+                text = song.title.orEmpty(),
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                 color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -253,7 +259,7 @@ fun SongItem(
         },
         supportingContent = {
             Text(
-                text = song.album ?: "",
+                text = song.album.orEmpty(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -262,7 +268,9 @@ fun SongItem(
             TempusImage(
                 coverArtId = song.coverArtId,
                 imageType = TempusImageType.Song,
-                modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         },
         trailingContent = {
@@ -279,14 +287,14 @@ fun AlbumItem(album: AlbumID3, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
         headlineContent = {
             Text(
-                text = album.name ?: "",
+                text = album.name.orEmpty(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         },
         supportingContent = {
             Text(
-                text = "${album.year ?: ""} • ${album.songCount} tracks",
+                text = "${album.year} • ${album.songCount} tracks",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -295,7 +303,9 @@ fun AlbumItem(album: AlbumID3, onClick: () -> Unit) {
             TempusImage(
                 coverArtId = album.coverArtId,
                 imageType = TempusImageType.Album,
-                modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         },
         trailingContent = {
@@ -310,14 +320,7 @@ fun SimilarArtistItem(artist: SimilarArtistID3, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
         headlineContent = {
             Text(
-                text = artist.name ?: "",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        supportingContent = {
-            Text(
-                text = stringResource(id = R.string.artist_page_title_similar_artists_section),
+                text = artist.name.orEmpty(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -326,7 +329,10 @@ fun SimilarArtistItem(artist: SimilarArtistID3, onClick: () -> Unit) {
             TempusImage(
                 coverArtId = artist.coverArtId,
                 imageType = TempusImageType.Artist,
-                modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(56.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         },
         trailingContent = {

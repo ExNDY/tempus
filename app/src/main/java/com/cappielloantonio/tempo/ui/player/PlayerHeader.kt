@@ -1,8 +1,8 @@
 package com.cappielloantonio.tempo.ui.player
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,15 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.TempusImage
 import com.cappielloantonio.tempo.ui.components.TempusImageType
-import com.cappielloantonio.tempo.util.Constants
 import java.util.Locale
 
 @Composable
@@ -44,7 +40,9 @@ fun PlayerHeader(
     currentSong: Child?,
     description: String?,
     isPlaying: Boolean,
-    progress: Float,
+    playbackState: Int,
+    progressController: PlayerProgressController,
+    progressRefreshToken: Int,
     isNextEnabled: Boolean,
     isSeekControlsEnabled: Boolean,
     onHeaderClick: () -> Unit,
@@ -52,26 +50,44 @@ fun PlayerHeader(
     onNextClick: () -> Unit,
     onSeekBackClick: () -> Unit,
     onSeekForwardClick: () -> Unit,
+    backgroundModifier: Modifier = Modifier,
+    coverArtModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
-    val mediaType = currentSong?.type
-    val isPodcast = mediaType == Constants.MEDIA_TYPE_PODCAST
-    val isRadio = mediaType == Constants.MEDIA_TYPE_RADIO
-    val subtitle = when {
-        isRadio && !description.isNullOrBlank() -> description
-        else -> currentSong?.artist.orEmpty()
-    }
+    val subtitle = currentSong?.displayArtist ?: currentSong?.artist.orEmpty()
     val bookmarkPosition = currentSong?.bookmarkPosition?.takeIf { it > 0L }
+    val progressSnapshot = rememberPlayerProgressSnapshot(
+        controller = progressController,
+        isPlaying = isPlaying,
+        playbackState = playbackState,
+        mediaId = currentSong?.id,
+        refreshToken = progressRefreshToken,
+    )
+    val progress = if (progressSnapshot.durationMs > 0L) {
+        progressSnapshot.positionMs.toFloat() / progressSnapshot.durationMs.toFloat()
+    } else {
+        0f
+    }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .fillMaxHeight()
             .clickable(onClick = onHeaderClick),
-        tonalElevation = 8.dp,
-        color = MaterialTheme.colorScheme.surface
+        color = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
-        Column {
+        Box {
+            Surface(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(backgroundModifier),
+                tonalElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface,
+                content = {}
+            )
+
+            Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -84,6 +100,7 @@ fun PlayerHeader(
                     imageType = TempusImageType.Song,
                     modifier = Modifier
                         .size(42.dp)
+                        .then(coverArtModifier)
                         .clip(MaterialTheme.shapes.small),
                     contentScale = ContentScale.Crop
                 )
@@ -98,7 +115,7 @@ fun PlayerHeader(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (subtitle.isNotBlank()) {
                         Text(
@@ -131,19 +148,6 @@ fun PlayerHeader(
                     }
                 }
 
-                if (isPodcast) {
-                    IconButton(
-                        onClick = onSeekBackClick,
-                        enabled = isSeekControlsEnabled
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FastRewind,
-                            contentDescription = null,
-                            tint = if (isSeekControlsEnabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
-                        )
-                    }
-                }
-
                 IconButton(onClick = onPlayPauseClick) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -152,13 +156,10 @@ fun PlayerHeader(
                 }
 
                 IconButton(
-                    onClick = if (isPodcast) onSeekForwardClick else onNextClick,
-                    enabled = if (isPodcast) isSeekControlsEnabled else isNextEnabled
+                    onClick = onNextClick,
+                    enabled = isNextEnabled
                 ) {
-                    Icon(
-                        imageVector = if (isPodcast) Icons.Default.FastForward else Icons.Default.SkipNext,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Default.SkipNext, contentDescription = null)
                 }
             }
             
@@ -170,6 +171,7 @@ fun PlayerHeader(
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = Color.Transparent
             )
+            }
         }
     }
 }

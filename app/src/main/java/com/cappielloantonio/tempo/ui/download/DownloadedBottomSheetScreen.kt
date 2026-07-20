@@ -7,10 +7,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getDownloadedBottomSheetViewModel
 import com.cappielloantonio.tempo.di.getViewModel
@@ -18,18 +19,20 @@ import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.BottomSheetErrorContent
+import com.cappielloantonio.tempo.ui.components.BottomSheetLoadingContent
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.util.DownloadUtil
 import com.cappielloantonio.tempo.util.ExternalAudioReader
 import com.cappielloantonio.tempo.util.MappingUtil
 import com.cappielloantonio.tempo.util.Preferences
-import com.cappielloantonio.tempo.viewmodel.DownloadedBottomSheetArgs
 import com.cappielloantonio.tempo.viewmodel.DownloadedBottomSheetUiState
 import com.cappielloantonio.tempo.viewmodel.DownloadedBottomSheetViewModel
 
 @Composable
 fun DownloadedBottomSheetRoute(
-    args: DownloadedBottomSheetArgs,
+    groupType: String,
+    groupValue: String,
     onDismiss: () -> Unit,
     onShufflePlay: (List<Child>) -> Unit,
     onPlayNext: (List<Child>) -> Unit,
@@ -37,9 +40,26 @@ fun DownloadedBottomSheetRoute(
 ) {
     val context = LocalContext.current
     val viewModel: DownloadedBottomSheetViewModel = getViewModel {
-        getDownloadedBottomSheetViewModel().apply { onStart(args) }
+        getDownloadedBottomSheetViewModel()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(groupType, groupValue) {
+        viewModel.onStart(groupType, groupValue)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> {
+            BottomSheetLoadingContent()
+            return
+        }
+        uiState.hasError -> {
+            BottomSheetErrorContent(
+                onRetry = { viewModel.retry(groupType, groupValue) },
+                onClose = onDismiss,
+            )
+            return
+        }
+    }
 
     DownloadedBottomSheetContent(
         uiState = uiState,
@@ -72,7 +92,10 @@ fun DownloadedBottomSheetContent(
 ) {
     ActionBottomSheetContent(
         title = uiState.title,
-        subtitle = uiState.subtitle,
+        subtitle = stringResource(
+            R.string.download_item_single_subtitle_formatter,
+            uiState.songs.size,
+        ),
         coverArtId = uiState.songs.firstOrNull()?.coverArtId,
         imageType = TempusImageType.Song,
         actions = listOf(

@@ -20,6 +20,11 @@ sealed interface Screen {
 
     interface BottomSheetScreen : Screen {
         @Composable
+        fun Content(navController: NavController, args: Bundle?, onClose: suspend () -> Unit)
+    }
+
+    interface DialogScreen : Screen {
+        @Composable
         fun Content(navController: NavController, args: Bundle?, onClose: () -> Unit)
     }
 }

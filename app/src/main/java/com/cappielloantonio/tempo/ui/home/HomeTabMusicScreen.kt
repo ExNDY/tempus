@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Refresh
@@ -27,6 +28,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cappielloantonio.tempo.R
@@ -52,8 +55,7 @@ import com.cappielloantonio.tempo.viewmodel.HomeMusicUiState
 @Composable
 fun HomeTabMusicScreen(
     uiState: HomeMusicUiState,
-    currentSongId: String?,
-    isPlaying: Boolean,
+    topContent: (@Composable () -> Unit)? = null,
     onSectorRefresh: (String) -> Unit,
     onMediaClick: (Child, List<Child>) -> Unit,
     onAlbumClick: (AlbumID3) -> Unit,
@@ -74,6 +76,12 @@ fun HomeTabMusicScreen(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 80.dp)
     ) {
+        topContent?.let { content ->
+            item {
+                content()
+            }
+        }
+
         items(uiState.sectorConfig.filter { it.isVisible }) { sector ->
             when (sector.id) {
                 Constants.HOME_SECTOR_DISCOVERY -> DiscoverySection(
@@ -89,11 +97,6 @@ fun HomeTabMusicScreen(
                     title = stringResource(id = R.string.home_title_best_of),
                     subtitle = stringResource(id = R.string.home_subtitle_best_of),
                     items = uiState.bestOfArtists,
-                    onItemClick = { onArtistClick(it as ArtistID3) }
-                )
-                Constants.HOME_SECTOR_RADIO_STATION -> CarouselSection(
-                    title = stringResource(id = R.string.home_title_radio_station),
-                    items = uiState.radioArtists,
                     onItemClick = { onArtistClick(it as ArtistID3) }
                 )
                 Constants.HOME_SECTOR_TOP_SONGS -> TopSongsSection(
@@ -338,9 +341,13 @@ fun CarouselSection(
             items(items) { item ->
                 when (item) {
                     is AlbumID3 -> AlbumCarouselItem(album = item, onClick = { onItemClick(item) })
-                    is ArtistID3 -> ArtistCarouselItem(artist = item, onClick = { onItemClick(item) })
+                    is ArtistID3 -> ArtistCarouselItem(
+                        artist = item,
+                        onClick = { onItemClick(item) })
                     is Child -> SongCarouselItem(song = item, onClick = { onItemClick(item) })
-                    is Playlist -> PlaylistCarouselItem(playlist = item, onClick = { onItemClick(item) })
+                    is Playlist -> PlaylistCarouselItem(
+                        playlist = item,
+                        onClick = { onItemClick(item) })
                     is Share -> ShareCarouselItem(share = item, onClick = { onItemClick(item) })
                 }
             }
@@ -350,7 +357,9 @@ fun CarouselSection(
 
 @Composable
 fun AlbumCarouselItem(album: AlbumID3, onClick: () -> Unit) {
-    Column(modifier = Modifier.width(140.dp).clickable(onClick = onClick)) {
+    Column(modifier = Modifier
+        .width(140.dp)
+        .clickable(onClick = onClick)) {
         TempusImage(
             coverArtId = album.coverArtId,
             imageType = TempusImageType.Album,
@@ -378,22 +387,26 @@ fun AlbumCarouselItem(album: AlbumID3, onClick: () -> Unit) {
 @Composable
 fun ArtistCarouselItem(artist: ArtistID3, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.width(120.dp).clickable(onClick = onClick),
+        modifier = Modifier
+            .width(80.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TempusImage(
             coverArtId = artist.coverArtId,
             imageType = TempusImageType.Artist,
             modifier = Modifier
-                .size(120.dp)
+                .clip(CircleShape)
+                .size(80.dp)
                 .clip(MaterialTheme.shapes.extraLarge)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = artist.name ?: "",
+            text = artist.name.orEmpty(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            maxLines = 1,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
     }
@@ -401,7 +414,9 @@ fun ArtistCarouselItem(artist: ArtistID3, onClick: () -> Unit) {
 
 @Composable
 fun SongCarouselItem(song: Child, onClick: () -> Unit) {
-    Column(modifier = Modifier.width(140.dp).clickable(onClick = onClick)) {
+    Column(modifier = Modifier
+        .width(140.dp)
+        .clickable(onClick = onClick)) {
         TempusImage(
             coverArtId = song.coverArtId,
             imageType = TempusImageType.Song,
@@ -428,7 +443,9 @@ fun SongCarouselItem(song: Child, onClick: () -> Unit) {
 
 @Composable
 fun PlaylistCarouselItem(playlist: Playlist, onClick: () -> Unit) {
-    Column(modifier = Modifier.width(140.dp).clickable(onClick = onClick)) {
+    Column(modifier = Modifier
+        .width(140.dp)
+        .clickable(onClick = onClick)) {
         TempusImage(
             coverArtId = playlist.coverArtId,
             imageType = TempusImageType.Playlist,
@@ -449,7 +466,9 @@ fun PlaylistCarouselItem(playlist: Playlist, onClick: () -> Unit) {
 
 @Composable
 fun ShareCarouselItem(share: Share, onClick: () -> Unit) {
-    Column(modifier = Modifier.width(140.dp).clickable(onClick = onClick)) {
+    Column(modifier = Modifier
+        .width(140.dp)
+        .clickable(onClick = onClick)) {
         TempusImage(
             coverArtId = share.entries?.firstOrNull()?.coverArtId,
             imageType = TempusImageType.Unknown,
@@ -487,15 +506,20 @@ fun FlashbackSection(years: List<Int>, onYearClick: (Int) -> Unit) {
 fun FlashbackItem(year: Int, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .size(100.dp)
+            .height(48.dp)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
+                modifier = Modifier.padding(horizontal = 8.dp),
                 text = year.toString(),
-                style = MaterialTheme.typography.headlineSmall,
+                maxLines = 1,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
@@ -522,9 +546,14 @@ fun TopSongsSection(
                     TempusImage(
                         coverArtId = song.coverArtId,
                         imageType = TempusImageType.Song,
-                        modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small)
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(MaterialTheme.shapes.small)
                     )
-                }
+                },
+                colors = ListItemDefaults.colors().copy(
+                    containerColor = Color.Transparent
+                ),
             )
         }
     }

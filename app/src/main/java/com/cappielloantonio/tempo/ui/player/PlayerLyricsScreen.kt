@@ -39,7 +39,10 @@ import com.cappielloantonio.tempo.viewmodel.PlayerUiState
 @Composable
 fun PlayerLyricsScreen(
     uiState: PlayerUiState,
-    currentPosition: Long,
+    isPlaying: Boolean,
+    playbackState: Int,
+    progressController: PlayerProgressController,
+    progressRefreshToken: Int,
     onLineClick: (Long) -> Unit,
     onSyncToggle: () -> Unit,
     onDownloadClick: () -> Unit,
@@ -50,6 +53,17 @@ fun PlayerLyricsScreen(
     val lines = uiState.lyricsList?.structuredLyrics?.firstOrNull()?.line ?: emptyList()
     val hasTimedLyrics = uiState.lyricsList?.structuredLyrics?.firstOrNull()?.synced == true
     val isSynced = hasTimedLyrics && uiState.isLyricsSynced
+    val currentPosition = if (isSynced) {
+        rememberPlayerProgressSnapshot(
+            controller = progressController,
+            isPlaying = isPlaying,
+            playbackState = playbackState,
+            mediaId = uiState.currentSong?.id,
+            refreshToken = progressRefreshToken,
+        ).positionMs
+    } else {
+        0L
+    }
 
     // Find current line index
     val currentLineIndex = if (isSynced) {

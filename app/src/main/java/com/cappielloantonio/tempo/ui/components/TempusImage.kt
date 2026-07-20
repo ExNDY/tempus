@@ -1,19 +1,20 @@
 package com.cappielloantonio.tempo.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.viewinterop.AndroidView
-import com.cappielloantonio.tempo.glide.CustomGlideRequest
+import androidx.compose.ui.res.painterResource
+import coil3.compose.AsyncImage
+import com.cappielloantonio.tempo.image.CoilImageRequest
 
 @Composable
 fun TempusImage(
@@ -25,7 +26,7 @@ fun TempusImage(
 ) {
     if (LocalInspectionMode.current) {
         Box(
-            modifier = modifier.background(Color.LightGray),
+            modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -38,31 +39,35 @@ fun TempusImage(
     }
 
     val context = LocalContext.current
-    
-    AndroidView(
-        factory = { ctx ->
-            android.widget.ImageView(ctx).apply {
-                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-            }
-        },
+    val resourceType = mapToCoilResourceType(imageType)
+    val model = remember(context, coverArtId, imageType) {
+        CoilImageRequest.buildImageRequest(
+            context = context,
+            item = coverArtId,
+            type = resourceType
+        )
+    }
+    val placeholder = painterResource(id = imageType.placeholderRes)
+
+    AsyncImage(
+        model = model,
+        contentDescription = contentDescription,
+        placeholder = placeholder,
+        error = placeholder,
+        fallback = placeholder,
+        contentScale = contentScale,
         modifier = modifier,
-        update = { view ->
-            CustomGlideRequest.Builder
-                .from(context, coverArtId, mapToGlideResourceType(imageType))
-                .build()
-                .into(view)
-        }
     )
 }
 
-private fun mapToGlideResourceType(type: TempusImageType): CustomGlideRequest.ResourceType {
+private fun mapToCoilResourceType(type: TempusImageType): CoilImageRequest.ResourceType {
     return when (type) {
-        TempusImageType.Song -> CustomGlideRequest.ResourceType.Song
-        TempusImageType.Album -> CustomGlideRequest.ResourceType.Album
-        TempusImageType.Artist -> CustomGlideRequest.ResourceType.Artist
-        TempusImageType.Playlist -> CustomGlideRequest.ResourceType.Playlist
-        TempusImageType.Podcast -> CustomGlideRequest.ResourceType.Podcast
-        TempusImageType.Radio -> CustomGlideRequest.ResourceType.Radio
-        else -> CustomGlideRequest.ResourceType.Unknown
+        TempusImageType.Song -> CoilImageRequest.ResourceType.Song
+        TempusImageType.Album -> CoilImageRequest.ResourceType.Album
+        TempusImageType.Artist -> CoilImageRequest.ResourceType.Artist
+        TempusImageType.Folder -> CoilImageRequest.ResourceType.Folder
+        TempusImageType.Directory -> CoilImageRequest.ResourceType.Directory
+        TempusImageType.Playlist -> CoilImageRequest.ResourceType.Playlist
+        else -> CoilImageRequest.ResourceType.Unknown
     }
 }

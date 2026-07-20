@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.di.getArtistBottomSheetViewModel
 import com.cappielloantonio.tempo.di.getViewModel
@@ -36,6 +37,8 @@ import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.ui.components.ActionBottomSheetContent
 import com.cappielloantonio.tempo.ui.components.ActionItemUiModel
+import com.cappielloantonio.tempo.ui.components.BottomSheetErrorContent
+import com.cappielloantonio.tempo.ui.components.BottomSheetLoadingContent
 import com.cappielloantonio.tempo.ui.components.AssetLinkChips
 import com.cappielloantonio.tempo.ui.components.TempusImageType
 import com.cappielloantonio.tempo.util.AssetLinkUtil
@@ -51,7 +54,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ArtistBottomSheetRoute(
-    artist: ArtistID3,
+    artistId: String,
     onDismiss: () -> Unit,
     onNavigateToArtist: (ArtistID3) -> Unit,
     onShufflePlay: (List<Child>) -> Unit,
@@ -63,9 +66,26 @@ fun ArtistBottomSheetRoute(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: ArtistBottomSheetViewModel = getViewModel {
-        getArtistBottomSheetViewModel().apply { onStart(artist) }
+        getArtistBottomSheetViewModel()
     }
-    val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(artistId) {
+        viewModel.onStart(artistId)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> {
+            BottomSheetLoadingContent()
+            return
+        }
+        uiState.hasError -> {
+            BottomSheetErrorContent(
+                onRetry = { viewModel.retry(artistId) },
+                onClose = onDismiss,
+            )
+            return
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.actions.collect { action ->

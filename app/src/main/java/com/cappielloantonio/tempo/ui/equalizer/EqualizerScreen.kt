@@ -357,9 +357,8 @@ fun VerticalSlider(
         val thumbRadiusPx = with(density) { 10.dp.toPx() }
         val trackWidthPx = with(density) { 4.dp.toPx() }
         val tickWidthPx = with(density) { 1.5.dp.toPx() }
-        val trackTop = thumbRadiusPx
-        val trackBottom = (height - thumbRadiusPx).coerceAtLeast(trackTop)
-        val trackHeight = (trackBottom - trackTop).coerceAtLeast(1f)
+        val trackBottom = (height - thumbRadiusPx).coerceAtLeast(thumbRadiusPx)
+        val trackHeight = (trackBottom - thumbRadiusPx).coerceAtLeast(1f)
         val tickLevels = remember(min, max) { buildTickLevels(min, max) }
         var displayValue by remember { mutableIntStateOf(value) }
         var isDragging by remember { mutableStateOf(false) }
@@ -372,8 +371,8 @@ fun VerticalSlider(
         }
 
         fun valueFromPosition(positionY: Float): Int {
-            val clamped = positionY.coerceIn(trackTop, trackBottom)
-            val percentage = 1f - ((clamped - trackTop) / trackHeight)
+            val clamped = positionY.coerceIn(thumbRadiusPx, trackBottom)
+            val percentage = 1f - ((clamped - thumbRadiusPx) / trackHeight)
             return (min + percentage * (max - min)).roundToInt().coerceIn(min, max)
         }
 
@@ -429,7 +428,7 @@ fun VerticalSlider(
 
             drawLine(
                 color = if (isEnabled) trackColor else disabledColor.copy(alpha = 0.3f),
-                start = Offset(centerX, trackTop),
+                start = Offset(centerX, thumbRadiusPx),
                 end = Offset(centerX, trackBottom),
                 strokeWidth = trackWidthPx,
                 cap = StrokeCap.Round

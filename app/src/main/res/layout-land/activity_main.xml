@@ -15,38 +15,25 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal">
-
             <FrameLayout
                 android:id="@+id/bottom_navigation_frame"
-                android:layout_width="55dp"
-                android:layout_height="match_parent">
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
 
-                <com.google.android.material.bottomnavigation.BottomNavigationView
-                    android:id="@+id/bottom_navigation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="center"
-                    android:rotation="90"
-                    app:menu="@menu/bottom_nav_menu" />
-            </FrameLayout>
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/bottom_navigation"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone"
+                app:menu="@menu/bottom_nav_menu" />
 
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/nav_host_fragment"
-                android:name="androidx.navigation.fragment.NavHostFragment"
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/compose_root"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:defaultNavHost="true"
-                app:navGraph="@navigation/nav_graph" />
+                android:layout_weight="1" />
         </LinearLayout>
-
-        <FrameLayout
-            android:id="@+id/player_bottom_sheet"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:behavior_hideable="true"
-            app:behavior_peekHeight="@dimen/bottom_sheet_peek_height"
-            app:layout_behavior="@string/bottom_sheet_behavior" />
 
         <TextView
             android:id="@+id/offline_mode_text_view"

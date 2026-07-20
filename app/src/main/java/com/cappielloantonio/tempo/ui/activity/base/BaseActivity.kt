@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
@@ -21,19 +20,17 @@ import com.cappielloantonio.tempo.di.KoinViewModelFactory
 import com.cappielloantonio.tempo.helper.ThemeHelper
 import com.cappielloantonio.tempo.service.DownloaderService
 import com.cappielloantonio.tempo.service.MediaService
-import com.cappielloantonio.tempo.ui.dialog.BatteryOptimizationDialog
+import com.cappielloantonio.tempo.ui.dialog.openBatteryOptimizationSettings
 import com.cappielloantonio.tempo.util.Flavors
 import com.cappielloantonio.tempo.util.Preferences
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.elevation.SurfaceColors
 import com.google.common.util.concurrent.ListenableFuture
 
-@UnstableApi
 open class BaseActivity : AppCompatActivity() {
-
     var mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>? = null
         private set
-
     override val defaultViewModelProviderFactory: ViewModelProvider.Factory
         get() = KoinViewModelFactory()
 
@@ -42,7 +39,6 @@ open class BaseActivity : AppCompatActivity() {
         val darkStyle = Preferences.getDarkThemeStyle()
         val isAmoled = ThemeHelper.AMOLED_MODE == darkStyle
         var applyAmoled = false
-
         if (ThemeHelper.DARK_MODE == theme || ThemeHelper.AMOLED_MODE == theme) {
             if (isAmoled) {
                 setTheme(R.style.AppTheme_Amoled)
@@ -55,12 +51,10 @@ open class BaseActivity : AppCompatActivity() {
                 applyAmoled = true
             }
         }
-
         DynamicColors.applyToActivityIfAvailable(this)
         if (applyAmoled) {
             getTheme().applyStyle(R.style.ThemeOverlay_App_Amoled, true)
         }
-
         super.onCreate(savedInstanceState)
         Flavors.initializeCastContext(this)
         initializeDownloader()
@@ -90,8 +84,16 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun checkPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
             }
         }
     }
@@ -108,12 +110,23 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun showBatteryOptimizationDialog() {
-        val dialog = BatteryOptimizationDialog()
-        dialog.show(supportFragmentManager, null)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.activity_battery_optimizations_title)
+            .setPositiveButton(R.string.battery_optimization_positive_button) { _, _ ->
+                openBatteryOptimizationSettings(this)
+            }
+            .setNeutralButton(R.string.battery_optimization_neutral_button) { _, _ ->
+                Preferences.dontAskForOptimization()
+            }
+            .setNegativeButton(R.string.battery_optimization_negative_button, null)
+            .show()
     }
 
     private fun initializeBrowser() {
-        mediaBrowserListenableFuture = MediaBrowser.Builder(this, SessionToken(this, ComponentName(this, MediaService::class.java))).buildAsync()
+        mediaBrowserListenableFuture = MediaBrowser.Builder(
+            this,
+            SessionToken(this, ComponentName(this, MediaService::class.java))
+        ).buildAsync()
     }
 
     private fun releaseBrowser() {
@@ -137,24 +150,28 @@ open class BaseActivity : AppCompatActivity() {
         val darkStyle = Preferences.getDarkThemeStyle()
         val isAmoled = ThemeHelper.AMOLED_MODE == darkStyle
         var applyAmoled = false
-
         if (ThemeHelper.DARK_MODE == theme || ThemeHelper.AMOLED_MODE == theme) {
             applyAmoled = isAmoled
         } else if (ThemeHelper.DEFAULT_MODE == theme) {
             val nightModeFlags = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
             applyAmoled = nightModeFlags == Configuration.UI_MODE_NIGHT_YES && isAmoled
         }
-
         if (applyAmoled) {
-            window.navigationBarColor = ContextCompat.getColor(this, android.R.color.black)
-            window.statusBarColor = ContextCompat.getColor(this, android.R.color.black)
+            setSystemBarColorsCompat(
+                navigationBarColor = ContextCompat.getColor(this, android.R.color.black),
+                statusBarColor = ContextCompat.getColor(this, android.R.color.black)
+            )
         } else {
-            window.navigationBarColor = SurfaceColors.getColorForElevation(this, 8f)
-            window.statusBarColor = SurfaceColors.getColorForElevation(this, 0f)
+            setSystemBarColorsCompat(
+                navigationBarColor = SurfaceColors.getColorForElevation(this, 8f),
+                statusBarColor = SurfaceColors.getColorForElevation(this, 0f)
+            )
         }
     }
 
-    companion object {
-        private const val TAG = "BaseActivity"
+    @Suppress("DEPRECATION")
+    private fun setSystemBarColorsCompat(navigationBarColor: Int, statusBarColor: Int) {
+        window.navigationBarColor = navigationBarColor
+        window.statusBarColor = statusBarColor
     }
 }
