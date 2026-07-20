@@ -279,6 +279,7 @@
     <string name="player_queue_save_queue_success">Saved play queue</string>
     <string name="player_queue_save_to_playlist">Save Queue to Playlist</string>
     <string name="player_queue_load_queue">Load Queue</string>
+    <string name="player_artist_chooser_title">Choose artist</string>
     <string name="player_queue_toggle_fab_menu_content_description">Toggle FAB action menu</string>
     <string name="player_lyrics_download_content_description">Download lyrics for offline playback</string>
     <string name="player_lyrics_downloaded_content_description">Lyrics downloaded for offline playback</string>
@@ -528,6 +529,12 @@
     <string name="settings_title_general">General</string>
     <string name="settings_title_misc">Miscellaneous</string>
     <string name="settings_title_players">Players</string>
+    <string name="settings_playback_diagnostics_share_title">Share playback diagnostics</string>
+    <string name="settings_playback_diagnostics_share_summary">Share local aggregate playback performance counters</string>
+    <string name="settings_playback_diagnostics_clear_title">Clear playback diagnostics</string>
+    <string name="settings_playback_diagnostics_clear_summary">Delete all locally collected playback counters</string>
+    <string name="settings_playback_diagnostics_empty">No playback diagnostics have been collected yet</string>
+    <string name="settings_playback_diagnostics_cleared">Playback diagnostics cleared</string>
     <string name="settings_title_playlist">Playlist</string>
     <string name="settings_title_rating">Rating</string>
     <string name="settings_title_loudness">Loudness correction</string>
@@ -796,6 +803,7 @@
     <string name="player_status_playing">Playing</string>
     <string name="player_status_paused">Paused</string>
     <string name="player_status_loading">Loading</string>
+    <string name="bottom_sheet_load_error">Could not load this item</string>
     <string name="download_directory_picker_summary">Choose a folder where downloaded songs will be stored.</string>
     <string name="download_directory_picker_positive_button">Choose folder</string>
     <plurals name="artist_album_count">

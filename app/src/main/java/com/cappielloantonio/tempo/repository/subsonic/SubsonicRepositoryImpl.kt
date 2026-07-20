@@ -194,21 +194,6 @@ class SubsonicRepositoryImpl(
     override suspend fun startScan() = safeGet("startScan.view")
     override suspend fun getScanStatus() = safeGet("getScanStatus.view")
 
-    // InternetRadioSource
-    override suspend fun getInternetRadioStations() = safeGet("getInternetRadioStations.view")
-    override suspend fun createInternetRadioStation(streamUrl: String, name: String, homepageUrl: String?) = safeGet("createInternetRadioStation.view") {
-        parameter("streamUrl", streamUrl)
-        parameter("name", name)
-        homepageUrl?.let { parameter("homepageUrl", it) }
-    }
-    override suspend fun updateInternetRadioStation(id: String, streamUrl: String, name: String, homepageUrl: String?) = safeGet("updateInternetRadioStation.view") {
-        parameter("id", id)
-        parameter("streamUrl", streamUrl)
-        parameter("name", name)
-        homepageUrl?.let { parameter("homepageUrl", it) }
-    }
-    override suspend fun deleteInternetRadioStation(id: String) = safeGet("deleteInternetRadioStation.view") { parameter("id", id) }
-
     // SharingSource
     override suspend fun getShares() = safeGet("getShares.view")
     override suspend fun createShare(id: String, description: String?, expires: Long?) = safeGet("createShare.view") {
@@ -223,15 +208,4 @@ class SubsonicRepositoryImpl(
     }
     override suspend fun deleteShare(id: String) = safeGet("deleteShare.view") { parameter("id", id) }
 
-    // PodcastSource
-    override suspend fun getPodcasts(includeEpisodes: Boolean, id: String?) = safeGet("getPodcasts.view") {
-        parameter("includeEpisodes", includeEpisodes)
-        id?.let { parameter("id", it) }
-    }
-    override suspend fun getNewestPodcasts(count: Int) = safeGet("getNewestPodcasts.view") { parameter("count", count) }
-    override suspend fun refreshPodcasts() = safeGet("refreshPodcasts.view")
-    override suspend fun createPodcastChannel(url: String) = safeGet("createPodcastChannel.view") { parameter("url", url) }
-    override suspend fun deletePodcastChannel(id: String) = safeGet("deletePodcastChannel.view") { parameter("id", id) }
-    override suspend fun deletePodcastEpisode(id: String) = safeGet("deletePodcastEpisode.view") { parameter("id", id) }
-    override suspend fun downloadPodcastEpisode(id: String) = safeGet("downloadPodcastEpisode.view") { parameter("id", id) }
 }

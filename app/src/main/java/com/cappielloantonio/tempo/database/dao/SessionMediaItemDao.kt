@@ -1,27 +1,19 @@
 package com.cappielloantonio.tempo.database.dao
-
-import androidx.media3.common.util.UnstableApi
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.cappielloantonio.tempo.model.SessionMediaItem
-
-@UnstableApi
 @Dao
 interface SessionMediaItemDao {
     @Query("SELECT * FROM session_media_item WHERE id = :id")
     fun get(id: String): SessionMediaItem?
-
     @Query("SELECT * FROM session_media_item WHERE timestamp = :timestamp")
     fun get(timestamp: Long): List<SessionMediaItem>
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(sessionMediaItem: SessionMediaItem)
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertAll(sessionMediaItems: List<SessionMediaItem>)
-
     @Query("DELETE FROM session_media_item")
     fun deleteAll()
 }

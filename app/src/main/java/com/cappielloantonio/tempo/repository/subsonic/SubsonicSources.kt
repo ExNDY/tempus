@@ -72,13 +72,6 @@ interface MediaLibraryScanningSource {
     suspend fun getScanStatus(): SubsonicResponse?
 }
 
-interface InternetRadioSource {
-    suspend fun getInternetRadioStations(): SubsonicResponse?
-    suspend fun createInternetRadioStation(streamUrl: String, name: String, homepageUrl: String?): SubsonicResponse?
-    suspend fun updateInternetRadioStation(id: String, streamUrl: String, name: String, homepageUrl: String?): SubsonicResponse?
-    suspend fun deleteInternetRadioStation(id: String): SubsonicResponse?
-}
-
 interface SharingSource {
     suspend fun getShares(): SubsonicResponse?
     suspend fun createShare(id: String, description: String?, expires: Long?): SubsonicResponse?
@@ -86,16 +79,6 @@ interface SharingSource {
     suspend fun deleteShare(id: String): SubsonicResponse?
 }
 
-interface PodcastSource {
-    suspend fun getPodcasts(includeEpisodes: Boolean, id: String?): SubsonicResponse?
-    suspend fun getNewestPodcasts(count: Int): SubsonicResponse?
-    suspend fun refreshPodcasts(): SubsonicResponse?
-    suspend fun createPodcastChannel(url: String): SubsonicResponse?
-    suspend fun deletePodcastChannel(id: String): SubsonicResponse?
-    suspend fun deletePodcastEpisode(id: String): SubsonicResponse?
-    suspend fun downloadPodcastEpisode(id: String): SubsonicResponse?
-}
-
 interface SubsonicRepository : AuthSource, BrowsingSource, AlbumSongListSource, MediaSource,
     PlaylistSource, SearchSource, BookmarkSource, MediaLibraryScanningSource,
-    InternetRadioSource, SharingSource, PodcastSource
+    SharingSource

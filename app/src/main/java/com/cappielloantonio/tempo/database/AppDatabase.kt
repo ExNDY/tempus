@@ -1,6 +1,4 @@
 package com.cappielloantonio.tempo.database
-
-import androidx.media3.common.util.UnstableApi
 import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
@@ -12,8 +10,6 @@ import com.cappielloantonio.tempo.database.converter.StringListConverter
 import com.cappielloantonio.tempo.database.dao.*
 import com.cappielloantonio.tempo.model.*
 import com.cappielloantonio.tempo.subsonic.models.Playlist
-
-@UnstableApi
 @Database(
     version = 21,
     entities = [
@@ -27,7 +23,6 @@ import com.cappielloantonio.tempo.subsonic.models.Playlist
         Playlist::class,
         PinnedPlaylist::class,
         LyricsCache::class,
-        InternetRadioStationCache::class,
         PlaylistSong::class
     ],
     autoMigrations = [
@@ -40,8 +35,7 @@ import com.cappielloantonio.tempo.subsonic.models.Playlist
         AutoMigration(from = 16, to = 17),
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19),
-        AutoMigration(from = 19, to = 20),
-        AutoMigration(from = 20, to = 21)
+        AutoMigration(from = 19, to = 20)
     ]
 )
 @TypeConverters(DateConverters::class, StringListConverter::class)
@@ -57,14 +51,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pinnedPlaylistDao(): PinnedPlaylistDao
     abstract fun playlistSongDao(): PlaylistSongDao
     abstract fun lyricsDao(): LyricsDao
-    abstract fun internetRadioStationDao(): InternetRadioStationDao
-
     companion object {
         private const val DB_NAME = "tempo_db"
-
         @Volatile
         private var instance: AppDatabase? = null
-
         fun getInstance(): AppDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(

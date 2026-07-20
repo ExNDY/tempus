@@ -4,16 +4,18 @@ import com.cappielloantonio.tempo.repository.*
 import org.koin.dsl.module
 
 val repositoryModule = module {
-    single { SongRepository(get()) }
-    single { SystemRepository(get()) }
-    single { ServerRepository(get(), get()) }
+    single { SongRepository(subsonicRepository = get()) }
+    single { SystemRepository(subsonicRepository = get()) }
+    single { ServerRepository(serverDao = get(), preferences = get()) }
     single { AlbumRepository() }
     single { ArtistRepository() }
     single { GenreRepository() }
     single { PlaylistRepository() }
-    single { SearchingRepository(get(), get(), get()) }
-    single { PodcastRepository() }
-    single { RadioRepository(get()) }
+    single { SearchingRepository(
+        recentSearchDao = get(),
+        subsonicRepository = get(),
+        preferences = get()
+    ) }
     single { DirectoryRepository() }
     single { FavoriteRepository() }
     single { DownloadRepository() }
