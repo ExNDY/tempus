@@ -26,15 +26,18 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: Build 64-bit Debug APKs
         run: |
-          bash ./gradlew assembleTempusDebug
-          bash ./gradlew assembleDegoogledDebug
+          VERSION_NAME="${GITHUB_REF_NAME#v}"
+          VERSION_CODE="$(git show -s --format=%ct HEAD)"
+          bash ./gradlew assembleTempusDebug assembleDegoogledDebug \
+            -PVERSION_NAME="$VERSION_NAME" \
+            -PVERSION_CODE="$VERSION_CODE"
 
       - name: Sign Tempus Debug APK
         id: sign_tempus
