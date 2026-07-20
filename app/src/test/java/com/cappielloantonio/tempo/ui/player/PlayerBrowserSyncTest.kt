@@ -1,13 +1,13 @@
-package com.cappielloantonio.tempo.ui.fragment
+package com.cappielloantonio.tempo.ui.player
 
 import android.net.Uri
 import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import com.cappielloantonio.tempo.playback.PlaybackStateStore
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.util.Constants
-import com.cappielloantonio.tempo.viewmodel.PlaybackViewModel
 import com.cappielloantonio.tempo.viewmodel.PlayerBottomSheetViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,22 +22,22 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
-class PlayerBottomSheetBrowserSyncTest {
+class PlayerBrowserSyncTest {
 
     @Test
     fun syncFromPlayer_updatesPlaybackAndMetadataWhenTrackIsPlaying() {
         val player = mock<Player>()
         val miniPlayerViewModel = mock<PlayerBottomSheetViewModel>()
-        val playbackViewModel = PlaybackViewModel()
+        val playbackStateStore = PlaybackStateStore()
         val mediaItem = createMediaItem()
 
         whenever(player.currentMediaItem).thenReturn(mediaItem)
         whenever(player.playbackState).thenReturn(Player.STATE_READY)
         whenever(player.playWhenReady).thenReturn(true)
 
-        val syncedMediaId = PlayerBottomSheetBrowserSync.syncFromPlayer(
+        val syncedMediaId = PlayerBrowserSync.syncFromPlayer(
             player = player,
-            playbackViewModel = playbackViewModel,
+            playbackStateStore = playbackStateStore,
             playerBottomSheetViewModel = miniPlayerViewModel,
             lastSyncedMediaId = null,
             forceMetadataSync = true
@@ -51,8 +51,8 @@ class PlayerBottomSheetBrowserSyncTest {
         )
 
         assertEquals("song-id", syncedMediaId)
-        assertEquals("song-id", playbackViewModel.currentSongId.value)
-        assertTrue(playbackViewModel.isPlaying.value)
+        assertEquals("song-id", playbackStateStore.state.value.currentSongId)
+        assertTrue(playbackStateStore.state.value.isPlaying)
         assertEquals("Track Title", placeholderCaptor.value.title)
         assertEquals("Track Artist", placeholderCaptor.value.artist)
         assertEquals("song-id", placeholderCaptor.value.id)
@@ -62,22 +62,22 @@ class PlayerBottomSheetBrowserSyncTest {
     fun syncFromPlayer_marksPlaybackPausedWhenPlayWhenReadyIsFalse() {
         val player = mock<Player>()
         val miniPlayerViewModel = mock<PlayerBottomSheetViewModel>()
-        val playbackViewModel = PlaybackViewModel()
+        val playbackStateStore = PlaybackStateStore()
 
         whenever(player.currentMediaItem).thenReturn(createMediaItem())
         whenever(player.playbackState).thenReturn(Player.STATE_READY)
         whenever(player.playWhenReady).thenReturn(false)
 
-        PlayerBottomSheetBrowserSync.syncFromPlayer(
+        PlayerBrowserSync.syncFromPlayer(
             player = player,
-            playbackViewModel = playbackViewModel,
+            playbackStateStore = playbackStateStore,
             playerBottomSheetViewModel = miniPlayerViewModel,
             lastSyncedMediaId = "song-id",
             forceMetadataSync = false
         )
 
-        assertEquals("song-id", playbackViewModel.currentSongId.value)
-        assertFalse(playbackViewModel.isPlaying.value)
+        assertEquals("song-id", playbackStateStore.state.value.currentSongId)
+        assertFalse(playbackStateStore.state.value.isPlaying)
         verifyNoMoreInteractions(miniPlayerViewModel)
     }
 
@@ -85,15 +85,15 @@ class PlayerBottomSheetBrowserSyncTest {
     fun syncFromPlayer_clearsStateWhenCurrentItemIsNull() {
         val player = mock<Player>()
         val miniPlayerViewModel = mock<PlayerBottomSheetViewModel>()
-        val playbackViewModel = PlaybackViewModel().apply { update("stale-id", true) }
+        val playbackStateStore = PlaybackStateStore().apply { update("stale-id", true) }
 
         whenever(player.currentMediaItem).thenReturn(null)
         whenever(player.playbackState).thenReturn(Player.STATE_IDLE)
         whenever(player.playWhenReady).thenReturn(false)
 
-        val syncedMediaId = PlayerBottomSheetBrowserSync.syncFromPlayer(
+        val syncedMediaId = PlayerBrowserSync.syncFromPlayer(
             player = player,
-            playbackViewModel = playbackViewModel,
+            playbackStateStore = playbackStateStore,
             playerBottomSheetViewModel = miniPlayerViewModel,
             lastSyncedMediaId = "stale-id",
             forceMetadataSync = true
@@ -101,8 +101,8 @@ class PlayerBottomSheetBrowserSyncTest {
 
         verify(miniPlayerViewModel).clearLiveMedia()
         assertNull(syncedMediaId)
-        assertNull(playbackViewModel.currentSongId.value)
-        assertFalse(playbackViewModel.isPlaying.value)
+        assertNull(playbackStateStore.state.value.currentSongId)
+        assertFalse(playbackStateStore.state.value.isPlaying)
     }
 
     @Test
@@ -110,15 +110,15 @@ class PlayerBottomSheetBrowserSyncTest {
         val playingPlayer = mock<Player>()
         val emptyPlayer = mock<Player>()
         val miniPlayerViewModel = mock<PlayerBottomSheetViewModel>()
-        val playbackViewModel = PlaybackViewModel()
+        val playbackStateStore = PlaybackStateStore()
 
         whenever(playingPlayer.currentMediaItem).thenReturn(createMediaItem())
         whenever(playingPlayer.playbackState).thenReturn(Player.STATE_READY)
         whenever(playingPlayer.playWhenReady).thenReturn(true)
 
-        val firstSyncedId = PlayerBottomSheetBrowserSync.syncFromPlayer(
+        val firstSyncedId = PlayerBrowserSync.syncFromPlayer(
             player = playingPlayer,
-            playbackViewModel = playbackViewModel,
+            playbackStateStore = playbackStateStore,
             playerBottomSheetViewModel = miniPlayerViewModel,
             lastSyncedMediaId = null,
             forceMetadataSync = true
@@ -128,9 +128,9 @@ class PlayerBottomSheetBrowserSyncTest {
         whenever(emptyPlayer.playbackState).thenReturn(Player.STATE_IDLE)
         whenever(emptyPlayer.playWhenReady).thenReturn(false)
 
-        val secondSyncedId = PlayerBottomSheetBrowserSync.syncFromPlayer(
+        val secondSyncedId = PlayerBrowserSync.syncFromPlayer(
             player = emptyPlayer,
-            playbackViewModel = playbackViewModel,
+            playbackStateStore = playbackStateStore,
             playerBottomSheetViewModel = miniPlayerViewModel,
             lastSyncedMediaId = firstSyncedId,
             forceMetadataSync = true
@@ -139,8 +139,8 @@ class PlayerBottomSheetBrowserSyncTest {
         verify(miniPlayerViewModel).clearLiveMedia()
         assertEquals("song-id", firstSyncedId)
         assertNull(secondSyncedId)
-        assertNull(playbackViewModel.currentSongId.value)
-        assertFalse(playbackViewModel.isPlaying.value)
+        assertNull(playbackStateStore.state.value.currentSongId)
+        assertFalse(playbackStateStore.state.value.isPlaying)
     }
 
     private fun createMediaItem(): MediaItem {
