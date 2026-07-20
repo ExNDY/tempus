@@ -3,32 +3,41 @@ package com.cappielloantonio.tempo.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import com.cappielloantonio.tempo.playback.PlaybackStateStore
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
-class PlaybackViewModel : ViewModel() {
+class PlaybackViewModel(
+    private val playbackStateStore: PlaybackStateStore,
+) : ViewModel() {
 
-    private val _currentSongId = MutableStateFlow<String?>(null)
-    val currentSongId = _currentSongId.asStateFlow()
+    val currentSongId = playbackStateStore.state
+        .map { it.currentSongId }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = playbackStateStore.state.value.currentSongId,
+        )
 
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying = _isPlaying.asStateFlow()
+    val isPlaying = playbackStateStore.state
+        .map { it.isPlaying }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = playbackStateStore.state.value.isPlaying,
+        )
 
     // Java Interop
-    fun getCurrentSongIdLiveData(): LiveData<String?> = _currentSongId.asLiveData()
-    fun getIsPlayingLiveData(): LiveData<Boolean> = _isPlaying.asLiveData()
+    fun getCurrentSongIdLiveData(): LiveData<String?> = currentSongId.asLiveData()
+    fun getIsPlayingLiveData(): LiveData<Boolean> = isPlaying.asLiveData()
 
     fun update(songId: String?, playing: Boolean) {
-        if (_currentSongId.value != songId) {
-            _currentSongId.value = songId
-        }
-        if (_isPlaying.value != playing) {
-            _isPlaying.value = playing
-        }
+        playbackStateStore.update(songId, playing)
     }
 
     fun clear() {
-        _currentSongId.value = null
-        _isPlaying.value = false
+        playbackStateStore.clear()
     }
 }

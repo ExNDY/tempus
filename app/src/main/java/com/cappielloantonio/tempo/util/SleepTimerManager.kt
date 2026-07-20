@@ -3,10 +3,11 @@ package com.cappielloantonio.tempo.util
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
-import androidx.media3.common.C
+import androidx.core.content.edit
 import androidx.media3.common.Player
-import java.util.Locale
 import com.cappielloantonio.tempo.App
+import com.cappielloantonio.tempo.util.SleepTimerManager.Companion.FADE_DURATION_MS
+import java.util.Locale
 
 /**
  * Singleton that manages a sleep timer countdown.
@@ -170,7 +171,7 @@ class SleepTimerManager private constructor() {
                     player.volume = 1f
                     return
                 }
-                volume[0] = Math.max(0f, volume[0] - decrement)
+                volume[0] = 0f.coerceAtLeast(volume[0] - decrement)
                 player.volume = volume[0]
                 if (volume[0] > 0f) {
                     handler.postDelayed(this, stepMs)
@@ -200,7 +201,7 @@ class SleepTimerManager private constructor() {
                 if (fadeStarted) return
                 val duration = player.duration
                 val position = player.currentPosition
-                if (duration > 0 && duration != C.TIME_UNSET) {
+                if (duration > 0) {
                     val remaining = duration - position
                     if (remaining in 1..FADE_DURATION_MS) {
                         fadeStarted = true
@@ -265,18 +266,18 @@ class SleepTimerManager private constructor() {
 
     private fun persistState() {
         val prefs = prefs ?: return
-        prefs.edit()
-            .putLong(PREF_END_TIME_MS, endTimeMs)
-            .putBoolean(PREF_END_OF_TRACK, endOfTrack)
-            .apply()
+        prefs.edit {
+            putLong(PREF_END_TIME_MS, endTimeMs)
+                .putBoolean(PREF_END_OF_TRACK, endOfTrack)
+        }
     }
 
     private fun clearPersistedState() {
         val prefs = prefs ?: return
-        prefs.edit()
-            .remove(PREF_END_TIME_MS)
-            .remove(PREF_END_OF_TRACK)
-            .apply()
+        prefs.edit {
+            remove(PREF_END_TIME_MS)
+                .remove(PREF_END_OF_TRACK)
+        }
     }
 
     private fun restoreFromPreferences() {
@@ -301,7 +302,7 @@ class SleepTimerManager private constructor() {
     private val prefs: SharedPreferences?
         get() = try {
             App.getSharedPreferences()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 

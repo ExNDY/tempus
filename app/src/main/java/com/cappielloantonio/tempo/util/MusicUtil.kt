@@ -16,6 +16,7 @@ import java.text.StringCharacterIterator
 import java.util.Locale
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+import androidx.core.net.toUri
 
 object MusicUtil {
     private const val TAG = "MusicUtil"
@@ -54,7 +55,7 @@ object MusicUtil {
 
         uri.append("&id=").append(id)
         Log.d(TAG, "getStreamUri: $uri")
-        return Uri.parse(uri.toString())
+        return uri.toString().toUri()
     }
 
     @JvmStatic
@@ -82,7 +83,7 @@ object MusicUtil {
         if (!Preferences.isServerPrioritized())
             s += "&format=" + getTranscodingFormatPreference()
 
-        return Uri.parse(s)
+        return s.toUri()
     }
 
     @JvmStatic
@@ -111,7 +112,7 @@ object MusicUtil {
             uri.append(download.downloadUri)
         }
         Log.d(TAG, "getDownloadUri: $uri")
-        return Uri.parse(uri.toString())
+        return uri.toString().toUri()
     }
 
     @JvmStatic
@@ -140,7 +141,7 @@ object MusicUtil {
 
         uri.append("&id=").append(id)
         Log.d(TAG, "getTranscodedDownloadUri: $uri")
-        return Uri.parse(uri.toString())
+        return uri.toString().toUri()
     }
 
     @JvmStatic
@@ -225,15 +226,9 @@ object MusicUtil {
 
     @JvmStatic
     fun getReadableLyrics(string: String?): String {
-        return if (string != null) {
-            string
-                .replace("&#34;".toRegex(), "\"")
-                .replace("&#39;".toRegex(), "'")
-                .replace("&amp;".toRegex(), "'")
-                .replace("&#xA;".toRegex(), "\n")
-        } else {
-            ""
-        }
+        return string?.replace("&#34;".toRegex(), "\"")?.replace("&#39;".toRegex(), "'")
+            ?.replace("&amp;".toRegex(), "'")?.replace("&#xA;".toRegex(), "\n")
+            ?: ""
     }
 
     @JvmStatic
@@ -316,8 +311,9 @@ object MusicUtil {
     @JvmStatic
     fun limitPlayableMedia(toLimit: List<Child>, position: Int): List<Child> {
         if (toLimit.isNotEmpty() && toLimit.size > Constants.PLAYABLE_MEDIA_LIMIT) {
-            val from = if (position < Constants.PRE_PLAYABLE_MEDIA) 0 else position - Constants.PRE_PLAYABLE_MEDIA
-            val to = Math.min(from + Constants.PLAYABLE_MEDIA_LIMIT, toLimit.size)
+            val from =
+                if (position < Constants.PRE_PLAYABLE_MEDIA) 0 else position - Constants.PRE_PLAYABLE_MEDIA
+            val to = (from + Constants.PLAYABLE_MEDIA_LIMIT).coerceAtMost(toLimit.size)
             return toLimit.subList(from, to)
         }
         return toLimit
@@ -326,13 +322,14 @@ object MusicUtil {
     @JvmStatic
     fun getPlayableMediaPosition(toLimit: List<Child>, position: Int): Int {
         if (toLimit.isNotEmpty() && toLimit.size > Constants.PLAYABLE_MEDIA_LIMIT) {
-            return Math.min(position, Constants.PRE_PLAYABLE_MEDIA)
+            return position.coerceAtMost(Constants.PRE_PLAYABLE_MEDIA)
         }
         return position
     }
 
     private val connectivityManager: ConnectivityManager
-        get() = App.getContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        get() = App.getContext()
+            .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     @JvmStatic
     fun ratingFilter(toFilter: MutableList<Child>) {
@@ -349,10 +346,11 @@ object MusicUtil {
     @JvmStatic
     fun isImageUrl(url: String?): Boolean {
         if (url.isNullOrEmpty()) return false
-        val path = url.lowercase(Locale.getDefault()).trim { it <= ' ' }.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+        val path = url.lowercase(Locale.getDefault()).trim { it <= ' ' }.split("\\?".toRegex())
+            .dropLastWhile { it.isEmpty() }.toTypedArray()[0]
         return path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".png") || path.endsWith(".webp") ||
-                path.endsWith(".gif") || path.endsWith(".bmp") ||
-                path.endsWith(".svg")
+            path.endsWith(".png") || path.endsWith(".webp") ||
+            path.endsWith(".gif") || path.endsWith(".bmp") ||
+            path.endsWith(".svg")
     }
 }

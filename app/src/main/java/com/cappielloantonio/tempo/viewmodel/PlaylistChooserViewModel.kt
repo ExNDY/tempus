@@ -1,6 +1,5 @@
 package com.cappielloantonio.tempo.viewmodel
 
-import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import com.cappielloantonio.tempo.repository.PlaylistRepository
@@ -36,14 +35,14 @@ class PlaylistChooserViewModel(
         return playlistRepository.getAllPlaylists(owner)
     }
 
-    fun addSongsToPlaylist(fragment: DialogFragment, dialog: android.app.Dialog?, playlistId: String) {
+    fun addSongsToPlaylist(playlistId: String, onSuccess: () -> Unit = {}) {
         playlistRepository.addSongToPlaylist(
             playlistId,
             songIds,
             isPlaylistPublic,
             object : PlaylistRepository.AddToPlaylistCallback {
                 override fun onSuccess() {
-                    fragment.dismiss()
+                    onSuccess()
                 }
 
                 override fun onFailure() {}

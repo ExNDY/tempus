@@ -10,4 +10,5 @@ data class ConnectionState(
 interface NetworkConnectivityService {
     val connectionState: Flow<ConnectionState>
     fun setSelectedServer(url: String?)
+    fun refresh()
 }

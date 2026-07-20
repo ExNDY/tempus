@@ -3,9 +3,10 @@ package com.cappielloantonio.tempo.viewmodel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.repository.DirectoryRepository
+import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.Index
+import com.cappielloantonio.tempo.subsonic.models.Indexes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 
 data class IndexUiState(
     val indices: List<Index> = emptyList(),
+    val children: List<Child> = emptyList(),
     val isLoading: Boolean = true,
     val musicFolderId: String? = null,
 )
@@ -40,10 +42,7 @@ class IndexViewModel(
             _uiState.update { it.copy(isLoading = true, musicFolderId = musicFolderId) }
             val indexes = directoryRepository.getIndexes(musicFolderId, null).asFlow().first()
             _uiState.update {
-                it.copy(
-                    indices = indexes?.indices ?: emptyList(),
-                    isLoading = false,
-                )
+                indexes.toIndexUiState(musicFolderId)
             }
         }
     }
@@ -68,9 +67,18 @@ class IndexViewModel(
         }
 
         children
-            .filter { it.isDir && !it.id.isNullOrEmpty() }
+            .filter { it.isDir && it.id.isNotBlank() }
             .forEach { child ->
-                child.id?.let { collectDirectorySongsRecursive(it, collectedSongs) }
+                collectDirectorySongsRecursive(child.id, collectedSongs)
             }
     }
+}
+
+internal fun Indexes?.toIndexUiState(musicFolderId: String?): IndexUiState {
+    return IndexUiState(
+        indices = this?.indices ?: emptyList(),
+        children = this?.children ?: emptyList(),
+        isLoading = false,
+        musicFolderId = musicFolderId,
+    )
 }

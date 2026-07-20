@@ -8,7 +8,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import java.text.Normalizer
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -73,12 +72,10 @@ object ExternalAudioReader {
             runSynchronously = true
         }
 
-        if (runSynchronously) {
-            try {
-                rebuildCache()
-            } finally {
-                onRefreshFinished()
-            }
+        try {
+            rebuildCache()
+        } finally {
+            onRefreshFinished()
         }
     }
 
@@ -102,8 +99,8 @@ object ExternalAudioReader {
     }
 
     private fun buildKey(artist: String?, title: String?, album: String?): String {
-        var name = if (artist != null && artist.isNotEmpty()) "$artist - $title" else title ?: ""
-        if (album != null && album.isNotEmpty()) name += " ($album)"
+        var name = if (!artist.isNullOrEmpty()) "$artist - $title" else title ?: ""
+        if (!album.isNullOrEmpty()) name += " ($album)"
         return normalizeForComparison(name)
     }
 
@@ -118,11 +115,6 @@ object ExternalAudioReader {
     @JvmStatic
     fun getUri(media: Child): Uri? {
         return findUri(media.artist, media.title, media.album)
-    }
-
-    @JvmStatic
-    fun getUri(episode: PodcastEpisode): Uri? {
-        return findUri(episode.artist, episode.title, episode.album)
     }
 
     @JvmStatic

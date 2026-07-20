@@ -9,10 +9,8 @@ import android.text.TextUtils
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.StringRes
-import androidx.core.content.ContextCompat
 import com.cappielloantonio.tempo.R
 import com.google.android.material.color.MaterialColors
-import java.util.Objects
 
 object AssetLinkUtil {
     const val SCHEME = "tempo"
@@ -137,7 +135,7 @@ object AssetLinkUtil {
             }
             val accent = MaterialColors.getColor(
                 view, R.attr.colorPrimary,
-                ContextCompat.getColor(view.context, android.R.color.holo_blue_light)
+                view.currentTextColor
             )
             view.setTextColor(accent)
         }
@@ -151,8 +149,8 @@ object AssetLinkUtil {
                 view.setTextColor(original)
             } else {
                 val defaultColor = MaterialColors.getColor(
-                    view, com.google.android.material.R.attr.colorOnSurface,
-                    ContextCompat.getColor(view.context, android.R.color.primary_text_light)
+                    view, R.attr.colorOnSurface,
+                    view.currentTextColor
                 )
                 view.setTextColor(defaultColor)
             }

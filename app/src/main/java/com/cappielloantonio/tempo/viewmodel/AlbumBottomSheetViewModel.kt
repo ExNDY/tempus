@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.interfaces.StarCallback
 import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.repository.AlbumRepository
@@ -27,22 +26,22 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Date
 
 data class AlbumBottomSheetUiState(
     val album: AlbumID3? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = true,
+    val hasError: Boolean = false,
 )
 
-@UnstableApi
 class AlbumBottomSheetViewModel(
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val favoriteRepository: FavoriteRepository,
     private val sharingRepository: SharingRepository,
 ) : ViewModel() {
-
     sealed interface Action {
         data class RequestDownloads(val songs: List<Child>) : Action
     }
@@ -51,28 +50,44 @@ class AlbumBottomSheetViewModel(
     private val _isLoading = MutableStateFlow(false)
     private val _actions = Channel<Action>(Channel.BUFFERED)
     private var startedAlbumId: String? = null
-
+    private var loadJob: Job? = null
     val actions = _actions.receiveAsFlow()
-
+    private val _hasError = MutableStateFlow(false)
     val uiState: StateFlow<AlbumBottomSheetUiState> = combine(
         _album,
-        _isLoading
-    ) { album, loading ->
-        AlbumBottomSheetUiState(album, loading)
+        _isLoading,
+        _hasError,
+    ) { album, loading, hasError ->
+        AlbumBottomSheetUiState(album, loading, hasError)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AlbumBottomSheetUiState()
     )
 
-    fun onStart(album: AlbumID3) {
-        if (startedAlbumId == album.id && _album.value?.id == album.id) {
-            return
+    fun onStart(albumId: String, force: Boolean = false) {
+        if (!force && startedAlbumId == albumId && (_album.value != null || _isLoading.value)) return
+        startedAlbumId = albumId
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _album.value = null
+            _hasError.value = false
+            _isLoading.value = true
+            if (albumId.isBlank()) {
+                _isLoading.value = false
+                _hasError.value = true
+                return@launch
+            }
+            val album = runCatching {
+                albumRepository.getAlbum(albumId).asFlow().first()
+            }.getOrNull()
+            _album.value = album
+            _isLoading.value = false
+            _hasError.value = album == null
         }
-        startedAlbumId = album.id
-        _album.value = album
     }
 
+    fun retry(albumId: String) = onStart(albumId, force = true)
     fun getArtist(): Flow<ArtistID3?> {
         val artistId = _album.value?.artistId
         return if (artistId.isNullOrEmpty()) {
@@ -121,40 +136,32 @@ class AlbumBottomSheetViewModel(
 
     private fun removeFavoriteOffline(album: AlbumID3) {
         favoriteRepository.starLater(null, album.id, null, false)
-        album.starred = null
-        _album.update { album }
+        _album.update { album.withStarred(null) }
     }
 
     private fun removeFavoriteOnline(album: AlbumID3) {
         favoriteRepository.unstar(null, album.id, null, object : StarCallback {
             override fun onSuccess() = Unit
-
             override fun onError() {
                 favoriteRepository.starLater(null, album.id, null, false)
             }
         })
-        album.starred = null
-        _album.update { album }
+        _album.update { album.withStarred(null) }
     }
 
     private fun setFavoriteOffline(album: AlbumID3) {
         favoriteRepository.starLater(null, album.id, null, true)
-        album.starred = Date()
-        _album.update { album }
+        _album.update { album.withStarred(Date()) }
     }
 
     private fun setFavoriteOnline(album: AlbumID3) {
         favoriteRepository.star(null, album.id, null, object : StarCallback {
             override fun onSuccess() = Unit
-
             override fun onError() {
                 favoriteRepository.starLater(null, album.id, null, true)
             }
         })
-
-        album.starred = Date()
-        _album.update { album }
-
+        _album.update { album.withStarred(Date()) }
         if (Preferences.isStarredAlbumsSyncEnabled()) {
             viewModelScope.launch {
                 val songs = getAlbumTracks().first()
@@ -163,5 +170,36 @@ class AlbumBottomSheetViewModel(
                 }
             }
         }
+    }
+
+    private fun AlbumID3.withStarred(starred: Date?): AlbumID3 {
+        return AlbumID3(
+            id = id,
+            name = name,
+            artist = artist,
+            artistId = artistId,
+            coverArtId = coverArtId,
+            songCount = songCount,
+            duration = duration,
+            playCount = playCount,
+            created = created,
+            starred = starred,
+            year = year,
+            genre = genre,
+            played = played,
+            userRating = userRating,
+            recordLabels = recordLabels,
+            musicBrainzId = musicBrainzId,
+            genres = genres,
+            artists = artists,
+            displayArtist = displayArtist,
+            releaseTypes = releaseTypes,
+            moods = moods,
+            sortName = sortName,
+            originalReleaseDate = originalReleaseDate,
+            releaseDate = releaseDate,
+            isCompilation = isCompilation,
+            discTitles = discTitles,
+        )
     }
 }

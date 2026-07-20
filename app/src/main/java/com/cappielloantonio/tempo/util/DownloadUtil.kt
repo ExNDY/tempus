@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.util
 import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSource
@@ -28,15 +27,14 @@ import java.net.CookieManager
 import java.net.CookiePolicy
 import java.util.concurrent.Executors
 
-@UnstableApi
+@androidx.media3.common.util.UnstableApi
 object DownloadUtil {
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
-    const val DOWNLOAD_NOTIFICATION_SUCCESSFUL_GROUP = "com.cappielloantonio.tempo.SuccessfulDownload"
+    const val DOWNLOAD_NOTIFICATION_SUCCESSFUL_GROUP =
+        "com.cappielloantonio.tempo.SuccessfulDownload"
     const val DOWNLOAD_NOTIFICATION_FAILED_GROUP = "com.cappielloantonio.tempo.FailedDownload"
-
     private const val STREAMING_CACHE_CONTENT_DIRECTORY = "streaming_cache"
     private const val DOWNLOAD_CONTENT_DIRECTORY = "downloads"
-
     private var dataSourceFactory: DataSource.Factory? = null
     private var httpDataSourceFactory: DataSource.Factory? = null
     private var databaseProvider: DatabaseProvider? = null
@@ -54,7 +52,10 @@ object DownloadUtil {
     }
 
     @JvmStatic
-    fun buildRenderersFactory(context: Context, preferExtensionRenderer: Boolean): RenderersFactory {
+    fun buildRenderersFactory(
+        context: Context,
+        preferExtensionRenderer: Boolean
+    ): RenderersFactory {
         val extensionRendererMode = if (useExtensionRenderers()) {
             if (preferExtensionRenderer) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
         } else {
@@ -80,23 +81,6 @@ object DownloadUtil {
 
     @JvmStatic
     @Synchronized
-    fun getHttpDataSourceFactoryForRadio(): DataSource.Factory {
-        val cookieManager = CookieManager()
-        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
-        CookieHandler.setDefault(cookieManager)
-
-        // Create a factory with ICY metadata support for radio streams
-        val defaultRequestProperties = HashMap<String, String>()
-        defaultRequestProperties["Icy-MetaData"] = "1"
-        defaultRequestProperties["User-Agent"] = "Tempus/1.0"
-
-        return DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-            .setDefaultRequestProperties(defaultRequestProperties)
-    }
-
-    @JvmStatic
-    @Synchronized
     fun getUpstreamDataSourceFactory(context: Context): DataSource.Factory {
         val upstreamFactory = DefaultDataSource.Factory(context, getHttpDataSourceFactory())
         dataSourceFactory = buildReadOnlyCacheDataSource(upstreamFactory, getDownloadCache(context))
@@ -105,19 +89,10 @@ object DownloadUtil {
 
     @JvmStatic
     @Synchronized
-    fun getUpstreamDataSourceFactoryForRadio(context: Context): DataSource.Factory {
-        val upstreamFactory =
-            DefaultDataSource.Factory(context, getHttpDataSourceFactoryForRadio())
-        return buildReadOnlyCacheDataSource(upstreamFactory, getDownloadCache(context))
-    }
-
-    @JvmStatic
-    @Synchronized
     fun getCacheDataSourceFactory(context: Context): DataSource.Factory {
         val streamCacheFactory = CacheDataSource.Factory()
             .setCache(getStreamingCache(context))
             .setUpstreamDataSourceFactory(getUpstreamDataSourceFactory(context))
-
         val resolvingFactory = ResolvingDataSource.Factory(
             StreamingCacheDataSource.Factory(streamCacheFactory)
         ) { dataSpec: DataSpec ->
@@ -125,7 +100,8 @@ object DownloadUtil {
             builder.setFlags(dataSpec.flags and DataSpec.FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN.inv())
             builder.build()
         }
-        dataSourceFactory = buildReadOnlyCacheDataSource(resolvingFactory, getDownloadCache(context))
+        dataSourceFactory =
+            buildReadOnlyCacheDataSource(resolvingFactory, getDownloadCache(context))
         return dataSourceFactory!!
     }
 
@@ -176,7 +152,7 @@ object DownloadUtil {
                 File(getStreamingCacheDirectory(context), STREAMING_CACHE_CONTENT_DIRECTORY)
             streamingCache = SimpleCache(
                 streamingCacheContentDirectory,
-                LeastRecentlyUsedCacheEvictor((Preferences.getStreamingCacheSize() * 1024 * 1024).toLong()),
+                LeastRecentlyUsedCacheEvictor(Preferences.getStreamingCacheSize() * 1024 * 1024),
                 getDatabaseProvider(context)
             )
         }

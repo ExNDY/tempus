@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.service
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.Log
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.offline.Download
@@ -16,7 +15,7 @@ import com.cappielloantonio.tempo.repository.DownloadRepository
 import com.cappielloantonio.tempo.util.DownloadUtil
 import java.io.IOException
 
-@UnstableApi
+@androidx.media3.common.util.UnstableApi
 class DownloaderManager(
     context: Context,
     private val dataSourceFactory: DataSource.Factory,
@@ -40,14 +39,10 @@ class DownloaderManager(
             val dataString = "$batchName|$index|$total"
             data = Util.getUtf8Bytes(dataString)
         }
-
         return DownloadHelper
-            .forMediaItem(
-                context,
-                mediaItem,
-                DownloadUtil.buildRenderersFactory(context, false),
-                dataSourceFactory
-            )
+            .Factory()
+            .setDataSourceFactory(dataSourceFactory)
+            .create(mediaItem)
             .getDownloadRequest(mediaItem.mediaId, data)
             .copyWithId(mediaItem.mediaId)
     }
@@ -67,7 +62,6 @@ class DownloaderManager(
 
     fun download(mediaItem: MediaItem, download: com.cappielloantonio.tempo.model.Download) {
         download.downloadUri = mediaItem.requestMetadata.mediaUri.toString()
-
         DownloadService.sendAddDownload(
             context,
             DownloaderService::class.java,
@@ -85,12 +79,10 @@ class DownloaderManager(
         if (mediaItems.isNotEmpty()) {
             batchName = mediaItems[0].mediaMetadata.albumTitle?.toString() ?: "Multiple tracks"
         }
-
         for (counter in mediaItems.indices) {
             val mediaItem = mediaItems[counter]
             val downloadModel = downloadsList[counter]
             downloadModel.downloadUri = mediaItem.requestMetadata.mediaUri.toString()
-
             DownloadService.sendAddDownload(
                 context,
                 DownloaderService::class.java,
@@ -130,13 +122,12 @@ class DownloaderManager(
     private fun loadDownloads() {
         try {
             val loadedDownloads = downloadIndex.getDownloads()
-            try {
+
+            loadedDownloads.use { loadedDownloads ->
                 while (loadedDownloads.moveToNext()) {
                     val download = loadedDownloads.download
                     downloads[download.request.id] = download
                 }
-            } finally {
-                loadedDownloads.close()
             }
         } catch (e: IOException) {
             Log.w(TAG, "Failed to query downloads", e)

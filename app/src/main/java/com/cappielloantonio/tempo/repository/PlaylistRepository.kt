@@ -1,12 +1,9 @@
 package com.cappielloantonio.tempo.repository
-
 import android.os.Handler
 import android.os.Looper
-import androidx.annotation.OptIn
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.database.AppDatabase
 import com.cappielloantonio.tempo.model.PinnedPlaylist
@@ -18,26 +15,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
-
-@UnstableApi
 class PlaylistRepository {
     private val pinnedPlaylistDao = AppDatabase.getInstance().pinnedPlaylistDao()
     private val playlistDao = AppDatabase.getInstance().playlistDao()
     private val playlistSongDao = AppDatabase.getInstance().playlistSongDao()
     private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
-
     companion object {
         private val playlistUpdateTrigger = MutableLiveData<Boolean>()
         private val allPlaylistsLiveData = MutableLiveData<List<Playlist>>()
     }
-
     fun getPlaylistUpdateTrigger(): LiveData<Boolean> = playlistUpdateTrigger
-
     fun notifyPlaylistChanged() {
         playlistUpdateTrigger.postValue(true)
         refreshAllPlaylists()
     }
-
     private fun handleMissingPlaylist(id: String, onMissing: Runnable?) {
         CoroutineScope(Dispatchers.IO).launch {
             playlistSongDao.deleteForPlaylist(id)
@@ -47,12 +38,10 @@ class PlaylistRepository {
             refreshAllPlaylists()
         }
     }
-
     fun getAllPlaylists(owner: LifecycleOwner): LiveData<List<Playlist>> {
         refreshAllPlaylists()
         return allPlaylistsLiveData
     }
-
     fun refreshAllPlaylists() {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.getPlaylists()
@@ -62,26 +51,22 @@ class PlaylistRepository {
             }
         }
     }
-
     private fun cacheAllPlaylists(playlists: List<Playlist>) {
         CoroutineScope(Dispatchers.IO).launch {
             val cachedPlaylists = playlistDao.getAllSync()
-            if (cachedPlaylists != null) {
-                val remoteIds = playlists.map { it.id }.toSet()
-                cachedPlaylists.forEach { cached ->
-                    if (!remoteIds.contains(cached.id)) {
-                        playlistSongDao.deleteForPlaylist(cached.id)
-                        pinnedPlaylistDao.unpin(cached.id)
-                        playlistDao.delete(cached)
-                        Log.d("PlaylistRepository", "Removed orphaned playlist ${cached.id} from local DB.")
-                    }
+            val remoteIds = playlists.map { it.id }.toSet()
+            cachedPlaylists.forEach { cached ->
+                if (!remoteIds.contains(cached.id)) {
+                    playlistSongDao.deleteForPlaylist(cached.id)
+                    pinnedPlaylistDao.unpin(cached.id)
+                    playlistDao.delete(cached)
+                    Log.d("PlaylistRepository", "Removed orphaned playlist ${cached.id} from local DB.")
                 }
             }
             playlistDao.insertAll(playlists)
             Log.d("PlaylistRepository", "Cached ${playlists.size} playlists to local DB.")
         }
     }
-
     fun getPlaylists(random: Boolean, size: Int): MutableLiveData<List<Playlist>> {
         val listLivePlaylists = MutableLiveData<List<Playlist>>(ArrayList())
         CoroutineScope(Dispatchers.IO).launch {
@@ -99,15 +84,12 @@ class PlaylistRepository {
         }
         return listLivePlaylists
     }
-
     fun getSortedPlaylists(sortOrder: String): LiveData<List<Playlist>> {
         return playlistDao.getSortedPlaylists(sortOrder)
     }
-
     fun getSortedPlaylistsPreview(sortOrder: String, limit: Int): LiveData<List<Playlist>> {
         return playlistDao.getSortedPlaylistsPreview(sortOrder, limit)
     }
-
     fun getPlaylistSongs(id: String): MutableLiveData<List<Child>?> {
         val listLivePlaylistSongs = MutableLiveData<List<Child>?>()
         CoroutineScope(Dispatchers.IO).launch {
@@ -129,7 +111,6 @@ class PlaylistRepository {
         }
         return listLivePlaylistSongs
     }
-
     private fun cachePlaylistSongs(playlistId: String, songs: List<Child>) {
         CoroutineScope(Dispatchers.IO).launch {
             if (songs.isEmpty()) {
@@ -141,7 +122,6 @@ class PlaylistRepository {
             playlistSongDao.insertAll(playlistSongs)
         }
     }
-
     private fun fetchCachedPlaylistSongs(playlistId: String, liveData: MutableLiveData<List<Child>?>) {
         CoroutineScope(Dispatchers.IO).launch {
             val cached = playlistSongDao.getSongsForPlaylistSync(playlistId)
@@ -162,7 +142,6 @@ class PlaylistRepository {
             }
         }
     }
-
     fun getPlaylist(id: String): MutableLiveData<Playlist?> {
         val playlistLiveData = MutableLiveData<Playlist?>()
         CoroutineScope(Dispatchers.IO).launch {
@@ -182,13 +161,11 @@ class PlaylistRepository {
         }
         return playlistLiveData
     }
-
     interface AddToPlaylistCallback {
         fun onSuccess()
         fun onFailure()
         fun onAllSkipped()
     }
-
     fun addSongToPlaylist(playlistId: String, songsId: ArrayList<String>, playlistVisibilityIsPublic: Boolean?, callback: AddToPlaylistCallback?) {
         if (songsId.isEmpty()) {
             callback?.onAllSkipped()
@@ -204,7 +181,6 @@ class PlaylistRepository {
             }
         }
     }
-
     fun removeSongFromPlaylist(playlistId: String, index: Int, callback: AddToPlaylistCallback?) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.updatePlaylist(playlistId, null, true, null, listOf(index))
@@ -216,7 +192,6 @@ class PlaylistRepository {
             }
         }
     }
-
     fun createPlaylist(playlistId: String?, name: String?, songsId: ArrayList<String>, callback: PlaylistActionCallback?) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.createPlaylist(playlistId, name, songsId)
@@ -228,7 +203,6 @@ class PlaylistRepository {
             }
         }
     }
-
     fun updatePlaylist(playlistId: String, name: String?, songsId: ArrayList<String>, callback: PlaylistActionCallback?) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.updatePlaylist(playlistId, name, true, songsId, null)
@@ -241,24 +215,20 @@ class PlaylistRepository {
             }
         }
     }
-
     fun pin(id: String) {
         CoroutineScope(Dispatchers.IO).launch {
             pinnedPlaylistDao.pin(id)
         }
     }
-
     fun unpin(id: String) {
         CoroutineScope(Dispatchers.IO).launch {
             pinnedPlaylistDao.unpin(id)
         }
     }
-
     interface PlaylistActionCallback {
         fun onSuccess()
         fun onFailure()
     }
-
     fun deletePlaylist(playlistId: String, callback: PlaylistActionCallback?) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = subsonicRepository.deletePlaylist(playlistId)
@@ -272,21 +242,17 @@ class PlaylistRepository {
             }
         }
     }
-
     fun getPinnedPlaylists(): LiveData<List<PinnedPlaylist>> = pinnedPlaylistDao.getAllPinnedIds()
-
     fun insert(playlist: Playlist) {
         CoroutineScope(Dispatchers.IO).launch {
             playlistDao.insert(playlist)
         }
     }
-
     fun delete(playlist: Playlist) {
         CoroutineScope(Dispatchers.IO).launch {
             playlistDao.delete(playlist)
         }
     }
-
     fun updatePinnedPlaylists(forceIds: List<String>? = null) {
         CoroutineScope(Dispatchers.IO).launch {
             val pinned = playlistDao.getAllSync()
@@ -306,7 +272,6 @@ class PlaylistRepository {
         }
     }
 }
-
 private object Log {
     fun d(tag: String, msg: String) {
         android.util.Log.d(tag, msg)

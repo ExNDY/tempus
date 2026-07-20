@@ -13,8 +13,11 @@ import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.util.ConstantsAA
 import com.cappielloantonio.tempo.util.Preferences
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.*
-import java.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
 @UnstableApi
@@ -46,13 +49,30 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (mixType == ConstantsAA.QUICKMIX_ID) {
-                    val response = subsonicRepository.getAlbumList2("recent", ConstantsAA.NUMBER_OF_RECENT_ALBUMS_FOR_MIX, 0, null, null)
-                    val recentAlbums = response?.albumList2?.albums?.toMutableList() ?: mutableListOf()
-                    
+                    val response = subsonicRepository.getAlbumList2(
+                        "recent",
+                        ConstantsAA.NUMBER_OF_RECENT_ALBUMS_FOR_MIX,
+                        0,
+                        null,
+                        null
+                    )
+                    val recentAlbums =
+                        response?.albumList2?.albums?.toMutableList() ?: mutableListOf()
+
                     if (recentAlbums.isNotEmpty()) {
                         Log.d(TAG, "$mixType recent albums loaded: ${recentAlbums.size}")
                         val usedTrackIds = mutableSetOf(usedTrackId)
-                        runMixLoop(mixType, count, usedTrackIds, recentAlbums, mutableListOf(), mutableListOf(), mutableListOf(), emptySet(), browserFuture)
+                        runMixLoop(
+                            mixType,
+                            count,
+                            usedTrackIds,
+                            recentAlbums,
+                            mutableListOf(),
+                            mutableListOf(),
+                            mutableListOf(),
+                            emptySet(),
+                            browserFuture
+                        )
                     } else {
                         fallbackToRandomSongs(count, usedTrackId, browserFuture)
                     }
@@ -60,13 +80,25 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
                 }
 
                 // MY_MIX and DISCOVERY_MIX
-                val recentResponse = async { subsonicRepository.getAlbumList2("recent", ConstantsAA.NUMBER_OF_RECENT_ALBUMS_FOR_MIX, 0, null, null) }
+                val recentResponse = async {
+                    subsonicRepository.getAlbumList2(
+                        "recent",
+                        ConstantsAA.NUMBER_OF_RECENT_ALBUMS_FOR_MIX,
+                        0,
+                        null,
+                        null
+                    )
+                }
                 val starredResponse = async { subsonicRepository.getStarred2() }
-                val recentTracksIds = async { 
-                    chronologyDao.getLastPlayedSync(Preferences.getServerId().orEmpty(), ConstantsAA.NUMBER_OF_RECENT_TRACKS_FOR_MIX).map { it.id }.toSet()
+                val recentTracksIds = async {
+                    chronologyDao.getLastPlayedSync(
+                        server = Preferences.getServerId().orEmpty(),
+                        count = ConstantsAA.NUMBER_OF_RECENT_TRACKS_FOR_MIX
+                    ).map { it.id }.toSet()
                 }
 
-                val recentAlbums = recentResponse.await()?.albumList2?.albums?.toMutableList() ?: mutableListOf()
+                val recentAlbums =
+                    recentResponse.await()?.albumList2?.albums?.toMutableList() ?: mutableListOf()
                 val starred = starredResponse.await()?.starred2
                 val starredAlbums = starred?.albums?.toMutableList() ?: mutableListOf()
                 val starredArtists = starred?.artists?.toMutableList() ?: mutableListOf()
@@ -77,7 +109,17 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
                     fallbackToRandomSongs(count, usedTrackId, browserFuture)
                 } else {
                     val usedTrackIds = mutableSetOf(usedTrackId)
-                    runMixLoop(mixType, count, usedTrackIds, recentAlbums, starredAlbums, starredArtists, starredTracks, recentTracks, browserFuture)
+                    runMixLoop(
+                        mixType,
+                        count,
+                        usedTrackIds,
+                        recentAlbums,
+                        starredAlbums,
+                        starredArtists,
+                        starredTracks,
+                        recentTracks,
+                        browserFuture
+                    )
                 }
 
             } catch (e: Exception) {
@@ -101,14 +143,21 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
     ) {
         val mixTracks = mutableListOf<Child>()
         var cycleIndex = 1
-        
+
         var recentIdx = 0
         var starredAlbumIdx = 0
         var starredArtistIdx = 0
         var starredTracksIdx = 0
 
         while (mixTracks.size < count && cycleIndex <= MAX_CYCLES) {
-            val currentStep = getNextStep(cycleIndex, mixType, recentAlbums, starredAlbums, starredArtists, starredTracks)
+            val currentStep = getNextStep(
+                cycleIndex,
+                mixType,
+                recentAlbums,
+                starredAlbums,
+                starredArtists,
+                starredTracks
+            )
             var songIdAdded: String? = null
 
             when (currentStep) {
@@ -155,7 +204,8 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
             if (mixType == ConstantsAA.DISCOVERYMIX_ID && songIdAdded != null && mixTracks.size < count) {
                 val similarResponse = subsonicRepository.getSimilarSongs(songIdAdded, 10)
                 val similar = similarResponse?.similarSongs?.songs ?: emptyList()
-                val candidate = similar.shuffled().find { !usedTrackIds.contains(it.id) && !recentTrackIds.contains(it.id) }
+                val candidate = similar.shuffled()
+                    .find { !usedTrackIds.contains(it.id) && !recentTrackIds.contains(it.id) }
                 candidate?.let {
                     mixTracks.add(it)
                     usedTrackIds.add(it.id)
@@ -170,7 +220,11 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
         }
     }
 
-    private suspend fun fetchAndAddFromAlbum(albumId: String?, mixTracks: MutableList<Child>, usedTrackIds: MutableSet<String>): String? {
+    private suspend fun fetchAndAddFromAlbum(
+        albumId: String?,
+        mixTracks: MutableList<Child>,
+        usedTrackIds: MutableSet<String>
+    ): String? {
         if (albumId == null) return null
         val response = subsonicRepository.getAlbum(albumId)
         val songs = response?.album?.songs ?: emptyList()
@@ -213,7 +267,11 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
         }
     }
 
-    private suspend fun fallbackToRandomSongs(count: Int, usedTrackId: String, browserFuture: ListenableFuture<MediaBrowser>) {
+    private suspend fun fallbackToRandomSongs(
+        count: Int,
+        usedTrackId: String,
+        browserFuture: ListenableFuture<MediaBrowser>
+    ) {
         val response = subsonicRepository.getRandomSongs(count, null, null, null)
         val songs = response?.randomSongs?.songs?.toMutableList() ?: mutableListOf()
         songs.removeAll { it.id == usedTrackId }
@@ -223,9 +281,14 @@ class MadeForYouBuilder(private val repository: AutomotiveRepository) {
         }
     }
 
-    private fun enqueueMix(mixTracks: List<Child>, mixType: String, browserFuture: ListenableFuture<MediaBrowser>) {
+    private fun enqueueMix(
+        mixTracks: List<Child>,
+        mixType: String,
+        browserFuture: ListenableFuture<MediaBrowser>
+    ) {
         Log.d(TAG, "$mixType complete with ${mixTracks.size} tracks, enqueuing")
-        val finalTracks = if (mixType == ConstantsAA.DISCOVERYMIX_ID) mixTracks.shuffled() else mixTracks
+        val finalTracks =
+            if (mixType == ConstantsAA.DISCOVERYMIX_ID) mixTracks.shuffled() else mixTracks
         repository.setChildrenMetadata(finalTracks)
         MediaManager.enqueue(browserFuture, finalTracks, true)
     }

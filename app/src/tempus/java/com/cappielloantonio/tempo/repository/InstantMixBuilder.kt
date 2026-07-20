@@ -6,14 +6,13 @@ import androidx.media3.session.MediaBrowser
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository
 import com.cappielloantonio.tempo.service.MediaManager
-import com.cappielloantonio.tempo.subsonic.models.AlbumID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
+import java.util.Random
 import java.util.concurrent.atomic.AtomicBoolean
 
 @UnstableApi
@@ -66,7 +65,10 @@ class InstantMixBuilder(private val repository: AutomotiveRepository) {
                             if (!usedTrackIds.contains(candidate.id)) {
                                 mixTracks.add(candidate)
                                 usedTrackIds.add(candidate.id)
-                                Log.d(TAG, "Added track [${mixTracks.size}/$count] ${candidate.title} from ${album.name}")
+                                Log.d(
+                                    TAG,
+                                    "Added track [${mixTracks.size}/$count] ${candidate.title} from ${album.name}"
+                                )
                             }
                         }
 

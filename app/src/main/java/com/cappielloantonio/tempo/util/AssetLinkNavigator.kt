@@ -1,6 +1,5 @@
 package com.cappielloantonio.tempo.util
 
-import android.os.Bundle
 import android.widget.Toast
 import androidx.lifecycle.Observer
 import com.cappielloantonio.tempo.R
@@ -10,7 +9,7 @@ import com.cappielloantonio.tempo.repository.PlaylistRepository
 import com.cappielloantonio.tempo.repository.SongRepository
 import com.cappielloantonio.tempo.subsonic.models.Genre
 import com.cappielloantonio.tempo.ui.activity.MainActivity
-import com.cappielloantonio.tempo.ui.fragment.bottomsheetdialog.SongBottomSheetDialog
+import com.cappielloantonio.tempo.viewmodel.SongListPageArgs
 
 class AssetLinkNavigator(private val activity: MainActivity) {
     private val songRepository = SongRepository()
@@ -42,11 +41,9 @@ class AssetLinkNavigator(private val activity: MainActivity) {
                     Toast.makeText(activity, R.string.asset_link_error_song, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val dialog = SongBottomSheetDialog()
-                val args = Bundle()
-                args.putSerializable(Constants.TRACK_OBJECT, value)
-                dialog.arguments = args
-                dialog.show(activity.supportFragmentManager, null)
+                activity.runOnUiThread {
+                    activity.openSongBottomSheetRoute(value)
+                }
             }
         }
         liveData.observe(activity, observer)
@@ -61,9 +58,7 @@ class AssetLinkNavigator(private val activity: MainActivity) {
                     Toast.makeText(activity, R.string.asset_link_error_album, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val args = Bundle()
-                args.putSerializable(Constants.ALBUM_OBJECT, value)
-                navigateSafely(R.id.albumPageFragment, args)
+                activity.openAlbumRoute(value.id.orEmpty())
             }
         }
         liveData.observe(activity, observer)
@@ -78,9 +73,7 @@ class AssetLinkNavigator(private val activity: MainActivity) {
                     Toast.makeText(activity, R.string.asset_link_error_artist, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val args = Bundle()
-                args.putSerializable(Constants.ARTIST_OBJECT, value)
-                navigateSafely(R.id.artistPageFragment, args)
+                activity.openArtistRoute(value.id.orEmpty())
             }
         }
         liveData.observe(activity, observer)
@@ -95,9 +88,7 @@ class AssetLinkNavigator(private val activity: MainActivity) {
                     Toast.makeText(activity, R.string.asset_link_error_playlist, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val args = Bundle()
-                args.putSerializable(Constants.PLAYLIST_OBJECT, value)
-                navigateSafely(R.id.playlistPageFragment, args)
+                activity.openPlaylistRoute(value.id)
             }
         }
         liveData.observe(activity, observer)
@@ -114,39 +105,29 @@ class AssetLinkNavigator(private val activity: MainActivity) {
         genre.genre = trimmed
         genre.songCount = 0
         genre.albumCount = 0
-        val args = Bundle()
-        args.putSerializable(Constants.GENRE_OBJECT, genre)
-        args.putString(Constants.MEDIA_BY_GENRE, Constants.MEDIA_BY_GENRE)
-        navigateSafely(R.id.songListPageFragment, args)
+        activity.runOnUiThread {
+            activity.openSongListRoute(
+                SongListPageArgs(
+                    type = Constants.MEDIA_BY_GENRE,
+                    genre = genre,
+                ),
+            )
+        }
     }
 
     private fun openYear(yearValue: String) {
         try {
             val year = yearValue.trim().toInt()
-            val args = Bundle()
-            args.putInt("year_object", year)
-            args.putString(Constants.MEDIA_BY_YEAR, Constants.MEDIA_BY_YEAR)
-            navigateSafely(R.id.songListPageFragment, args)
-        } catch (ex: NumberFormatException) {
-            Toast.makeText(activity, R.string.asset_link_error_unsupported, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun navigateSafely(destinationId: Int, args: Bundle?) {
-        activity.runOnUiThread {
-            val navController = activity.navController
-            if (navController == null) {
-                return@runOnUiThread
-            }
-            if (navController.currentDestination?.id == destinationId) {
-                navController.navigate(
-                    destinationId,
-                    args,
-                    androidx.navigation.NavOptions.Builder().setLaunchSingleTop(true).build()
+            activity.runOnUiThread {
+                activity.openSongListRoute(
+                    SongListPageArgs(
+                        type = Constants.MEDIA_BY_YEAR,
+                        year = year,
+                    ),
                 )
-            } else {
-                navController.navigate(destinationId, args)
             }
+        } catch (_: NumberFormatException) {
+            Toast.makeText(activity, R.string.asset_link_error_unsupported, Toast.LENGTH_SHORT).show()
         }
     }
 }

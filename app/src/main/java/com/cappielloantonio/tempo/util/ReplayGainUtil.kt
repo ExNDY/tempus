@@ -3,15 +3,11 @@ package com.cappielloantonio.tempo.util
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Metadata
 import androidx.media3.common.Player
-import androidx.media3.common.TrackGroup
 import androidx.media3.common.Tracks
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.MetadataRetriever
 import androidx.media3.exoplayer.source.TrackGroupArray
 import androidx.media3.extractor.metadata.id3.InternalFrame
 import androidx.media3.extractor.metadata.id3.TextInformationFrame
@@ -25,8 +21,9 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.math.log10
 
-@OptIn(UnstableApi::class)
+@androidx.media3.common.util.UnstableApi
 object ReplayGainUtil {
     private const val TAG = "ReplayGainUtil"
     private val tags = arrayOf(
@@ -34,7 +31,6 @@ object ReplayGainUtil {
         "R128_TRACK_GAIN", "R128_ALBUM_GAIN",
         "REPLAYGAIN_TRACK_PEAK", "REPLAYGAIN_ALBUM_PEAK"
     )
-
     private val gainDataMap = ConcurrentHashMap<String, List<ReplayGain>>()
     private val prefetchedIds = ConcurrentHashMap.newKeySet<String>()
     private val prefetchExecutor: ExecutorService = Executors.newFixedThreadPool(2)
@@ -58,15 +54,9 @@ object ReplayGainUtil {
     fun prefetchQueueGains(player: Player) {
         if (Preferences.getReplayGainMode() == "disabled") return
         playerRef = WeakReference(player)
-
         for (i in 0 until player.mediaItemCount) {
             val item = player.getMediaItemAt(i)
-            if (item.mediaId == null || item.localConfiguration == null) continue
-
-            val mediaType = item.mediaMetadata.extras?.getString("type")
-            if (Constants.MEDIA_TYPE_RADIO == mediaType) continue
-            if (item.mediaId.startsWith("ir-")) continue
-
+            if (item.localConfiguration == null) continue
             val serverInfo = extractServerInfo(item)
             if (serverInfo != null) {
                 if (prefetchedIds.add(item.mediaId)) {
@@ -75,7 +65,6 @@ object ReplayGainUtil {
                 }
                 continue
             }
-
             if (!prefetchedIds.add(item.mediaId)) continue
             submitPrefetch(item)
         }
@@ -84,49 +73,55 @@ object ReplayGainUtil {
     private fun submitPrefetch(item: MediaItem) {
         prefetchExecutor.execute {
             try {
-                MetadataRetriever.Builder(App.getInstance(), item).build().use { retriever ->
-                    val trackGroups = retriever.retrieveTrackGroups().get(20, TimeUnit.SECONDS)
-                    val metadataList = extractMetadata(trackGroups)
-                    val gains = getReplayGains(metadataList)
-
-                    val prefetchedGainsValid = resolveTrackGain(gains) != 0f || resolveAlbumGain(gains) != 0f
-                    if (prefetchedGainsValid) {
-                        gainDataMap[item.mediaId] = gains
-                    }
-                    Log.d(
-                        TAG, "Prefetched " + item.mediaId +
-                                " trackGain=" + resolveTrackGain(gains) +
-                                " valid=" + prefetchedGainsValid
-                    )
-
-                    mainHandler.post {
-                        val p = playerRef.get() ?: return@post
-                        val current = p.currentMediaItem
-                        if (current != null && item.mediaId == current.mediaId) {
-                            val gain = resolveGain(p, gains)
-                            if (gain != 0f) {
-                                val peak = resolvePeak(p, gains)
-                                val totalGain = computeTotalGain(gain, peak)
-                                Log.d(
-                                    TAG, "Late prefetch for current track " + item.mediaId +
-                                            " — applying gain immediately totalGain=" + totalGain
-                                )
-                                audioProcessor.setGainImmediate(totalGain)
-                            } else {
-                                Log.d(
-                                    TAG,
-                                    "Late prefetch for current track " + item.mediaId + " — empty gains, skipping setGainImmediate"
-                                )
-                            }
+                val metadataList = retrieveFallbackMetadata(item)
+                val gains = getReplayGains(metadataList)
+                val prefetchedGainsValid =
+                    resolveTrackGain(gains) != 0f || resolveAlbumGain(gains) != 0f
+                if (prefetchedGainsValid) {
+                    gainDataMap[item.mediaId] = gains
+                }
+                Log.d(
+                    TAG, "Prefetched " + item.mediaId +
+                        " trackGain=" + resolveTrackGain(gains) +
+                        " valid=" + prefetchedGainsValid
+                )
+                mainHandler.post {
+                    val p = playerRef.get() ?: return@post
+                    val current = p.currentMediaItem
+                    if (current != null && item.mediaId == current.mediaId) {
+                        val gain = resolveGain(p, gains)
+                        if (gain != 0f) {
+                            val peak = resolvePeak(p, gains)
+                            val totalGain = computeTotalGain(gain, peak)
+                            Log.d(
+                                TAG, "Late prefetch for current track " + item.mediaId +
+                                    " — applying gain immediately totalGain=" + totalGain
+                            )
+                            audioProcessor.setGainImmediate(totalGain)
+                        } else {
+                            Log.d(
+                                TAG,
+                                "Late prefetch for current track " + item.mediaId + " — empty gains, skipping setGainImmediate"
+                            )
                         }
-                        queuePendingForNextTrack(p)
                     }
+                    queuePendingForNextTrack(p)
                 }
             } catch (e: Throwable) {
                 Log.d(TAG, "Prefetch failed for " + item.mediaId + ": " + e)
                 prefetchedIds.remove(item.mediaId)
             }
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun retrieveFallbackMetadata(item: MediaItem): List<Metadata> {
+        // Used only when the server response does not include ReplayGain metadata.
+        androidx.media3.exoplayer.MetadataRetriever.Builder(App.getInstance(), item).build()
+            .use { retriever ->
+                val trackGroups = retriever.retrieveTrackGroups().get(20, TimeUnit.SECONDS)
+                return extractMetadata(trackGroups)
+            }
     }
 
     @JvmStatic
@@ -136,26 +131,23 @@ object ReplayGainUtil {
             Log.d(TAG, "applyGain: null mediaItem or mediaId, skipping")
             return
         }
-
         val serverInfo = extractServerInfo(mediaItem)
         if (serverInfo != null) {
             val gains = serverInfoToGains(serverInfo)
             gainDataMap[mediaItem.mediaId] = gains
             prefetchedIds.add(mediaItem.mediaId)
-
             val gain = resolveGain(player, gains)
             val peak = resolvePeak(player, gains)
             val totalGain = computeTotalGain(gain, peak)
             Log.d(
                 TAG, "applyGain: server RG for " + mediaItem.mediaId +
-                        " gain=" + gain + " peak=" + peak +
-                        " totalGain=" + totalGain
+                    " gain=" + gain + " peak=" + peak +
+                    " totalGain=" + totalGain
             )
             audioProcessor.setGainImmediate(totalGain)
             queuePendingForNextTrack(player)
             return
         }
-
         val gains = gainDataMap[mediaItem.mediaId]
         if (gains != null) {
             val gain = resolveGain(player, gains)
@@ -164,20 +156,23 @@ object ReplayGainUtil {
                 val totalGain = computeTotalGain(gain, peak)
                 Log.d(
                     TAG, "applyGain: tag cache hit for " + mediaItem.mediaId +
-                            " gain=" + gain + " peak=" + peak +
-                            " totalGain=" + totalGain
+                        " gain=" + gain + " peak=" + peak +
+                        " totalGain=" + totalGain
                 )
                 audioProcessor.setGainImmediate(totalGain)
             } else {
                 val preampOnly = computeTotalGain(0f, 0f)
                 Log.d(
                     TAG, "applyGain: cache hit but gain=0 for " + mediaItem.mediaId +
-                            ", applying preamp-only totalGain=" + preampOnly
+                        ", applying preamp-only totalGain=" + preampOnly
                 )
                 audioProcessor.setGainImmediate(preampOnly)
             }
         } else {
-            Log.d(TAG, "applyGain: cache miss for " + mediaItem.mediaId + ", holding current gain until onTracksChanged")
+            Log.d(
+                TAG,
+                "applyGain: cache miss for " + mediaItem.mediaId + ", holding current gain until onTracksChanged"
+            )
         }
         queuePendingForNextTrack(player)
     }
@@ -186,45 +181,40 @@ object ReplayGainUtil {
     fun setReplayGain(player: Player, tracks: Tracks?) {
         if (tracks == null || tracks.groups.isEmpty()) return
         val currentItem = player.currentMediaItem
-
         if (currentItem != null && extractServerInfo(currentItem) != null) {
             Log.d(
                 TAG, "setReplayGain: server RG already applied for " +
-                        currentItem.mediaId + ", ignoring tag-extracted values"
+                    currentItem.mediaId + ", ignoring tag-extracted values"
             )
             queuePendingForNextTrack(player)
             return
         }
-
         val metadataList = extractMetadata(tracks)
         var gains = getReplayGains(metadataList)
-
         val mediaId = currentItem?.mediaId
         val cached = if (mediaId != null) gainDataMap[mediaId] else null
         val extractedIsEmpty = resolveTrackGain(gains) == 0f && resolveAlbumGain(gains) == 0f
         if (extractedIsEmpty && cached != null) {
             Log.d(
                 TAG, "setReplayGain: extracted gains empty (seek past header?), " +
-                        "keeping cached gains for " + mediaId
+                    "keeping cached gains for " + mediaId
             )
             gains = cached
         } else if (mediaId != null) {
             gainDataMap[mediaId] = gains
             prefetchedIds.add(mediaId)
         }
-
         val gain = resolveGain(player, gains)
         if (gain == 0f) {
             val preampOnly = computeTotalGain(0f, 0f)
             Log.d(
                 TAG, "setReplayGain: no effective gain data for " + mediaId +
-                        ", applying preamp-only totalGain=" + preampOnly
+                    ", applying preamp-only totalGain=" + preampOnly
             )
             audioProcessor.setGainImmediate(preampOnly)
             queuePendingForNextTrack(player)
             return
         }
-
         val peak = resolvePeak(player, gains)
         audioProcessor.setGainImmediate(computeTotalGain(gain, peak))
         queuePendingForNextTrack(player)
@@ -237,55 +227,66 @@ object ReplayGainUtil {
             Log.d(TAG, "reapplyCurrentTrackGain: no current item, skipping")
             return
         }
-
         val serverInfo = extractServerInfo(currentItem)
         if (serverInfo != null) {
             val gains = serverInfoToGains(serverInfo)
             val gain = resolveGain(player, gains)
             val peak = resolvePeak(player, gains)
             val totalGain = computeTotalGain(gain, peak)
-            Log.d(TAG, "reapplyCurrentTrackGain: server RG for " + currentItem.mediaId + " totalGain=" + totalGain)
+            Log.d(
+                TAG,
+                "reapplyCurrentTrackGain: server RG for " + currentItem.mediaId + " totalGain=" + totalGain
+            )
             audioProcessor.setGainImmediate(totalGain)
             return
         }
-
         val cached = gainDataMap[currentItem.mediaId]
         if (cached != null) {
             val gain = resolveGain(player, cached)
             if (gain != 0f) {
                 val peak = resolvePeak(player, cached)
                 val totalGain = computeTotalGain(gain, peak)
-                Log.d(TAG, "reapplyCurrentTrackGain: cache hit for " + currentItem.mediaId + " totalGain=" + totalGain)
+                Log.d(
+                    TAG,
+                    "reapplyCurrentTrackGain: cache hit for " + currentItem.mediaId + " totalGain=" + totalGain
+                )
                 audioProcessor.setGainImmediate(totalGain)
                 return
             }
-            Log.d(TAG, "reapplyCurrentTrackGain: cache hit but gain=0 for " + currentItem.mediaId + ", keeping current gain")
+            Log.d(
+                TAG,
+                "reapplyCurrentTrackGain: cache hit but gain=0 for " + currentItem.mediaId + ", keeping current gain"
+            )
             return
         }
-
-        Log.d(TAG, "reapplyCurrentTrackGain: no cached data for " + currentItem.mediaId + ", keeping current gain")
+        Log.d(
+            TAG,
+            "reapplyCurrentTrackGain: no cached data for " + currentItem.mediaId + ", keeping current gain"
+        )
     }
 
     private fun queuePendingForNextTrack(player: Player) {
         val nextIndex = player.nextMediaItemIndex
         if (nextIndex == C.INDEX_UNSET) return
-        val nextItem = player.getMediaItemAt(nextIndex) ?: return
-        if (nextItem.mediaId == null) return
-
+        val nextItem = player.getMediaItemAt(nextIndex)
         val gains = gainDataMap[nextItem.mediaId]
         val resolvedGain = if (gains != null) resolveGainForNextTrack(player, gains) else 0f
-
         if (resolvedGain == 0f) {
             if (gains == null) {
-                Log.d(TAG, "queuePendingForNextTrack: no RG data yet for " + nextItem.mediaId + ", carrying over current gain")
+                Log.d(
+                    TAG,
+                    "queuePendingForNextTrack: no RG data yet for " + nextItem.mediaId + ", carrying over current gain"
+                )
                 return
             }
             val preampOnly = computeTotalGain(0f, 0f)
             audioProcessor.setPendingGain(preampOnly)
-            Log.d(TAG, "queuePendingForNextTrack: no RG tags for " + nextItem.mediaId + ", queuing preamp-only totalGain=" + preampOnly)
+            Log.d(
+                TAG,
+                "queuePendingForNextTrack: no RG tags for " + nextItem.mediaId + ", queuing preamp-only totalGain=" + preampOnly
+            )
             return
         }
-
         val totalGain = computeTotalGain(resolvedGain, resolvePeakForNextTrack(player, gains))
         audioProcessor.setPendingGain(totalGain)
     }
@@ -319,7 +320,6 @@ object ReplayGainUtil {
     private fun getReplayGains(metadataList: List<Metadata>?): List<ReplayGain> {
         val id3Gains = ReplayGain()
         val fallbackGains = ReplayGain()
-
         if (metadataList != null) {
             for (metadata in metadataList) {
                 for (j in 0 until metadata.length()) {
@@ -330,7 +330,6 @@ object ReplayGainUtil {
                 }
             }
         }
-
         val gains = ArrayList<ReplayGain>()
         gains.add(id3Gains)
         gains.add(fallbackGains)
@@ -353,7 +352,6 @@ object ReplayGainUtil {
             val desc = entry.description ?: entry.id
             str = desc + if (entry.values.isNotEmpty()) entry.values[0] else ""
         }
-
         val upper = str.uppercase(Locale.ROOT)
         if (upper.contains(tags[0])) target.trackGain = parseReplayGainTag(str)
         if (upper.contains(tags[1])) target.albumGain = parseReplayGainTag(str)
@@ -372,29 +370,33 @@ object ReplayGainUtil {
             var lastMatch: String? = null
             while (matcher.find()) lastMatch = matcher.group(1)
             lastMatch?.toFloat() ?: 0f
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
             0f
         }
     }
 
     private fun resolveGain(player: Player, gains: List<ReplayGain>?): Float {
         if (Preferences.getReplayGainMode() == "disabled" || gains.isNullOrEmpty()) return 0f
-        val mode = Preferences.getReplayGainMode() ?: ""
+        val mode = Preferences.getReplayGainMode()
         return when (mode) {
             "track" -> resolveTrackGain(gains)
             "album" -> resolveAlbumGain(gains)
-            "auto" -> if (areTracksConsecutive(player)) resolveAlbumGain(gains) else resolveTrackGain(gains)
+            "auto" -> if (areTracksConsecutive(player)) resolveAlbumGain(gains) else resolveTrackGain(
+                gains
+            )
             else -> 0f
         }
     }
 
     private fun resolveGainForNextTrack(player: Player, gains: List<ReplayGain>?): Float {
         if (Preferences.getReplayGainMode() == "disabled" || gains.isNullOrEmpty()) return 0f
-        val mode = Preferences.getReplayGainMode() ?: ""
+        val mode = Preferences.getReplayGainMode()
         return when (mode) {
             "track" -> resolveTrackGain(gains)
             "album" -> resolveAlbumGain(gains)
-            "auto" -> if (areCurrentAndNextConsecutive(player)) resolveAlbumGain(gains) else resolveTrackGain(gains)
+            "auto" -> if (areCurrentAndNextConsecutive(player)) resolveAlbumGain(gains) else resolveTrackGain(
+                gains
+            )
             else -> 0f
         }
     }
@@ -415,14 +417,14 @@ object ReplayGainUtil {
     private fun resolvePeak(player: Player, gains: List<ReplayGain>?): Float {
         if (Preferences.getReplayGainMode() == "disabled" || gains.isNullOrEmpty()) return 0f
         val useAlbum = Preferences.getReplayGainMode() == "album" ||
-                (Preferences.getReplayGainMode() == "auto" && areTracksConsecutive(player))
+            (Preferences.getReplayGainMode() == "auto" && areTracksConsecutive(player))
         return resolveTrackOrAlbumPeak(gains, useAlbum)
     }
 
     private fun resolvePeakForNextTrack(player: Player, gains: List<ReplayGain>?): Float {
         if (Preferences.getReplayGainMode() == "disabled" || gains.isNullOrEmpty()) return 0f
         val useAlbum = Preferences.getReplayGainMode() == "album" ||
-                (Preferences.getReplayGainMode() == "auto" && areCurrentAndNextConsecutive(player))
+            (Preferences.getReplayGainMode() == "auto" && areCurrentAndNextConsecutive(player))
         return resolveTrackOrAlbumPeak(gains, useAlbum)
     }
 
@@ -443,9 +445,9 @@ object ReplayGainUtil {
         val prevIdx = player.previousMediaItemIndex
         val prev = if (prevIdx == C.INDEX_UNSET) null else player.getMediaItemAt(prevIdx)
         return current != null && prev != null &&
-                current.mediaMetadata.albumTitle != null &&
-                prev.mediaMetadata.albumTitle != null &&
-                prev.mediaMetadata.albumTitle.toString() == current.mediaMetadata.albumTitle.toString()
+            current.mediaMetadata.albumTitle != null &&
+            prev.mediaMetadata.albumTitle != null &&
+            prev.mediaMetadata.albumTitle.toString() == current.mediaMetadata.albumTitle.toString()
     }
 
     private fun areCurrentAndNextConsecutive(player: Player): Boolean {
@@ -453,19 +455,19 @@ object ReplayGainUtil {
         val nextIdx = player.nextMediaItemIndex
         val next = if (nextIdx == C.INDEX_UNSET) null else player.getMediaItemAt(nextIdx)
         return current != null && next != null &&
-                current.mediaMetadata.albumTitle != null &&
-                next.mediaMetadata.albumTitle != null &&
-                current.mediaMetadata.albumTitle.toString() == next.mediaMetadata.albumTitle.toString()
+            current.mediaMetadata.albumTitle != null &&
+            next.mediaMetadata.albumTitle != null &&
+            current.mediaMetadata.albumTitle.toString() == next.mediaMetadata.albumTitle.toString()
     }
 
     private fun computeTotalGain(gain: Float, peak: Float): Float {
         val preamp = Preferences.getLoudnessPreamp()
         var totalGain = gain + preamp
         if (Preferences.isReplayGainPreventClipping() && peak > 0f) {
-            val maxGainForPeak = -(20.0 * Math.log10(peak.toDouble())).toFloat()
+            val maxGainForPeak = -(20.0 * log10(peak.toDouble())).toFloat()
             if (totalGain > maxGainForPeak) totalGain = maxGainForPeak
         }
-        return Math.max(-60f, Math.min(15f, totalGain))
+        return (-60f).coerceAtLeast(15f.coerceAtMost(totalGain))
     }
 
     private fun extractServerInfo(item: MediaItem?): ReplayGainInfo? {
@@ -481,7 +483,6 @@ object ReplayGainUtil {
         if (info.albumGain != null) primary.albumGain = info.albumGain!!
         if (info.trackPeak != null) primary.trackPeak = info.trackPeak!!
         if (info.albumPeak != null) primary.albumPeak = info.albumPeak!!
-
         val secondary = ReplayGain()
         val fallback = info.fallbackGain
         if (fallback != null) {

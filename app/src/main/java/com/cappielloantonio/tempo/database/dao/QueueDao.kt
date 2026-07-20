@@ -8,6 +8,11 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.cappielloantonio.tempo.model.Queue
 
+data class QueueRestoreRows(
+    val queue: List<Queue>,
+    val lastPlayed: Queue?,
+)
+
 @Dao
 interface QueueDao {
     @Query("SELECT * FROM queue ORDER BY track_order ASC")
@@ -39,6 +44,12 @@ interface QueueDao {
 
     @Query("SELECT * FROM queue ORDER BY last_play DESC LIMIT 1")
     fun getLastPlayed(): Queue?
+
+    @Transaction
+    fun getRestoreRows(): QueueRestoreRows = QueueRestoreRows(
+        queue = getAllSimple(),
+        lastPlayed = getLastPlayed(),
+    )
 
     @Transaction
     fun replaceQueue(newQueue: List<Queue>) {

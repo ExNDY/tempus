@@ -13,7 +13,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
-import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.max
@@ -71,7 +70,7 @@ class FastScrollbar @JvmOverloads constructor(
         val handleView = handle ?: return super.onTouchEvent(event)
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                if (event.x < handleView.x - ViewCompat.getPaddingStart(handleView)) return false
+                if (event.x < handleView.x - handleView.paddingStart) return false
                 currentAnimator?.cancel()
                 if (bubble?.visibility == INVISIBLE) showBubble()
                 handleView.isSelected = true

@@ -1,9 +1,8 @@
 package com.cappielloantonio.tempo.viewmodel
-
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.UnstableApi
+import com.cappielloantonio.tempo.playback.PlaybackStateStore
 import com.cappielloantonio.tempo.repository.PlaylistRepository
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.Playlist
@@ -12,20 +11,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
 data class PlaylistPageUiState(
     val playlist: Playlist? = null,
     val isPinned: Boolean = false,
     val isEditable: Boolean = false,
     val songs: List<Child> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val currentSongId: String? = null,
+    val isPlaying: Boolean = false,
 )
-
-@UnstableApi
 class PlaylistPageViewModel(
-    private val playlistRepository: PlaylistRepository
+    private val playlistRepository: PlaylistRepository,
+    private val playbackStateStore: PlaybackStateStore,
 ) : ViewModel() {
-
     private val _playlist = MutableStateFlow<Playlist?>(null)
     private val _isPinned = MutableStateFlow(false)
     private val _isEditable = MutableStateFlow(false)
@@ -33,22 +31,28 @@ class PlaylistPageViewModel(
     private val _isLoading = MutableStateFlow(true)
     private var startedPlaylistId: String? = null
     private var loadJob: Job? = null
-
     val uiState: StateFlow<PlaylistPageUiState> = combine(
-        _playlist, _isPinned, _isEditable, _songs, _isLoading
-    ) { playlist, pinned, editable, songs, loading ->
-        PlaylistPageUiState(playlist, pinned, editable, songs, loading)
+        _playlist, _isPinned, _isEditable, _songs, _isLoading, playbackStateStore.state
+    ) { args ->
+        @Suppress("UNCHECKED_CAST")
+        PlaylistPageUiState(
+            playlist = args[0] as Playlist?,
+            isPinned = args[1] as Boolean,
+            isEditable = args[2] as Boolean,
+            songs = args[3] as List<Child>,
+            isLoading = args[4] as Boolean,
+            currentSongId = (args[5] as com.cappielloantonio.tempo.playback.PlaybackState).currentSongId,
+            isPlaying = (args[5] as com.cappielloantonio.tempo.playback.PlaybackState).isPlaying,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PlaylistPageUiState()
     )
-
     init {
         observePinnedState()
         observePlaylistMutations()
     }
-
     fun onStart(playlist: Playlist) {
         if (startedPlaylistId == playlist.id && _playlist.value?.id == playlist.id) return
         startedPlaylistId = playlist.id
@@ -58,15 +62,22 @@ class PlaylistPageViewModel(
         refreshPinnedState(playlist.id)
         loadData(playlist)
     }
-
+    fun onStart(playlistId: String) {
+        if (startedPlaylistId == playlistId && _playlist.value?.id == playlistId) return
+        val initialPlaylist = Playlist().apply { id = playlistId }
+        startedPlaylistId = playlistId
+        _playlist.value = initialPlaylist
+        _isEditable.value = isEditableByCurrentUser(initialPlaylist)
+        _songs.value = emptyList()
+        refreshPinnedState(playlistId)
+        loadData(initialPlaylist)
+    }
     private fun loadData(playlist: Playlist) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _isLoading.value = true
-
             val playlistDeferred = async { playlistRepository.getPlaylist(playlist.id).asFlow().first() }
             val songsDeferred = async { playlistRepository.getPlaylistSongs(playlist.id).asFlow().first().orEmpty() }
-
             val refreshedPlaylist = playlistDeferred.await()
             _playlist.value = refreshedPlaylist
             _isEditable.value = refreshedPlaylist?.let(::isEditableByCurrentUser) ?: false
@@ -75,7 +86,9 @@ class PlaylistPageViewModel(
             _isLoading.value = false
         }
     }
-
+    fun refreshCurrent() {
+        _playlist.value?.let(::loadData)
+    }
     private fun observePinnedState() {
         viewModelScope.launch {
             playlistRepository.getPinnedPlaylists().asFlow().collect { playlists ->
@@ -88,7 +101,6 @@ class PlaylistPageViewModel(
             }
         }
     }
-
     private fun observePlaylistMutations() {
         viewModelScope.launch {
             playlistRepository.getPlaylistUpdateTrigger().asFlow().collect { shouldRefresh ->
@@ -99,7 +111,6 @@ class PlaylistPageViewModel(
             }
         }
     }
-
     private fun refreshPinnedState(playlistId: String) {
         _isPinned.value = playlistRepository
             .getPinnedPlaylists()
@@ -107,7 +118,6 @@ class PlaylistPageViewModel(
             .orEmpty()
             .any { it.playlistId == playlistId }
     }
-
     fun togglePinned() {
         val currentPlaylist = _playlist.value ?: return
         playlistRepository.insert(currentPlaylist)
@@ -118,7 +128,6 @@ class PlaylistPageViewModel(
         }
         _isPinned.update { !it }
     }
-
     private fun isEditableByCurrentUser(playlist: Playlist): Boolean {
         val currentUser = Preferences.getUser()
         return playlist.owner.isNullOrEmpty() || playlist.owner == currentUser

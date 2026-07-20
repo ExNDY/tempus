@@ -1,9 +1,7 @@
 package com.cappielloantonio.tempo
-
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.media3.common.util.UnstableApi
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -28,15 +26,11 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
-
-@UnstableApi
 class App : Application(), SingletonImageLoader.Factory {
-
     override fun onCreate() {
         super.onCreate()
         instance = this
         appContext = applicationContext
-
         // Capture crash logs
         CaocConfig.Builder.create()
             .backgroundMode(CaocConfig.BACKGROUND_MODE_SHOW_CUSTOM)
@@ -50,20 +44,16 @@ class App : Application(), SingletonImageLoader.Factory {
             .restartActivity(null)
             .errorActivity(CrashActivity::class.java)
             .apply()
-
         // Koin
         startDI {
             androidLogger()
             androidContext(this@App)
         }
-
         val prefs = get<Preferences>()
         val themePref = prefs.getTheme()
         ThemeHelper.applyTheme(themePref)
-
         ClientCertManager.setupSslSocketFactory(this)
     }
-
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
             .crossfade(true)
@@ -90,49 +80,32 @@ class App : Application(), SingletonImageLoader.Factory {
             }
             .build()
     }
-
     companion object {
         private var instance: App? = null
         private var appContext: Context? = null
-
         @JvmStatic
         fun getInstance(): App {
             return instance ?: throw IllegalStateException("App not initialized")
         }
-
         @JvmStatic
         fun getContext(): Context {
             return appContext ?: throw IllegalStateException("Context not initialized")
         }
-
         @JvmStatic
         fun <T : Any> get(clazz: Class<T>): T {
             return org.koin.java.KoinJavaComponent.get(clazz)
         }
-
         // Java compatibility for static clients - these will now use Koin under the hood
         @JvmStatic
         fun getSubsonicClientInstance(override: Boolean): Subsonic {
             return getInstance().get<Subsonic>()
         }
-
-        @JvmStatic
-        fun getSubsonicPublicClientInstance(override: Boolean): Subsonic {
-            return getInstance().get<Subsonic>()
-        }
-
         @JvmStatic
         fun refreshSubsonicClient() {
             // Unload and reload network module to pick up new preferences
             unloadKoinModules(networkModule)
             loadKoinModules(networkModule)
         }
-        
-        @JvmStatic
-        fun getPreferences(): Preferences {
-            return getInstance().get<Preferences>()
-        }
-
         @JvmStatic
         fun getSharedPreferences(): android.content.SharedPreferences {
             return androidx.preference.PreferenceManager.getDefaultSharedPreferences(getContext())

@@ -1,9 +1,7 @@
 package com.cappielloantonio.tempo.repository
-
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.database.AppDatabase
 import com.cappielloantonio.tempo.model.Queue
@@ -12,25 +10,40 @@ import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.PlayQueue
 import kotlinx.coroutines.*
 import java.util.concurrent.Executors
-
-@UnstableApi
+data class QueueRestoreSnapshot(
+    val media: List<Child>,
+    val lastIndex: Int,
+    val lastPosition: Long,
+)
 class QueueRepository {
     private val queueDao = AppDatabase.getInstance().queueDao()
     private val subsonicRepository: SubsonicRepository = App.get(SubsonicRepository::class.java)
-
     companion object {
         private const val TAG = "QueueRepository"
         private val dbExecutor = Executors.newSingleThreadExecutor()
     }
-
     fun getLiveQueue(): LiveData<List<Queue>> = queueDao.getAll()
-
     fun getMedia(): List<Child> {
         return runBlocking(Dispatchers.IO) {
             queueDao.getAllSimple().map { it as Child }
         }
     }
-
+    fun loadRestoreSnapshot(onLoaded: (QueueRestoreSnapshot) -> Unit) {
+        dbExecutor.execute {
+            val snapshot = try {
+                val rows = queueDao.getRestoreRows()
+                QueueRestoreSnapshot(
+                    media = rows.queue.map { it as Child },
+                    lastIndex = rows.lastPlayed?.trackOrder ?: 0,
+                    lastPosition = rows.lastPlayed?.playingChanged ?: 0L,
+                )
+            } catch (error: Throwable) {
+                Log.w(TAG, "Unable to restore the local playback queue", error)
+                QueueRestoreSnapshot(emptyList(), 0, 0L)
+            }
+            onLoaded(snapshot)
+        }
+    }
     fun getPlayQueue(): MutableLiveData<PlayQueue?> {
         val playQueue = MutableLiveData<PlayQueue?>()
         Log.d(TAG, "Getting play queue from server...")
@@ -46,14 +59,12 @@ class QueueRepository {
         }
         return playQueue
     }
-
     fun savePlayQueue(ids: List<String>, current: String?, position: Long) {
         Log.d(TAG, "Saving play queue to server...")
         CoroutineScope(Dispatchers.IO).launch {
             subsonicRepository.savePlayQueue(ids, current, position)
         }
     }
-
     fun insert(media: Child, reset: Boolean, afterIndex: Int) {
         dbExecutor.execute {
             var mediaList = if (reset) mutableListOf() else queueDao.getAllSimple().toMutableList()
@@ -62,12 +73,10 @@ class QueueRepository {
             queueDao.replaceQueue(mediaList)
         }
     }
-
     private fun isMediaInQueue(queue: List<Queue>?, media: Child?): Boolean {
         if (queue == null || media == null) return false
         return queue.any { it.id == media.id }
     }
-
     fun insertAll(toAdd: List<Child>, reset: Boolean, afterIndex: Int) {
         dbExecutor.execute {
             val mediaList = if (reset) mutableListOf() else queueDao.getAllSimple().toMutableList()
@@ -79,41 +88,33 @@ class QueueRepository {
             queueDao.replaceQueue(mediaList)
         }
     }
-
     fun delete(position: Int) {
         dbExecutor.execute { queueDao.delete(position) }
     }
-
     fun deleteAll() {
         dbExecutor.execute { queueDao.deleteAll() }
     }
-
     fun count(): Int {
         return runBlocking(Dispatchers.IO) {
             queueDao.count()
         }
     }
-
     fun setLastPlayedTimestamp(id: String) {
         dbExecutor.execute { queueDao.setLastPlay(id, System.currentTimeMillis()) }
     }
-
     fun setPlayingPausedTimestamp(id: String, ms: Long) {
         dbExecutor.execute { queueDao.setPlayingChanged(id, ms) }
     }
-
     fun getLastPlayedMediaIndex(): Int {
         return runBlocking(Dispatchers.IO) {
             queueDao.getLastPlayed()?.trackOrder ?: 0
         }
     }
-
     fun getLastPlayedMediaTimestamp(): Long {
         return runBlocking(Dispatchers.IO) {
             queueDao.getLastPlayed()?.playingChanged ?: 0
         }
     }
-
     fun deleteRange(fromIndex: Int, toIndex: Int) {
         dbExecutor.execute {
             val mediaList = queueDao.getAllSimple().toMutableList()

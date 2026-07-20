@@ -8,9 +8,9 @@ import android.net.Uri
 import android.provider.Settings
 import android.webkit.MimeTypeMap
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.repository.DownloadRepository
@@ -20,21 +20,19 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.Normalizer
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
-@UnstableApi
 object ExternalAudioWriter {
     private val EXECUTOR: ExecutorService = Executors.newSingleThreadExecutor()
     private const val BUFFER_SIZE = 8192
     private const val CONNECT_TIMEOUT_MS = 15_000
     private const val READ_TIMEOUT_MS = 60_000
-
     private fun sanitizeFileName(name: String): String {
         var sanitized = name.replace("[\\\\/:*?\\\"<>|]".toRegex(), "_")
         sanitized = sanitized.replace("\\s+".toRegex(), " ").trim()
@@ -60,11 +58,13 @@ object ExternalAudioWriter {
         return null
     }
 
+    @androidx.media3.common.util.UnstableApi
     @JvmStatic
     fun downloadToUserDirectory(context: Context?, child: Child?) {
         downloadToUserDirectory(context, child, null, null)
     }
 
+    @androidx.media3.common.util.UnstableApi
     @JvmStatic
     fun downloadToUserDirectory(
         context: Context?,
@@ -76,7 +76,6 @@ object ExternalAudioWriter {
         val appContext = context.applicationContext
         val mediaItem = MappingUtil.mapDownload(child)
         val fallbackName = child.title ?: child.id
-
         EXECUTOR.execute {
             performDownload(
                 appContext,
@@ -102,8 +101,7 @@ object ExternalAudioWriter {
             notifyUnavailable(context)
             return
         }
-
-        val directory = DocumentFile.fromTreeUri(context, Uri.parse(uriString))
+        val directory = DocumentFile.fromTreeUri(context, uriString.toUri())
         if (directory == null || !directory.canWrite()) {
             notifyFailure(
                 context,
@@ -111,7 +109,6 @@ object ExternalAudioWriter {
             )
             return
         }
-
         val artist = child.artist ?: ""
         val title = child.title ?: (fallbackName ?: "")
         val album = child.album ?: ""
@@ -121,23 +118,22 @@ object ExternalAudioWriter {
             baseName = fallbackName ?: "download"
         }
         val metadataKey = normalizeForComparison(baseName)
-
         val mediaUri = mediaItem?.requestMetadata?.mediaUri
         if (mediaUri == null) {
-            notifyFailure(context, context.getString(R.string.download_notification_invalid_media_uri))
+            notifyFailure(
+                context,
+                context.getString(R.string.download_notification_invalid_media_uri)
+            )
             ExternalDownloadMetadataStore.remove(metadataKey)
             return
         }
-
         val scheme = mediaUri.scheme?.lowercase(Locale.ROOT) ?: ""
-
         var connection: HttpURLConnection? = null
         var sourceDocument: DocumentFile? = null
         var sourceFile: File? = null
         var remoteLength: Long = -1
         var mimeType: String? = null
         var targetFile: DocumentFile? = null
-
         try {
             when (scheme) {
                 "http", "https" -> {
@@ -146,21 +142,21 @@ object ExternalAudioWriter {
                     connection.readTimeout = READ_TIMEOUT_MS
                     connection.setRequestProperty("Accept-Encoding", "identity")
                     connection.connect()
-
                     val responseCode = connection.responseCode
                     if (responseCode >= HttpURLConnection.HTTP_BAD_REQUEST) {
                         notifyFailure(
                             context,
-                            context.getString(R.string.download_notification_server_returned, responseCode)
+                            context.getString(
+                                R.string.download_notification_server_returned,
+                                responseCode
+                            )
                         )
                         ExternalDownloadMetadataStore.remove(metadataKey)
                         return
                     }
-
                     mimeType = connection.contentType
                     remoteLength = connection.contentLengthLong
                 }
-
                 "content" -> {
                     sourceDocument = DocumentFile.fromSingleUri(context, mediaUri)
                     mimeType = context.contentResolver.getType(mediaUri)
@@ -168,7 +164,6 @@ object ExternalAudioWriter {
                         remoteLength = sourceDocument.length()
                     }
                 }
-
                 "file" -> {
                     val path = mediaUri.path
                     if (path != null) {
@@ -182,7 +177,6 @@ object ExternalAudioWriter {
                         mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
                     }
                 }
-
                 else -> {
                     notifyFailure(
                         context,
@@ -192,40 +186,36 @@ object ExternalAudioWriter {
                     return
                 }
             }
-
-            if (mimeType == null || mimeType.isEmpty()) {
+            if (mimeType.isNullOrEmpty()) {
                 mimeType = "application/octet-stream"
             }
-
             var extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-            if ((extension == null || extension.isEmpty()) && sourceDocument?.name != null) {
+            if (extension.isNullOrEmpty() && sourceDocument?.name != null) {
                 val name = sourceDocument.name!!
                 val dot = name.lastIndexOf('.')
                 if (dot >= 0 && dot < name.length - 1) {
                     extension = name.substring(dot + 1)
                 }
             }
-            if ((extension == null || extension.isEmpty()) && sourceFile != null) {
+            if (extension.isNullOrEmpty() && sourceFile != null) {
                 val name = sourceFile.name
                 val dot = name.lastIndexOf('.')
                 if (dot >= 0 && dot < name.length - 1) {
                     extension = name.substring(dot + 1)
                 }
             }
-            if (extension == null || extension.isEmpty()) {
+            if (extension.isNullOrEmpty()) {
                 val suffix = child.suffix
-                extension = if (suffix != null && suffix.isNotEmpty()) {
+                extension = if (!suffix.isNullOrEmpty()) {
                     suffix
                 } else {
                     "bin"
                 }
             }
-
             var sanitized = sanitizeFileName(baseName)
             if (sanitized.isEmpty()) sanitized = sanitizeFileName(fallbackName ?: "download")
             if (sanitized.isEmpty()) sanitized = "download"
             val fileName = "$sanitized.$extension"
-
             val existingFile = findFile(directory, fileName)
             val recordedSize = ExternalDownloadMetadataStore.getSize(metadataKey)
             if (existingFile != null && existingFile.exists()) {
@@ -247,7 +237,6 @@ object ExternalAudioWriter {
                     ExternalDownloadMetadataStore.remove(metadataKey)
                 }
             }
-
             targetFile = directory.createFile(mimeType, fileName)
             if (targetFile == null) {
                 notifyFailure(
@@ -256,7 +245,6 @@ object ExternalAudioWriter {
                 )
                 return
             }
-
             val targetUri = targetFile.uri
             try {
                 openInputStream(context, mediaUri, scheme, connection, sourceFile).use { `in` ->
@@ -269,7 +257,6 @@ object ExternalAudioWriter {
                             targetFile.delete()
                             return
                         }
-
                         val buffer = ByteArray(BUFFER_SIZE)
                         var len: Int
                         var total: Long = 0
@@ -278,7 +265,6 @@ object ExternalAudioWriter {
                             total += len.toLong()
                         }
                         out.flush()
-
                         if (total <= 0) {
                             targetFile.delete()
                             ExternalDownloadMetadataStore.remove(metadataKey)
@@ -288,7 +274,6 @@ object ExternalAudioWriter {
                             )
                             return
                         }
-
                         if (remoteLength > 0 && total != remoteLength) {
                             targetFile.delete()
                             ExternalDownloadMetadataStore.remove(metadataKey)
@@ -298,7 +283,6 @@ object ExternalAudioWriter {
                             )
                             return
                         }
-
                         ExternalDownloadMetadataStore.recordSize(metadataKey, total)
                         recordDownload(child, targetUri, playlistId, playlistName)
                         notifySuccess(context, fileName, child, targetUri)
@@ -310,9 +294,7 @@ object ExternalAudioWriter {
                 throw e
             }
         } catch (e: Exception) {
-            if (targetFile != null) {
-                targetFile.delete()
-            }
+            targetFile?.delete()
             ExternalDownloadMetadataStore.remove(metadataKey)
             notifyFailure(
                 context,
@@ -333,42 +315,41 @@ object ExternalAudioWriter {
             context, 0, settingsIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        val builder = NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.download_notification_no_folder_title))
-            .setContentText(context.getString(R.string.download_notification_no_folder_text))
-            .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setSilent(true)
-            .setContentIntent(openSettings)
-            .setAutoCancel(true)
-
+        val builder =
+            NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.download_notification_no_folder_title))
+                .setContentText(context.getString(R.string.download_notification_no_folder_text))
+                .setSmallIcon(android.R.drawable.stat_notify_error)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setSilent(true)
+                .setContentIntent(openSettings)
+                .setAutoCancel(true)
         manager.notify(1011, builder.build())
     }
 
     private fun notifyFailure(context: Context, message: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val builder = NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.download_notification_failed))
-            .setContentText(message)
-            .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setAutoCancel(true)
+        val builder =
+            NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.download_notification_failed))
+                .setContentText(message)
+                .setSmallIcon(android.R.drawable.stat_notify_error)
+                .setAutoCancel(true)
         manager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
     private fun notifySuccess(context: Context, name: String, child: Child, fileUri: Uri) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val builder = NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.downloader_download_completed))
-            .setContentText(name)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setAutoCancel(true)
-
+        val builder =
+            NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.downloader_download_completed))
+                .setContentText(name)
+                .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setAutoCancel(true)
         val playIntent = buildPlayIntent(context, child, fileUri)
         if (playIntent != null) {
             builder.setContentIntent(playIntent)
         }
-
         manager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
@@ -382,21 +363,20 @@ object ExternalAudioWriter {
         download.downloadState = 1
         download.playlistId = playlistId
         download.playlistName = playlistName
-
         if (fileUri != null) {
             download.downloadUri = fileUri.toString()
         }
-
         DownloadRepository().insert(download)
     }
 
     private fun notifyExists(context: Context, name: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val builder = NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.download_notification_already_downloaded))
-            .setContentText(name)
-            .setSmallIcon(android.R.drawable.stat_sys_warning)
-            .setAutoCancel(true)
+        val builder =
+            NotificationCompat.Builder(context, DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.download_notification_already_downloaded))
+                .setContentText(name)
+                .setSmallIcon(android.R.drawable.stat_sys_warning)
+                .setAutoCancel(true)
         manager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
@@ -411,12 +391,10 @@ object ExternalAudioWriter {
             .putExtra(Constants.EXTRA_DOWNLOAD_ALBUM, child.album)
             .putExtra(
                 Constants.EXTRA_DOWNLOAD_DURATION,
-                if (child.duration != null) child.duration else 0
+                child.duration
             )
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
-        val requestCode = child.id?.hashCode()?.let { Math.abs(it) } ?: Math.abs(fileUri.toString().hashCode())
-
+        val requestCode = abs(child.id.hashCode())
         return PendingIntent.getActivity(
             context,
             requestCode,
@@ -440,19 +418,16 @@ object ExternalAudioWriter {
                 }
                 connection.inputStream
             }
-
             "content" -> {
                 context.contentResolver.openInputStream(mediaUri)
                     ?: throw IOException("Cannot open content stream")
             }
-
             "file" -> {
                 if (sourceFile == null || !sourceFile.exists()) {
                     throw IOException("Missing source file")
                 }
                 FileInputStream(sourceFile)
             }
-
             else -> throw IOException("Unsupported scheme $scheme")
         }
     }

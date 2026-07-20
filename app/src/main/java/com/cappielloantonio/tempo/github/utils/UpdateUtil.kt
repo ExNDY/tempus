@@ -22,7 +22,7 @@ object UpdateUtil {
                 }
             }
             false
-        } catch (exception: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

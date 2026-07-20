@@ -40,8 +40,8 @@ class StarredAlbumsSyncViewModel(
     private fun loadStarredAlbums() {
         val source = albumRepository.getStarredAlbums(false, -1)
         source.observeForever(object : Observer<List<AlbumID3>> {
-            override fun onChanged(albums: List<AlbumID3>) {
-                starredAlbums.postValue(albums)
+            override fun onChanged(value: List<AlbumID3>) {
+                starredAlbums.postValue(value)
                 source.removeObserver(this)
             }
         })
@@ -50,9 +50,9 @@ class StarredAlbumsSyncViewModel(
     private fun loadAllStarredAlbumSongs() {
         val source = albumRepository.getStarredAlbums(false, -1)
         source.observeForever(object : Observer<List<AlbumID3>> {
-            override fun onChanged(albums: List<AlbumID3>) {
-                if (albums.isNotEmpty()) {
-                    collectAllAlbumSongs(albums)
+            override fun onChanged(value: List<AlbumID3>) {
+                if (value.isNotEmpty()) {
+                    collectAllAlbumSongs(value)
                 } else {
                     starredAlbumSongs.postValue(emptyList())
                 }
@@ -80,8 +80,8 @@ class StarredAlbumsSyncViewModel(
             }
             val albumTracks = albumRepository.getAlbumTracks(albumId)
             albumTracks.observeForever(object : Observer<List<Child>> {
-                override fun onChanged(songs: List<Child>) {
-                    allSongs.addAll(songs)
+                override fun onChanged(value: List<Child>) {
+                    allSongs.addAll(value)
                     remaining--
                     albumTracks.removeObserver(this)
                     if (remaining == 0) {

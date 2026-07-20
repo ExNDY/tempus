@@ -1,15 +1,14 @@
-package com.cappielloantonio.tempo.glide
+package com.cappielloantonio.tempo.image
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.RGB_565
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.toDrawable
 import coil3.imageLoader
 import coil3.load
-import coil3.toBitmap
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -19,9 +18,9 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.fallback
 import coil3.request.placeholder
-import coil3.request.target
 import coil3.request.transformations
 import coil3.size.Scale
+import coil3.toBitmap
 import coil3.transform.RoundedCornersTransformation
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.R
@@ -33,7 +32,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.File
 
-class CustomGlideRequest private constructor() {
+class CoilImageRequest private constructor() {
 
     enum class ResourceType {
         Unknown,
@@ -42,8 +41,6 @@ class CustomGlideRequest private constructor() {
         Folder,
         Directory,
         Playlist,
-        Podcast,
-        Radio,
         Song,
     }
 
@@ -78,10 +75,15 @@ class CustomGlideRequest private constructor() {
                 } else {
                     null
                 }
+                val resolvedCacheKey = if (item != null && !Preferences.isDataSavingMode()) {
+                    createCoverArtCacheKey(item, type, Preferences.getImageSize())
+                } else {
+                    null
+                }
 
                 return Builder(
                     data = resolvedData,
-                    cacheKey = resolvedData,
+                    cacheKey = resolvedCacheKey,
                     type = type,
                 )
             }
@@ -139,7 +141,8 @@ class CustomGlideRequest private constructor() {
             callback: BitmapCallback,
         ) {
             val url = createUrl(coverId, size)
-            val request = baseRequest(context, url, url, ResourceType.Album)
+            val cacheKey = createCoverArtCacheKey(coverId, ResourceType.Album, size)
+            val request = baseRequest(context, url, cacheKey, ResourceType.Album)
                 .size(size, size)
                 .allowHardware(false)
                 .target(
@@ -156,6 +159,26 @@ class CustomGlideRequest private constructor() {
         }
 
         @JvmStatic
+        fun buildImageRequest(
+            context: Context,
+            item: String?,
+            type: ResourceType,
+        ): ImageRequest {
+            val resolvedData = if (item != null && !Preferences.isDataSavingMode()) {
+                createUrl(item, Preferences.getImageSize())
+            } else {
+                null
+            }
+            val resolvedCacheKey = if (item != null && !Preferences.isDataSavingMode()) {
+                createCoverArtCacheKey(item, type, Preferences.getImageSize())
+            } else {
+                null
+            }
+
+            return baseRequest(context, resolvedData, resolvedCacheKey, type).build()
+        }
+
+        @JvmStatic
         fun loadInto(
             imageView: ImageView,
             data: Any?,
@@ -163,6 +186,17 @@ class CustomGlideRequest private constructor() {
             type: ResourceType,
             addLastModifiedToFileCacheKey: Boolean = false,
         ) {
+            val requestIdentity = requestIdentity(
+                data = data,
+                cacheKey = cacheKey,
+                type = type,
+                addLastModifiedToFileCacheKey = addLastModifiedToFileCacheKey,
+            )
+            if (imageView.getTag(R.id.tag_tempus_image_request_key) == requestIdentity) {
+                return
+            }
+            imageView.setTag(R.id.tag_tempus_image_request_key, requestIdentity)
+
             imageView.load(data, imageView.context.imageLoader) {
                 applyBaseOptions(imageView.context, data, cacheKey, type, addLastModifiedToFileCacheKey)
             }
@@ -225,11 +259,9 @@ class CustomGlideRequest private constructor() {
                 ResourceType.Folder -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_folder)
                 ResourceType.Directory -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_directory)
                 ResourceType.Playlist -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_playlist)
-                ResourceType.Podcast -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_podcast)
-                ResourceType.Radio -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_radio)
                 ResourceType.Song -> AppCompatResources.getDrawable(context, R.drawable.ic_placeholder_song)
-                ResourceType.Unknown -> ColorDrawable(SurfaceColors.SURFACE_5.getColor(context))
-            } ?: ColorDrawable(SurfaceColors.SURFACE_5.getColor(context))
+                ResourceType.Unknown -> SurfaceColors.SURFACE_5.getColor(context).toDrawable()
+            } ?: SurfaceColors.SURFACE_5.getColor(context).toDrawable()
         }
 
         private fun baseRequest(
@@ -260,19 +292,50 @@ class CustomGlideRequest private constructor() {
             bitmapConfig(RGB_565)
 
             val resolvedCacheKey = cacheKey ?: defaultCacheKey(data)
-            memoryCacheKey(resolvedCacheKey)
+            val radius = if (Preferences.isCornerRoundingEnabled()) {
+                Preferences.getRoundedCornerSize().coerceAtLeast(DEFAULT_CORNER_RADIUS)
+            } else {
+                DEFAULT_CORNER_RADIUS
+            }
+            memoryCacheKey(memoryCacheKey(resolvedCacheKey, radius))
             diskCacheKey(resolvedCacheKey)
 
             if (addLastModifiedToFileCacheKey && data is File) {
                 memoryCacheKeyExtra("lastModified", data.lastModified().toString())
             }
 
-            val radius = if (Preferences.isCornerRoundingEnabled()) {
-                Preferences.getRoundedCornerSize().coerceAtLeast(DEFAULT_CORNER_RADIUS)
-            } else {
-                DEFAULT_CORNER_RADIUS
-            }
             transformations(RoundedCornersTransformation(radius.toFloat()))
+        }
+
+        private fun createCoverArtCacheKey(
+            item: String,
+            type: ResourceType,
+            size: Int,
+        ): String {
+            val serverId = Preferences.getServerId().orEmpty()
+            return "cover:$serverId:${type.name}:$item:$size"
+        }
+
+        private fun memoryCacheKey(
+            cacheKey: String?,
+            radius: Int,
+        ): String? {
+            return cacheKey?.let { "$it:radius:$radius" }
+        }
+
+        private fun requestIdentity(
+            data: Any?,
+            cacheKey: String?,
+            type: ResourceType,
+            addLastModifiedToFileCacheKey: Boolean,
+        ): String {
+            val resolvedCacheKey = cacheKey ?: defaultCacheKey(data).orEmpty()
+            val lastModified = if (addLastModifiedToFileCacheKey && data is File) {
+                data.lastModified().toString()
+            } else {
+                ""
+            }
+            return "${type.name}|$resolvedCacheKey|$lastModified"
         }
 
         private fun defaultCacheKey(data: Any?): String? {

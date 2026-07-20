@@ -3,20 +3,15 @@ package com.cappielloantonio.tempo.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3
 import com.cappielloantonio.tempo.subsonic.models.Child
 
-@UnstableApi
 class StarredArtistsSyncViewModel(
     private val artistRepository: ArtistRepository
 ) : ViewModel() {
-
     private val collectedSongs = MutableLiveData<List<Child>?>(null)
-
     fun getAllStarredArtistSongs(): LiveData<List<Child>?> = collectedSongs
-
     fun getStarredArtistSongs(owner: androidx.lifecycle.LifecycleOwner): LiveData<List<Child>?> {
         return collectedSongs
     }
@@ -28,7 +23,6 @@ class StarredArtistsSyncViewModel(
             collectedSongs.postValue(emptyList())
             return
         }
-
         for (artist in artists) {
             artistRepository.getArtistAllSongs(artist.id ?: "") { songs ->
                 synchronized(allSongs) {

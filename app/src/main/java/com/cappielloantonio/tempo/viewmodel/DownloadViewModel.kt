@@ -1,15 +1,15 @@
 package com.cappielloantonio.tempo.viewmodel
 
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import androidx.documentfile.provider.DocumentFile
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.model.DownloadStack
 import com.cappielloantonio.tempo.repository.DownloadRepository
 import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.ExternalAudioReader
 import com.cappielloantonio.tempo.util.Preferences
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import android.net.Uri
+import androidx.core.net.toUri
 
 data class DownloadUiState(
     val songs: List<Child> = emptyList(),
@@ -135,7 +135,7 @@ class DownloadViewModel(
             return false
         }
 
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         if (!uri.scheme.equals("content", ignoreCase = true)) {
             return false
         }

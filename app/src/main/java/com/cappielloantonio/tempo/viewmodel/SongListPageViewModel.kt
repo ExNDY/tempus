@@ -5,6 +5,7 @@ import com.cappielloantonio.tempo.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import com.cappielloantonio.tempo.playback.PlaybackStateStore
 import com.cappielloantonio.tempo.repository.AlbumRepository
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.ChronologyRepository
@@ -20,8 +21,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -43,6 +44,8 @@ data class SongListUiState(
     val isLoading: Boolean = true,
     val supportsSort: Boolean = false,
     val type: String = "",
+    val currentSongId: String? = null,
+    val isPlaying: Boolean = false,
 )
 
 class SongListPageViewModel(
@@ -51,10 +54,26 @@ class SongListPageViewModel(
     private val albumRepository: AlbumRepository,
     private val downloadRepository: DownloadRepository,
     private val chronologyRepository: ChronologyRepository,
+    playbackStateStore: PlaybackStateStore,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SongListUiState())
-    val uiState: StateFlow<SongListUiState> = _uiState.asStateFlow()
+    private val _baseUiState = MutableStateFlow(SongListUiState())
+    val uiState: StateFlow<SongListUiState> = kotlinx.coroutines.flow.combine(
+        _baseUiState,
+        playbackStateStore.state,
+    ) { baseState, playbackState ->
+        baseState.copy(
+            currentSongId = playbackState.currentSongId,
+            isPlaying = playbackState.isPlaying,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SongListUiState(
+            currentSongId = playbackStateStore.state.value.currentSongId,
+            isPlaying = playbackStateStore.state.value.isPlaying,
+        ),
+    )
 
     private var startedKey: String? = null
     private var loadJob: Job? = null
@@ -64,7 +83,7 @@ class SongListPageViewModel(
         if (startedKey == key) return
         startedKey = key
 
-        _uiState.value = SongListUiState(
+        _baseUiState.value = SongListUiState(
             title = resolveTitle(args),
             subtitle = null,
             songs = emptyList(),
@@ -136,8 +155,7 @@ class SongListPageViewModel(
                         System.currentTimeMillis(),
                     ).asFlow().collectLatest { history ->
                         val songs = history
-                            .filterIsInstance<Child>()
-                            .sortedByDescending { (it as? com.cappielloantonio.tempo.model.Chronology)?.timestamp ?: 0L }
+                            .sortedByDescending { it.timestamp }
                             .distinctBy { it.id }
                         updateSongs(songs, args)
                     }
@@ -150,7 +168,6 @@ class SongListPageViewModel(
                         System.currentTimeMillis(),
                     ).asFlow().collectLatest { history ->
                         val songs = history
-                            .filterIsInstance<Child>()
                             .groupBy { it.id }
                             .values
                             .sortedByDescending { it.size }
@@ -179,7 +196,7 @@ class SongListPageViewModel(
     }
 
     private fun updateSongs(songs: List<Child>, args: SongListPageArgs) {
-        _uiState.update {
+        _baseUiState.update {
             it.copy(
                 songs = songs,
                 subtitle = resolveSubtitle(args, songs),

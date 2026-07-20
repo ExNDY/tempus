@@ -39,7 +39,7 @@ interface PlaylistDao {
     fun updateName(playlistId: String, newName: String)
 
     /**
-     * Full list query used by PlaylistCatalogueFragment.
+     * Full list query used by the playlist catalogue route.
      */
     @Query("""
         SELECT p.*, (pp.playlistId IS NOT NULL) AS isPinned 

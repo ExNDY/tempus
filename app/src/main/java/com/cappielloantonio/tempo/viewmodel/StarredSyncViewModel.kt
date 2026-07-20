@@ -23,8 +23,8 @@ class StarredSyncViewModel(
     private fun loadStarredTracks() {
         val source = songRepository.getStarredSongs(false, -1)
         source.observeForever(object : Observer<List<Child>> {
-            override fun onChanged(tracks: List<Child>) {
-                starredTracks.postValue(tracks)
+            override fun onChanged(value: List<Child>) {
+                starredTracks.postValue(value)
                 source.removeObserver(this)
             }
         })

@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import com.cappielloantonio.tempo.App
 import org.json.JSONException
 import org.json.JSONObject
+import androidx.core.content.edit
 
 object ExternalDownloadMetadataStore {
     private const val PREF_KEY = "external_download_metadata"
@@ -14,14 +15,14 @@ object ExternalDownloadMetadataStore {
     private fun readAll(): JSONObject {
         val raw = preferences.getString(PREF_KEY, "{}")
         return try {
-            JSONObject(raw)
+            JSONObject(raw ?: "{}")
         } catch (e: JSONException) {
             JSONObject()
         }
     }
 
     private fun writeAll(obj: JSONObject) {
-        preferences.edit().putString(PREF_KEY, obj.toString()).apply()
+        preferences.edit { putString(PREF_KEY, obj.toString()) }
     }
 
     @JvmStatic
@@ -39,7 +40,7 @@ object ExternalDownloadMetadataStore {
         val obj = readAll()
         try {
             obj.put(key, size)
-        } catch (ignored: JSONException) {
+        } catch (_: JSONException) {
         }
         writeAll(obj)
     }
@@ -91,7 +92,7 @@ object ExternalDownloadMetadataStore {
     @JvmStatic
     @Synchronized
     fun retainOnly(keysToKeep: Set<String>?) {
-        if (keysToKeep == null || keysToKeep.isEmpty()) {
+        if (keysToKeep.isNullOrEmpty()) {
             clear()
             return
         }

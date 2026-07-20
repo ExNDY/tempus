@@ -7,7 +7,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import com.cappielloantonio.tempo.glide.CustomGlideRequest;
+import com.cappielloantonio.tempo.image.CoilImageRequest;
 import com.cappielloantonio.tempo.R;
 
 import androidx.media3.common.C;
@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.util.concurrent.ExecutionException;
 
 public final class WidgetUpdateManager {
-
     private static final int WIDGET_SAFE_ART_SIZE = 512;
 
     public static void updateFromState(Context ctx,
@@ -42,9 +41,7 @@ public final class WidgetUpdateManager {
         if (TextUtils.isEmpty(title)) title = ctx.getString(R.string.widget_not_playing);
         if (TextUtils.isEmpty(artist)) artist = ctx.getString(R.string.widget_placeholder_subtitle);
         if (TextUtils.isEmpty(album)) album = "";
-
         final TimingInfo timing = createTimingInfo(positionMs, durationMs);
-
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
         int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, WidgetProvider4x1.class));
         for (int id : ids) {
@@ -89,9 +86,8 @@ public final class WidgetUpdateManager {
         final String songLinkFinal = songLink;
         final String albumLinkFinal = albumLink;
         final String artistLinkFinal = artistLink;
-
         if (!TextUtils.isEmpty(coverArtId)) {
-            CustomGlideRequest.loadAlbumArtBitmap(
+            CoilImageRequest.loadAlbumArtBitmap(
                     appCtx,
                     coverArtId,
                     WIDGET_SAFE_ART_SIZE,
@@ -152,17 +148,14 @@ public final class WidgetUpdateManager {
                         if (artist == null) artist = mi.mediaMetadata.extras.getString("artist");
                         if (album == null) album = mi.mediaMetadata.extras.getString("album");
                         coverId = extras.getString("coverArtId");
-
                         songLink = extras.getString("assetLinkSong");
                         if (songLink == null) {
                             songLink = AssetLinkUtil.buildLink(AssetLinkUtil.TYPE_SONG, extras.getString("id"));
                         }
-
                         albumLink = extras.getString("assetLinkAlbum");
                         if (albumLink == null) {
                             albumLink = AssetLinkUtil.buildLink(AssetLinkUtil.TYPE_ALBUM, extras.getString("albumId"));
                         }
-
                         artistLink = extras.getString("assetLinkArtist");
                         if (artistLink == null) {
                             artistLink = AssetLinkUtil.buildLink(AssetLinkUtil.TYPE_ARTIST, extras.getString("artistId"));
@@ -198,14 +191,12 @@ public final class WidgetUpdateManager {
         if (safeDuration > 0 && safePosition > safeDuration) {
             safePosition = safeDuration;
         }
-
         String elapsed = (safeDuration > 0 || safePosition > 0)
                 ? MusicUtil.getReadableDurationString(safePosition, true)
                 : null;
         String total = safeDuration > 0
                 ? MusicUtil.getReadableDurationString(safeDuration, true)
                 : null;
-
         int progress = 0;
         if (safeDuration > 0) {
             long scaled = safePosition * WidgetViewsFactory.PROGRESS_MAX;
@@ -218,7 +209,6 @@ public final class WidgetUpdateManager {
                 progress = (int) progressLong;
             }
         }
-
         return new TimingInfo(elapsed, total, progress);
     }
 
@@ -298,5 +288,4 @@ public final class WidgetUpdateManager {
             this.progress = progress;
         }
     }
-
 }

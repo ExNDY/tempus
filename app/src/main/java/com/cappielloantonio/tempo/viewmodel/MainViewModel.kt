@@ -11,6 +11,7 @@ import com.cappielloantonio.tempo.repository.QueueRepository
 import com.cappielloantonio.tempo.repository.SystemRepository
 import com.cappielloantonio.tempo.subsonic.models.OpenSubsonicExtension
 import com.cappielloantonio.tempo.subsonic.models.SubsonicResponse
+import com.cappielloantonio.tempo.util.Preferences
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -31,6 +32,14 @@ class MainViewModel(
 
     fun isQueueLoaded(): Boolean {
         return queueRepository.count() != 0
+    }
+
+    fun syncSelectedServerFromPreferences() {
+        networkService.setSelectedServer(Preferences.getInUseServerAddress())
+    }
+
+    fun refreshConnectionState() {
+        networkService.refresh()
     }
 
     fun ping(): LiveData<SubsonicResponse?> {

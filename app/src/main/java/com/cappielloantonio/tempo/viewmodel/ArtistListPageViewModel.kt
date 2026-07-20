@@ -73,6 +73,7 @@ class ArtistListPageViewModel(
                         .asFlow()
                         .collectLatest { downloads ->
                             val artists = downloads
+                                .asSequence()
                                 .map { it as Child }
                                 .filter { !it.artistId.isNullOrEmpty() || !it.artist.isNullOrEmpty() }
                                 .groupBy { it.artistId ?: it.artist.orEmpty() }
@@ -86,6 +87,7 @@ class ArtistListPageViewModel(
                                     )
                                 }
                                 .sortedBy { it.name?.lowercase().orEmpty() }
+                                .toList()
                             updateArtists(artists)
                         }
                 }

@@ -48,4 +48,30 @@ class DirectoryViewModel(
             }
         }
     }
+
+    suspend fun collectDirectorySongs(directoryId: String): List<Child> {
+        val collectedSongs = linkedSetOf<Child>()
+        collectDirectorySongsRecursive(directoryId, collectedSongs)
+        return collectedSongs.toList()
+    }
+
+    private suspend fun collectDirectorySongsRecursive(
+        directoryId: String,
+        collectedSongs: LinkedHashSet<Child>,
+    ) {
+        val directory = directoryRepository.getMusicDirectory(directoryId).asFlow().first()
+        val children = directory?.children.orEmpty()
+
+        children.forEach { child ->
+            if (!child.isDir && !child.isVideo) {
+                collectedSongs.add(child)
+            }
+        }
+
+        children
+            .filter { it.isDir && it.id.isNotBlank() }
+            .forEach { child ->
+                collectDirectorySongsRecursive(child.id, collectedSongs)
+            }
+    }
 }

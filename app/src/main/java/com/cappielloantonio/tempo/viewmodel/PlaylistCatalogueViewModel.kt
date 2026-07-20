@@ -1,9 +1,7 @@
 package com.cappielloantonio.tempo.viewmodel
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.model.Download
 import com.cappielloantonio.tempo.repository.DownloadRepository
 import com.cappielloantonio.tempo.repository.PlaylistRepository
@@ -17,9 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 data class PlaylistCatalogueArgs(val type: String = Constants.PLAYLIST_ALL)
-
 data class PlaylistCatalogueUiState(
     val playlists: List<Playlist> = emptyList(),
     val isLoading: Boolean = true,
@@ -27,8 +23,6 @@ data class PlaylistCatalogueUiState(
     val pinnedPlaylistIds: Set<String> = emptySet(),
     val downloadedPlaylistIds: Set<String> = emptySet(),
 )
-
-@UnstableApi
 class PlaylistCatalogueViewModel(
     private val playlistRepository: PlaylistRepository,
     private val downloadRepository: DownloadRepository,
@@ -41,7 +35,6 @@ class PlaylistCatalogueViewModel(
     private var pinnedJob: Job? = null
     private var downloadsJob: Job? = null
     private var playlistUpdatesJob: Job? = null
-
     fun onStart(args: PlaylistCatalogueArgs) {
         if (startedType == args.type) return
         startedType = args.type
@@ -51,7 +44,6 @@ class PlaylistCatalogueViewModel(
         observePlaylistUpdates()
         refresh()
     }
-
     fun refresh(sortOrder: String = Preferences.getHomeSortPlaylists()) {
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
@@ -69,7 +61,6 @@ class PlaylistCatalogueViewModel(
             }
         }
     }
-
     private fun observePinnedPlaylists() {
         if (pinnedJob != null) return
         pinnedJob = viewModelScope.launch {
@@ -82,7 +73,6 @@ class PlaylistCatalogueViewModel(
             }
         }
     }
-
     private fun observeDownloadedPlaylists() {
         if (downloadsJob != null) return
         downloadsJob = viewModelScope.launch {
@@ -106,7 +96,6 @@ class PlaylistCatalogueViewModel(
             }
         }
     }
-
     private fun observePlaylistUpdates() {
         if (playlistUpdatesJob != null) return
         playlistUpdatesJob = viewModelScope.launch {
@@ -115,7 +104,6 @@ class PlaylistCatalogueViewModel(
             }
         }
     }
-
     private fun filterPlaylists(
         playlists: List<Playlist>,
         type: String,

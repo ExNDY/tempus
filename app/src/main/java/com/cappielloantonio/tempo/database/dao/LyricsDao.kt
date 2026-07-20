@@ -13,7 +13,7 @@ interface LyricsDao {
     fun getOne(songId: String): LyricsCache?
 
     @Query("SELECT * FROM lyrics_cache WHERE song_id = :songId")
-    fun observeOne(songId: String): LiveData<LyricsCache>
+    fun observeOne(songId: String): LiveData<LyricsCache?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(lyricsCache: LyricsCache)

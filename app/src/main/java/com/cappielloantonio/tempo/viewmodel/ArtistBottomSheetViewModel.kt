@@ -1,8 +1,6 @@
 package com.cappielloantonio.tempo.viewmodel
-
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.ViewModel
-import androidx.media3.common.util.UnstableApi
 import com.cappielloantonio.tempo.interfaces.StarCallback
 import com.cappielloantonio.tempo.repository.ArtistRepository
 import com.cappielloantonio.tempo.repository.FavoriteRepository
@@ -25,51 +23,61 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import java.util.Date
-
 data class ArtistBottomSheetUiState(
     val artist: ArtistID3? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = true,
+    val hasError: Boolean = false,
 )
-
-@UnstableApi
 class ArtistBottomSheetViewModel(
     private val artistRepository: ArtistRepository,
     private val favoriteRepository: FavoriteRepository,
     private val sharingRepository: SharingRepository,
 ) : ViewModel() {
-
     sealed interface Action {
         data class RequestDownloads(val songs: List<Child>) : Action
     }
-
     private val _artist = MutableStateFlow<ArtistID3?>(null)
     private val _isLoading = MutableStateFlow(false)
     private val _actions = Channel<Action>(Channel.BUFFERED)
     private var startedArtistId: String? = null
-
+    private var loadJob: Job? = null
     val actions = _actions.receiveAsFlow()
-
+    private val _hasError = MutableStateFlow(false)
     val uiState: StateFlow<ArtistBottomSheetUiState> = combine(
-        _artist, _isLoading
-    ) { artist, loading ->
-        ArtistBottomSheetUiState(artist, loading)
+        _artist, _isLoading, _hasError
+    ) { artist, loading, hasError ->
+        ArtistBottomSheetUiState(artist, loading, hasError)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ArtistBottomSheetUiState()
     )
-
-    fun onStart(artist: ArtistID3) {
-        if (startedArtistId == artist.id && _artist.value?.id == artist.id) {
-            return
+    fun onStart(artistId: String, force: Boolean = false) {
+        if (!force && startedArtistId == artistId && (_artist.value != null || _isLoading.value)) return
+        startedArtistId = artistId
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _artist.value = null
+            _hasError.value = false
+            _isLoading.value = true
+            if (artistId.isBlank()) {
+                _isLoading.value = false
+                _hasError.value = true
+                return@launch
+            }
+            val artist = runCatching {
+                artistRepository.getArtist(artistId).asFlow().first()
+            }.getOrNull()
+            _artist.value = artist
+            _isLoading.value = false
+            _hasError.value = artist == null
         }
-        startedArtistId = artist.id
-        _artist.value = artist
     }
-
+    fun retry(artistId: String) = onStart(artistId, force = true)
     fun setFavorite() {
         val artist = _artist.value ?: return
         if (artist.starred != null) {
@@ -86,17 +94,14 @@ class ArtistBottomSheetViewModel(
             }
         }
     }
-
     fun getArtistInstantMix(count: Int = 30): Flow<List<Child>> {
         val artist = _artist.value ?: return flowOf(emptyList())
         return artistRepository.getInstantMix(artist, count).asFlow()
     }
-
     fun getRandomSongs(count: Int = 50): Flow<List<Child>> {
         val artist = _artist.value ?: return flowOf(emptyList())
         return artistRepository.getRandomSong(artist, count).asFlow()
     }
-
     fun getAllSongs(): Flow<List<Child>> {
         val artistId = _artist.value?.id ?: return flowOf(emptyList())
         return callbackFlow {
@@ -107,50 +112,38 @@ class ArtistBottomSheetViewModel(
             awaitClose {}
         }
     }
-
     suspend fun shareArtist(): Share? {
         val artist = _artist.value ?: return null
         val artistId = artist.id ?: return null
         return sharingRepository.createShare(artistId, artist.name, null).asFlow().first()
     }
-
     private fun removeFavoriteOffline(artist: ArtistID3) {
         favoriteRepository.starLater(null, null, artist.id, false)
-        artist.starred = null
-        _artist.update { artist }
+        _artist.update { artist.withStarred(null) }
     }
-
     private fun removeFavoriteOnline(artist: ArtistID3) {
         val artistId = artist.id ?: return
         favoriteRepository.unstar(null, null, artistId, object : StarCallback {
             override fun onSuccess() = Unit
-
             override fun onError() {
                 favoriteRepository.starLater(null, null, artistId, false)
             }
         })
-        artist.starred = null
-        _artist.update { artist }
+        _artist.update { artist.withStarred(null) }
     }
-
     private fun setFavoriteOffline(artist: ArtistID3) {
         favoriteRepository.starLater(null, null, artist.id, true)
-        artist.starred = Date()
-        _artist.update { artist }
+        _artist.update { artist.withStarred(Date()) }
     }
-
     private fun setFavoriteOnline(artist: ArtistID3) {
         val artistId = artist.id ?: return
         favoriteRepository.star(null, null, artistId, object : StarCallback {
             override fun onSuccess() = Unit
-
             override fun onError() {
                 favoriteRepository.starLater(null, null, artistId, true)
             }
         })
-        artist.starred = Date()
-        _artist.update { artist }
-
+        _artist.update { artist.withStarred(Date()) }
         if (Preferences.isStarredArtistsSyncEnabled()) {
             artistRepository.getArtistAllSongs(artistId) { songs ->
                 if (songs.isNotEmpty()) {
@@ -160,5 +153,14 @@ class ArtistBottomSheetViewModel(
                 }
             }
         }
+    }
+    private fun ArtistID3.withStarred(starred: Date?): ArtistID3 {
+        return ArtistID3(
+            id = id,
+            name = name,
+            coverArtId = coverArtId,
+            albumCount = albumCount,
+            starred = starred,
+        )
     }
 }

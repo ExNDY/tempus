@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.*
 import java.util.*
+import androidx.core.net.toUri
 
 @UnstableApi
 class AutomotiveRepository {
@@ -63,7 +64,7 @@ class AutomotiveRepository {
 
     private fun createArtist(artistName: String?, id: String, isGridView: Boolean, artistCoverArtId: String?): MediaItem {
         val artworkUri = if (!artistCoverArtId.isNullOrEmpty()) AlbumArtContentProvider.contentUri(artistCoverArtId)
-        else Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists)
+        else ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists).toUri()
 
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(artistName)
@@ -83,7 +84,7 @@ class AutomotiveRepository {
 
     private fun createAlbum(albumName: String?, artistName: String?, genre: String?, id: String, isPlayable: Boolean, albumCoverArtId: String?): MediaItem {
         val artworkUri = if (!albumCoverArtId.isNullOrEmpty()) AlbumArtContentProvider.contentUri(albumCoverArtId)
-        else Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums)
+        else ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums).toUri()
 
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(albumName)
@@ -127,10 +128,10 @@ class AutomotiveRepository {
 
                 if (isRootCall == true) {
                     val jumpTo = createFunction(
-                        App.getContext().getString(R.string.aa_starred_albums),
-                        ConstantsAA.JUMP_TO_STARRED_ALBUMS_ID,
-                        Preferences.isAndroidAutoAlbumViewEnabled(),
-                        Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_star_album)
+                        title = App.getContext().getString(R.string.aa_starred_albums),
+                        id = ConstantsAA.JUMP_TO_STARRED_ALBUMS_ID,
+                        isGridView = Preferences.isAndroidAutoAlbumViewEnabled(),
+                        artworkUri = ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_star_album).toUri()
                     )
                     mediaItems.add(0, jumpTo)
                 }
@@ -165,18 +166,18 @@ class AutomotiveRepository {
                 }
 
                 mediaItems.add(0, createFunction(
-                    App.getContext().getString(R.string.aa_view_by_albums),
-                    ConstantsAA.ARTISTS_BY_ALBUMS_ID,
-                    Preferences.isAndroidAutoAlbumViewEnabled(),
-                    Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums)
+                    title = App.getContext().getString(R.string.aa_view_by_albums),
+                    id = ConstantsAA.ARTISTS_BY_ALBUMS_ID,
+                    isGridView = Preferences.isAndroidAutoAlbumViewEnabled(),
+                    artworkUri = ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums).toUri()
                 ))
 
                 if (isRootCall == true) {
                     mediaItems.add(0, createFunction(
-                        App.getContext().getString(R.string.aa_starred_artists),
-                        ConstantsAA.JUMP_TO_STARRED_ARTISTS_ID,
-                        Preferences.isAndroidAutoAlbumViewEnabled(),
-                        Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists)
+                        title = App.getContext().getString(R.string.aa_starred_artists),
+                        id = ConstantsAA.JUMP_TO_STARRED_ARTISTS_ID,
+                        isGridView = Preferences.isAndroidAutoAlbumViewEnabled(),
+                        artworkUri = ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists).toUri()
                     ))
                 }
 
@@ -264,10 +265,10 @@ class AutomotiveRepository {
 
                 if (isRootCall == true) {
                     mediaItems.add(0, createFunction(
-                        App.getContext().getString(R.string.aa_albums),
-                        ConstantsAA.JUMP_TO_ALBUMS_ID,
-                        Preferences.isAndroidAutoAlbumViewEnabled(),
-                        Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums)
+                        title = App.getContext().getString(R.string.aa_albums),
+                        id = ConstantsAA.JUMP_TO_ALBUMS_ID,
+                        isGridView = Preferences.isAndroidAutoAlbumViewEnabled(),
+                        artworkUri = ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_albums).toUri()
                     ))
                 }
 
@@ -294,10 +295,10 @@ class AutomotiveRepository {
 
                 if (isRootCall == true) {
                     mediaItems.add(0, createFunction(
-                        App.getContext().getString(R.string.aa_artists),
-                        ConstantsAA.JUMP_TO_ARTISTS_ID,
-                        Preferences.isAndroidAutoAlbumViewEnabled(),
-                        Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists)
+                        title = App.getContext().getString(R.string.aa_artists),
+                        id = ConstantsAA.JUMP_TO_ARTISTS_ID,
+                        isGridView = Preferences.isAndroidAutoAlbumViewEnabled(),
+                        artworkUri = ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_artists).toUri()
                     ))
                 }
 
@@ -316,7 +317,8 @@ class AutomotiveRepository {
             try {
                 val response = subsonicRepository.getMusicFolders()
                 val musicFolders = response?.musicFolders?.musicFolders ?: emptyList()
-                val artworkUri = Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_folders)
+                val artworkUri =
+                    ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_folders).toUri()
 
                 val mediaItems = musicFolders.map { musicFolder ->
                     val mediaMetadata = MediaMetadata.Builder()
@@ -419,7 +421,7 @@ class AutomotiveRepository {
                     MediaItem.Builder()
                         .setMediaId(if (child.isDir) prefix + child.id else child.id)
                         .setMediaMetadata(mediaMetadata)
-                        .setUri(if (!child.isDir) MusicUtil.getStreamUri(child.id) else Uri.parse(""))
+                        .setUri(if (!child.isDir) MusicUtil.getStreamUri(child.id) else "".toUri())
                         .build()
                 }
 
@@ -444,7 +446,7 @@ class AutomotiveRepository {
 
                 val mediaItems = playlists.map { playlist ->
                     val artworkUri = if (!playlist.coverArtId.isNullOrEmpty()) AlbumArtContentProvider.contentUri(playlist.coverArtId)
-                    else Uri.parse("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_playlist)
+                    else ("android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.ic_aa_playlist).toUri()
 
                     val mediaMetadata = MediaMetadata.Builder()
                         .setTitle(playlist.name)
@@ -460,66 +462,6 @@ class AutomotiveRepository {
                         .setUri("")
                         .build()
                 }
-
-                listenableFuture.set(LibraryResult.ofItemList(ImmutableList.copyOf(mediaItems), null))
-            } catch (e: Exception) {
-                listenableFuture.setException(e)
-            }
-        }
-        return listenableFuture
-    }
-
-    fun getNewestPodcastEpisodes(count: Int): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        val listenableFuture = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = subsonicRepository.getNewestPodcasts(count)
-                val episodes = response?.newestPodcasts?.episodes ?: emptyList()
-
-                val mediaItems = episodes.map { episode ->
-                    val artworkUri = episode.coverArtId?.let { AlbumArtContentProvider.contentUri(it) }
-                    val mediaMetadata = MediaMetadata.Builder()
-                        .setTitle(episode.title)
-                        .setIsBrowsable(false)
-                        .setIsPlayable(true)
-                        .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
-                        .setArtworkUri(artworkUri)
-                        .build()
-
-                    MediaItem.Builder()
-                        .setMediaId(episode.id ?: "")
-                        .setMediaMetadata(mediaMetadata)
-                        .setUri(MusicUtil.getStreamUri(episode.streamId ?: ""))
-                        .build()
-                }
-
-                setPodcastEpisodesMetadata(episodes)
-
-                listenableFuture.set(LibraryResult.ofItemList(ImmutableList.copyOf(mediaItems), null))
-            } catch (e: Exception) {
-                listenableFuture.setException(e)
-            }
-        }
-        return listenableFuture
-    }
-
-    fun getInternetRadioStations(): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        val listenableFuture = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = subsonicRepository.getInternetRadioStations()
-                val radioStations = (response?.internetRadioStations?.internetRadioStations ?: emptyList()).toMutableList()
-
-                val localCaches = AppDatabase.getInstance().internetRadioStationDao().getLocal()
-                radioStations.addAll(localCaches.map { it.toInternetRadioStation() })
-
-                radioStations.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name ?: "" })
-
-                val mediaItems = radioStations.map { MappingUtil.mapInternetRadioStation(it) }
-
-                setInternetRadioStationsMetadata(radioStations)
 
                 listenableFuture.set(LibraryResult.ofItemList(ImmutableList.copyOf(mediaItems), null))
             } catch (e: Exception) {
@@ -668,7 +610,7 @@ class AutomotiveRepository {
                 } else {
                     fallbackToFirstRandomSong(mixType, count, listenableFuture)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 fallbackToFirstRandomSong(mixType, count, listenableFuture)
             }
         }
@@ -724,22 +666,6 @@ class AutomotiveRepository {
     fun setChildrenMetadata(children: List<Child>) {
         val timestamp = System.currentTimeMillis()
         val sessionMediaItems = children.map { SessionMediaItem(it).apply { this.timestamp = timestamp } }
-        CoroutineScope(Dispatchers.IO).launch {
-            sessionMediaItemDao.insertAll(sessionMediaItems)
-        }
-    }
-
-    fun setPodcastEpisodesMetadata(podcastEpisodes: List<PodcastEpisode>) {
-        val timestamp = System.currentTimeMillis()
-        val sessionMediaItems = podcastEpisodes.map { SessionMediaItem(it).apply { this.timestamp = timestamp } }
-        CoroutineScope(Dispatchers.IO).launch {
-            sessionMediaItemDao.insertAll(sessionMediaItems)
-        }
-    }
-
-    fun setInternetRadioStationsMetadata(internetRadioStations: List<InternetRadioStation>) {
-        val timestamp = System.currentTimeMillis()
-        val sessionMediaItems = internetRadioStations.map { SessionMediaItem(it).apply { this.timestamp = timestamp } }
         CoroutineScope(Dispatchers.IO).launch {
             sessionMediaItemDao.insertAll(sessionMediaItems)
         }

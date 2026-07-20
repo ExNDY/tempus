@@ -1,14 +1,11 @@
 package com.cappielloantonio.tempo.service
-
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.OptIn
 import androidx.lifecycle.Observer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.interfaces.MediaIndexCallback
@@ -17,8 +14,6 @@ import com.cappielloantonio.tempo.repository.ChronologyRepository
 import com.cappielloantonio.tempo.repository.QueueRepository
 import com.cappielloantonio.tempo.repository.SongRepository
 import com.cappielloantonio.tempo.subsonic.models.Child
-import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation
-import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import com.cappielloantonio.tempo.util.MappingUtil
 import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.viewmodel.PlaybackViewModel
@@ -32,7 +27,6 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.stream.Collectors
-
 object MediaManager {
     private const val TAG = "MediaManager"
     private var attachedBrowserRef = WeakReference<MediaBrowser?>(null)
@@ -40,16 +34,13 @@ object MediaManager {
     val justStarted = AtomicBoolean(false)
     @JvmField
     val continuousPlayIsRunning = AtomicBoolean(false)
-
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
-
     @JvmStatic
     fun registerPlaybackObserver(
         browserFuture: ListenableFuture<MediaBrowser>?,
         playbackViewModel: PlaybackViewModel
     ) {
         if (browserFuture == null) return
-
         Futures.addCallback(browserFuture, object : FutureCallback<MediaBrowser> {
             override fun onSuccess(browser: MediaBrowser?) {
                 if (browser == null) return
@@ -61,20 +52,16 @@ object MediaManager {
                                 || events.contains(Player.EVENT_PLAY_WHEN_READY_CHANGED)
                                 || events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)
                             ) {
-
                                 val mediaId = player.currentMediaItem?.mediaId
                                 val playing = player.playbackState == Player.STATE_READY
                                         && player.playWhenReady
-
                                 playbackViewModel.update(mediaId, playing)
                             }
                         }
                     })
-
                     val mediaId = browser.currentMediaItem?.mediaId
                     val playing = browser.playbackState == Player.STATE_READY && browser.playWhenReady
                     playbackViewModel.update(mediaId, playing)
-
                     attachedBrowserRef = WeakReference(browser)
                 } else {
                     val mediaId = browser.currentMediaItem?.mediaId
@@ -82,13 +69,11 @@ object MediaManager {
                     playbackViewModel.update(mediaId, playing)
                 }
             }
-
             override fun onFailure(t: Throwable) {
                 Log.e(TAG, "Failed to get MediaBrowser instance", t)
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun onBrowserReleased(released: MediaBrowser?) {
         val attached = attachedBrowserRef.get()
@@ -96,7 +81,6 @@ object MediaManager {
             attachedBrowserRef.clear()
         }
     }
-
     @JvmStatic
     fun reset(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?) {
         mediaBrowserListenableFuture?.addListener({
@@ -105,14 +89,12 @@ object MediaManager {
                 if (browser.isPlaying) {
                     browser.pause()
                 }
-
                 browser.stop()
                 browser.clearMediaItems()
                 clearDatabase()
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun hide(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?) {
         mediaBrowserListenableFuture?.addListener({
@@ -122,49 +104,17 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
-    @OptIn(UnstableApi::class)
-    fun check(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?) {
-        mediaBrowserListenableFuture?.addListener({
-            val browser = getResolvedBrowser(mediaBrowserListenableFuture, "check")
-            if (browser != null && browser.mediaItemCount < 1) {
-                val media = queueRepository.getMedia()
-                if (media.isNotEmpty()) {
-                    init(mediaBrowserListenableFuture, media)
-                }
-            }
-        }, MoreExecutors.directExecutor())
-    }
-
-    @JvmStatic
-    @OptIn(UnstableApi::class)
-    fun init(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>) {
-        mediaBrowserListenableFuture?.addListener({
-            val browser = getResolvedBrowser(mediaBrowserListenableFuture, "init")
-            if (browser != null) {
-                browser.clearMediaItems()
-                browser.setMediaItems(MappingUtil.mapMediaItems(media))
-                browser.seekTo(queueRepository.getLastPlayedMediaIndex(), queueRepository.getLastPlayedMediaTimestamp())
-                browser.prepare()
-            }
-        }, MoreExecutors.directExecutor())
-    }
-
-    @JvmStatic
-    @OptIn(UnstableApi::class)
     fun startQueue(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>, startIndex: Int) {
         mediaBrowserListenableFuture?.addListener({
             try {
                 if (mediaBrowserListenableFuture.isDone) {
                     val browser = mediaBrowserListenableFuture.get()
                     val items = MappingUtil.mapMediaItems(media)
-
                     Handler(Looper.getMainLooper()).post {
                         justStarted.set(true)
                         browser.setMediaItems(items, startIndex, 0)
                         browser.prepare()
-
                         val timelineListener = object : Player.Listener {
                             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                                 val itemCount = browser.mediaItemCount
@@ -177,10 +127,8 @@ object MediaManager {
                                 }
                             }
                         }
-
                         browser.addListener(timelineListener)
                     }
-
                     backgroundExecutor.execute {
                         Log.d(TAG, "Background: enqueuing to database")
                         enqueueDatabase(media, true, 0)
@@ -193,7 +141,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun startQueue(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: Child) {
         mediaBrowserListenableFuture?.addListener({
@@ -213,7 +160,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun playDownloadedMediaItem(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, mediaItem: MediaItem?) {
         if (mediaBrowserListenableFuture != null && mediaItem != null) {
@@ -235,45 +181,6 @@ object MediaManager {
             }, MoreExecutors.directExecutor())
         }
     }
-
-    @JvmStatic
-    fun startRadio(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, internetRadioStation: InternetRadioStation) {
-        mediaBrowserListenableFuture?.addListener({
-            try {
-                if (mediaBrowserListenableFuture.isDone) {
-                    val browser = mediaBrowserListenableFuture.get()
-                    justStarted.set(true)
-                    browser.setMediaItem(MappingUtil.mapInternetRadioStation(internetRadioStation))
-                    browser.prepare()
-                    browser.play()
-                }
-            } catch (e: ExecutionException) {
-                e.printStackTrace()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }, MoreExecutors.directExecutor())
-    }
-
-    @JvmStatic
-    fun startPodcast(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, podcastEpisode: PodcastEpisode) {
-        mediaBrowserListenableFuture?.addListener({
-            try {
-                if (mediaBrowserListenableFuture.isDone) {
-                    val browser = mediaBrowserListenableFuture.get()
-                    justStarted.set(true)
-                    browser.setMediaItem(MappingUtil.mapMediaItem(podcastEpisode))
-                    browser.prepare()
-                    browser.play()
-                }
-            } catch (e: ExecutionException) {
-                e.printStackTrace()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }, MoreExecutors.directExecutor())
-    }
-
     @JvmStatic
     fun enqueue(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>, playImmediatelyAfter: Boolean) {
         mediaBrowserListenableFuture?.addListener({
@@ -296,7 +203,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun enqueue(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: Child, playImmediatelyAfter: Boolean) {
         mediaBrowserListenableFuture?.addListener({
@@ -319,7 +225,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun shuffle(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>, startIndex: Int, endIndex: Int) {
         mediaBrowserListenableFuture?.addListener({
@@ -338,7 +243,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun swap(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: List<Child>, from: Int, to: Int) {
         mediaBrowserListenableFuture?.addListener({
@@ -355,7 +259,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun remove(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: MutableList<Child>, toRemove: Int) {
         mediaBrowserListenableFuture?.addListener({
@@ -376,7 +279,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun removeRange(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, media: MutableList<Child>, fromItem: Int, toItem: Int) {
         mediaBrowserListenableFuture?.addListener({
@@ -393,9 +295,7 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
-    @OptIn(UnstableApi::class)
     fun removeRange(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, fromItem: Int, toItem: Int) {
         mediaBrowserListenableFuture?.addListener({
             try {
@@ -410,7 +310,6 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun getCurrentIndex(mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?, callback: MediaIndexCallback) {
         mediaBrowserListenableFuture?.addListener({
@@ -420,35 +319,28 @@ object MediaManager {
             }
         }, MoreExecutors.directExecutor())
     }
-
     @JvmStatic
     fun setLastPlayedTimestamp(mediaItem: MediaItem) {
         queueRepository.setLastPlayedTimestamp(mediaItem.mediaId)
     }
-
     @JvmStatic
     fun setPlayingPausedTimestamp(mediaItem: MediaItem, ms: Long) {
         queueRepository.setPlayingPausedTimestamp(mediaItem.mediaId, ms)
     }
-
     @JvmStatic
     fun scrobble(mediaItem: MediaItem, submission: Boolean) {
         if (mediaItem.mediaMetadata.extras != null && Preferences.isScrobblingEnabled()) {
             songRepository.scrobble(mediaItem.mediaMetadata.extras!!.getString("id") ?: "", submission)
         }
     }
-
     @JvmStatic
-    @OptIn(UnstableApi::class)
     fun continuousPlay(
         mediaItem: MediaItem,
         existingBrowserFuture: ListenableFuture<MediaBrowser>?
     ) {
         continuousPlay(mediaItem, existingBrowserFuture, null)
     }
-
     @JvmStatic
-    @OptIn(UnstableApi::class)
     fun continuousPlay(
         mediaItem: MediaItem,
         existingBrowserFuture: ListenableFuture<MediaBrowser>?,
@@ -460,12 +352,9 @@ object MediaManager {
             return
         }
         Log.d(TAG, "Continuous Play")
-
         Preferences.setLastInstantMix()
         continuousPlayIsRunning.set(true)
-
         val instantMix = songRepository.getContinuousMix(mediaItem.mediaId, 25)
-
         instantMix.observeForever(object : Observer<List<Child>?> {
             override fun onChanged(value: List<Child>?) {
                 if (value == null || value.isEmpty()) {
@@ -473,7 +362,6 @@ object MediaManager {
                 } else {
                     if (existingBrowserFuture != null) {
                         Log.d(TAG, "Continuous Play: found " + value.size + " similar tracks")
-
                         val browser: MediaBrowser
                         try {
                             browser = existingBrowserFuture.get()
@@ -488,7 +376,6 @@ object MediaManager {
                             continuousPlayIsRunning.set(false)
                             return
                         }
-
                         val currentIds = ArrayList<String>()
                         for (i in 0 until browser.mediaItemCount) {
                             currentIds.add(browser.getMediaItemAt(i).mediaId)
@@ -496,7 +383,6 @@ object MediaManager {
                         val filteredMedia = value.stream()
                             .filter { child -> !currentIds.contains(child.id) }
                             .collect(Collectors.toList())
-
                         Log.d(TAG, "Continuous Play: adding " + filteredMedia.size + " tracks to queue")
                         enqueue(existingBrowserFuture, filteredMedia, true)
                     }
@@ -507,51 +393,40 @@ object MediaManager {
             }
         })
     }
-
     @JvmStatic
     fun saveChronology(mediaItem: MediaItem) {
         chronologyRepository.insert(Chronology(mediaItem))
     }
-
     private val queueRepository: QueueRepository
         get() = QueueRepository()
-
     private val songRepository: SongRepository
         get() = SongRepository(App.get(com.cappielloantonio.tempo.repository.subsonic.SubsonicRepository::class.java))
-
     private val chronologyRepository: ChronologyRepository
         get() = ChronologyRepository()
-
     private fun enqueueDatabase(media: List<Child>, reset: Boolean, afterIndex: Int) {
         queueRepository.insertAll(media, reset, afterIndex)
     }
-
     private fun enqueueDatabase(media: Child, reset: Boolean, afterIndex: Int) {
         queueRepository.insert(media, reset, afterIndex)
     }
-
     private fun swapDatabase(media: List<Child>) {
         queueRepository.insertAll(media, true, 0)
     }
-
     private fun removeDatabase(media: MutableList<Child>, toRemove: Int) {
         if (toRemove != -1) {
             media.removeAt(toRemove)
             queueRepository.insertAll(media, true, 0)
         }
     }
-
     private fun removeRangeDatabase(media: MutableList<Child>, fromItem: Int, toItem: Int) {
         val toRemove = media.subList(fromItem, toItem)
         media.removeAll(toRemove)
         queueRepository.insertAll(media, true, 0)
     }
-
     @JvmStatic
     fun clearDatabase() {
         queueRepository.deleteAll()
     }
-
     private fun getResolvedBrowser(
         mediaBrowserListenableFuture: ListenableFuture<MediaBrowser>?,
         action: String
@@ -563,7 +438,6 @@ object MediaManager {
             Log.d(TAG, "$action: MediaBrowser future was cancelled")
             return null
         }
-
         return try {
             mediaBrowserListenableFuture.get()
         } catch (e: CancellationException) {
